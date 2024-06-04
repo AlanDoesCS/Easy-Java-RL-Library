@@ -1,7 +1,7 @@
 package Structures;
 
 public class Matrix {
-    float[][] data;
+    private float[][] data;
     int rows, cols;
 
     public Matrix(int rows, int cols) {
@@ -110,5 +110,13 @@ public class Matrix {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    public float get(int x, int y) {
+        return data[y][x];
+    }
+
+    public void set(int x, int y, float value) {
+        data[y][x] = value;
     }
 }
