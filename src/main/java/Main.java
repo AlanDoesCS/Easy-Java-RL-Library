@@ -1,10 +1,11 @@
 import Structures.DQN;
 import Structures.Layer;
 import Structures.Matrix;
-import Tools.DQN_Visualiser;
+import Tools.PerlinNoise_Visualiser;
 import Training.ActivationFunction;
-import Training.NoisyGridMesh;
-import Training.ReLU;
+import Training.RandomGridMesh;
+import Training.Sigmoid;
+import Tools.PerlinNoise;
 
 import java.util.List;
 import java.util.Random;
@@ -14,7 +15,7 @@ public class Main {
         Random rand = new Random();
 
         int width=10, height=10;
-        NoisyGridMesh environment = new NoisyGridMesh(width, height);
+        RandomGridMesh environment = new RandomGridMesh(width, height);
         int numSquares = environment.getNumSquares();
 
         int startX=rand.nextInt(width+1), startY=rand.nextInt(height+1);
@@ -35,9 +36,9 @@ public class Main {
 
         Matrix input = new Matrix(inputArr);
 
-        System.out.println(environment);
+        // System.out.println(environment);
 
-        ActivationFunction sig = new ReLU(); // Rectified Linear Unit / Sigmoid function depending on use
+        ActivationFunction sig = new Sigmoid();
         List<Layer> layers = List.of(
                 new Layer(numSquares, 7, sig, 0),
                 new Layer(7, 8, sig, 0),
@@ -47,7 +48,13 @@ public class Main {
         DQN net = new DQN(numSquares, layers, 4, 1, sig, 0);
 
         // System.out.println(net.getOutput(input));
+        PerlinNoise n = new PerlinNoise();
 
-        new DQN_Visualiser(net);
+        int octaves = 8;
+        float persistence = 0.6f;
+
+        new PerlinNoise_Visualiser(2, octaves, persistence);
+
+        // new DQN_Visualiser(net);
     }
 }

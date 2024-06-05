@@ -2,9 +2,9 @@ package Training;
 
 import java.util.Random;
 
-public class NoisyGridMesh extends GridEnvironment {
+public class RandomGridMesh extends GridEnvironment {
 
-     public NoisyGridMesh(int width, int height) {
+     public RandomGridMesh(int width, int height) {
          super(width, height);
          fill();
      }
