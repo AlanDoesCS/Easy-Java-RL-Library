@@ -1,11 +1,12 @@
 import Structures.DQN;
 import Structures.Layer;
 import Structures.Matrix;
+import Tools.Perlin2D;
 import Tools.PerlinNoise_Visualiser;
 import Training.ActivationFunction;
 import Training.RandomGridMesh;
 import Training.Sigmoid;
-import Tools.PerlinNoise;
+import Tools.Perlin1D;
 
 import java.util.List;
 import java.util.Random;
@@ -48,12 +49,13 @@ public class Main {
         DQN net = new DQN(numSquares, layers, 4, 1, sig, 0);
 
         // System.out.println(net.getOutput(input));
-        PerlinNoise n = new PerlinNoise();
 
         int octaves = 8;
-        float persistence = 0.6f;
+        float persistence = 0.3f;
+        Perlin1D p1 = new Perlin1D(octaves, persistence);
+        Perlin2D p2 = new Perlin2D(octaves, persistence);
 
-        new PerlinNoise_Visualiser(2, octaves, persistence);
+        new PerlinNoise_Visualiser(p2, 0.01f);
 
         // new DQN_Visualiser(net);
     }
