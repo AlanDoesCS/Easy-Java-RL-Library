@@ -54,17 +54,11 @@ public class Perlin2D extends PerlinNoise {
             Vector2D v2 = Vector2D.subtract(position, new Vector2D(x0, y1));
             Vector2D v3 = Vector2D.subtract(position, new Vector2D(x1, y1));
 
-            // Gradients
-            Vector2D g0 = getGradient(x0, y0);
-            Vector2D g1 = getGradient(x1, y0);
-            Vector2D g2 = getGradient(x0, y1);
-            Vector2D g3 = getGradient(x1, y1);
-
             // Vertical displacement (delta)
-            float d0 = Vector2D.dot(v0, g0);
-            float d1 = Vector2D.dot(v1, g1);
-            float d2 = Vector2D.dot(v2, g2);
-            float d3 = Vector2D.dot(v3, g3);
+            float d0 = Vector2D.dot(v0, getGradient(x0, y0));
+            float d1 = Vector2D.dot(v1, getGradient(x1, y0));
+            float d2 = Vector2D.dot(v2, getGradient(x0, y1));
+            float d3 = Vector2D.dot(v3, getGradient(x1, y1));
 
             float xf = xPos -x0;
             float yf = yPos -y0;
@@ -75,7 +69,8 @@ public class Perlin2D extends PerlinNoise {
                             fade(xf, yf) * d3
             ) * amplitude;
         }
-        return noise;
+        return math.clamp(noise, -1f, 1f);
+        //return Math.round(noise*5)/5f; // For "stepped" results
     }
 
     public Matrix toMatrix(int xPixels, int yPixels, float step) {

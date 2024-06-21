@@ -42,4 +42,16 @@ public class Vector2D {
     public String toString() {
         return "Vector(" + "i=" + i + ", j=" + j + ')';
     }
+
+    public void add(float I, float J) {
+        i += I;
+        j += J;
+    }
+
+    public void multiplyI(float multiplier) {
+        this.i *= multiplier;
+    }
+    public void multiplyJ(float multiplier) {
+        this.j *= multiplier;
+    }
 }

@@ -95,20 +95,24 @@ public class Matrix {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
+
+        final int dp = 3;
+        int multiplier = (int) Math.pow(10, dp);
         for (int i = 0; i < rows; i++) {
-            sb.append("[");
+            sb.append("\n[");
             for (int j = 0; j < cols; j++) {
-                sb.append(data[i][j]);
+                float roundedVal = (float) Math.round(data[i][j]*multiplier)/multiplier;
+                sb.append(roundedVal);
                 if (j < cols - 1) {
-                    sb.append(", ");
+                    sb.append(",\t");
                 }
             }
             sb.append("]");
             if (i < rows - 1) {
-                sb.append(", ");
+                sb.append(",");
             }
         }
-        sb.append("]");
+        sb.append("\n]");
         return sb.toString();
     }
 

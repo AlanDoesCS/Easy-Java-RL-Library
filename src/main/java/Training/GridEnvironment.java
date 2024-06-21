@@ -2,7 +2,7 @@ package Training;
 
 import Structures.Matrix;
 
-public abstract class GridEnvironment {
+public abstract class GridEnvironment extends Environment {
     public int width, height;
     private Matrix gridMatrix;
 
@@ -15,8 +15,16 @@ public abstract class GridEnvironment {
     public int getNumSquares() {
         return width * height;
     }
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
 
-    public abstract void fill();
+    // fill matrix
+    abstract void fill();
+    public abstract void refill();
+
+    public void createNewScene() {
+        refill();
+    }
 
     public float get(int x, int y) {
         return gridMatrix.get(x, y);
@@ -30,7 +38,7 @@ public abstract class GridEnvironment {
     public void set(int x, int y, float value) {
         gridMatrix.set(x, y, value);
     }
-    public void set(int i, float value) { // simplifies process getting cells for Neural Net
+    public void set(int i, float value ) { // simplifies process for creating the environment
         int x = i % width;
         int y = i / width;
         set(x, y, value);

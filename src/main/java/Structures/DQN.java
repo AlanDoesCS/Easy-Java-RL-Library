@@ -4,7 +4,7 @@ import Training.ActivationFunction;
 
 import java.util.List;
 
-public class DQN {
+public class DQN extends NN {
 
     private float learningRate, bias;
     private final int inputSize, outputSize;
@@ -20,6 +20,7 @@ public class DQN {
         this.outputSize = outputSize;
     }
 
+    @Override
     public Matrix getOutput(Matrix input) {
         for (Layer layer : hiddenLayers) {
             input = layer.compute(input);

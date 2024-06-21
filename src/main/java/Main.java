@@ -1,22 +1,23 @@
-import Structures.DQN;
-import Structures.Layer;
 import Structures.Matrix;
-import Tools.Perlin2D;
-import Tools.PerlinNoise_Visualiser;
-import Training.ActivationFunction;
-import Training.RandomGridMesh;
-import Training.Sigmoid;
-import Tools.Perlin1D;
+import Structures.Vector2D;
+import Tools.Environment_Visualiser;
+import Tools.Pathfinding.Pathfinder;
+import Training.*;
 
-import java.util.List;
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
         Random rand = new Random();
 
-        int width=10, height=10;
-        RandomGridMesh environment = new RandomGridMesh(width, height);
+        int width=200, height=200;
+        int octaves = 6;
+        float persistence = 0.9f;
+        float step = 0.01f;
+
+        PerlinGridEnvironment environment = new PerlinGridEnvironment(width, height, octaves, persistence, step);
         int numSquares = environment.getNumSquares();
 
         int startX=rand.nextInt(width+1), startY=rand.nextInt(height+1);
@@ -37,8 +38,11 @@ public class Main {
 
         Matrix input = new Matrix(inputArr);
 
-        // System.out.println(environment);
+        // new PerlinNoise_Visualiser(new Perlin2D(octaves, persistence), step);
 
+        testPathfinding(new Vector2D(0, 0), new Vector2D(environment.getWidth()-1, environment.getHeight()-1), environment);
+
+        /*
         ActivationFunction sig = new Sigmoid();
         List<Layer> layers = List.of(
                 new Layer(numSquares, 7, sig, 0),
@@ -48,15 +52,15 @@ public class Main {
 
         DQN net = new DQN(numSquares, layers, 4, 1, sig, 0);
 
-        // System.out.println(net.getOutput(input));
-
-        int octaves = 8;
-        float persistence = 0.3f;
-        Perlin1D p1 = new Perlin1D(octaves, persistence);
-        Perlin2D p2 = new Perlin2D(octaves, persistence);
-
-        new PerlinNoise_Visualiser(p2, 0.01f);
+        System.out.println(net.getOutput(input));
+        */
 
         // new DQN_Visualiser(net);
+    }
+
+    public static void testPathfinding(Vector2D start, Vector2D end, PerlinGridEnvironment environment) {
+        ArrayList<Vector2D> shortestPath = Pathfinder.dijkstra(start, end, environment);
+        Environment_Visualiser vis = new Environment_Visualiser(environment);
+        vis.addPath(shortestPath, Color.YELLOW);
     }
 }

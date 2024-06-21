@@ -6,18 +6,10 @@ import java.awt.*;
 
 import Structures.Matrix;
 
-public class PerlinNoise_Visualiser extends JFrame {
-    static final int width=1280, height=900;
-
-    private Color colorOf(float noise) { // noise is in range [-1, 1]
-        float normNoise = (noise+1)/2;
-        normNoise = Math.min(Math.max(normNoise, 0), 1);
-        int b = (int) (255*normNoise); // brightness (greyscale)
-        return new Color(b, b, b);
-    }
+public class PerlinNoise_Visualiser extends Visualiser {
 
     public PerlinNoise_Visualiser(Perlin1D perlin, float step) {
-        super("1D Perlin Noise Visualiser");
+        super("1D Perlin Noise Visualiser", 1000, 1000);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(width, height);
 
@@ -26,7 +18,7 @@ public class PerlinNoise_Visualiser extends JFrame {
         int vRange = height - 2*yPadding;
         int midHeight = vRange / 2 + yPadding;
 
-        JPanel pn = new JPanel() {
+        this.panel = new JPanel() {
             @Override
             public void paint(Graphics g) {
                 Graphics2D g2=(Graphics2D)g.create();
@@ -43,12 +35,12 @@ public class PerlinNoise_Visualiser extends JFrame {
             }
         };
 
-        add(pn);
+        add(panel);
         setVisible(true);
     }
 
     public PerlinNoise_Visualiser(Perlin2D perlin, float step) {
-        super("2D Perlin Noise Visualiser");
+        super("2D Perlin Noise Visualiser", 1000, 1000);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(width, height);
 
