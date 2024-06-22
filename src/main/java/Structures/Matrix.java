@@ -74,6 +74,23 @@ public class Matrix {
         }
     }
 
+    public Matrix transpose() {
+        float[][] newData = new float[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                newData[j][i] = data[i][j];
+            }
+        }
+        data = newData;
+        return this;
+    }
+
+    public static Matrix transpose(Matrix B) {
+        return B.transpose();
+    }
+
+    // Slower Matrix multiplication
+    @Deprecated
     public static Matrix multiply(Matrix A, Matrix B) {
         if (A.cols != B.rows) {
             throw new IllegalArgumentException("Invalid matrix dimensions");
@@ -87,6 +104,47 @@ public class Matrix {
                     sum += A.data[i][k] * B.data[k][j];
                 }
                 result.data[i][j] = sum;
+            }
+        }
+        return result;
+    }
+
+    /*
+    Faster matrix multiplication algorithm, written after watching this video:
+    https://www.youtube.com/watch?v=QGYvbsHDPxo (Please go watch, it's really great)
+
+    Also yes, it is faster for large matrices than an approach with fewer loops
+    ---
+
+    Steps:
+    - Validate input
+    - Transpose matrix B for improved cache efficiency
+    - Outer loops to create blocks (i, j, k)
+    - Compute values for inner blocks
+    - return resulting Matrix
+     */
+    public static Matrix multiply(Matrix A, Matrix B, int blockSize) {
+        if (A.cols != B.rows) {
+            throw new IllegalArgumentException("Invalid matrix dimensions");
+        }
+
+        Matrix result = new Matrix(A.rows, B.cols);
+        B.transpose();  // Transpose matrix B for better cache efficiency
+
+        for (int i = 0; i < A.rows; i += blockSize) {
+            for (int j = 0; j < B.cols; j += blockSize) {
+                for (int k = 0; k < A.cols; k += blockSize) {
+                    // Block multiplication
+                    for (int ii = i; ii < Math.min(i + blockSize, A.rows); ii++) {
+                        for (int jj = j; jj < Math.min(j + blockSize, B.cols); jj++) {
+                            float sum = 0;
+                            for (int kk = k; kk < Math.min(k + blockSize, A.cols); kk++) {
+                                sum += A.data[ii][kk] * B.data[jj][kk];
+                            }
+                            result.data[ii][jj] += sum;
+                        }
+                    }
+                }
             }
         }
         return result;
