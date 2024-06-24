@@ -85,6 +85,14 @@ public class Matrix {
         return this;
     }
 
+    public static Matrix getIdentityMatrix(int width) {
+        float[][] data = new float[width][width];
+        for (int i = 0; i < width; i++) {
+            data[i][i] = 1;
+        }
+        return new Matrix(data);
+    }
+
     public static Matrix transpose(Matrix B) {
         return B.transpose();
     }
