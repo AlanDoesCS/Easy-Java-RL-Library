@@ -82,6 +82,9 @@ public class Matrix {
             }
         }
         data = newData;
+        int temp = rows;
+        rows = cols;
+        cols = temp;
         return this;
     }
 
