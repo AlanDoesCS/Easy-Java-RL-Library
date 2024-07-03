@@ -28,6 +28,10 @@ public class DQN extends NN {
         return outputLayer.compute(input); // is output after all layers
     }
 
+    public void addLayer(int size, ActivationFunction phi, float bias) {
+
+    }
+
     public int layers() {
         return hiddenLayers.size()+2; //input + hidden + output
     }

@@ -1,19 +1,26 @@
+import Structures.DQN;
+import Structures.Layer;
 import Structures.Matrix;
 import Structures.Vector2D;
+import Tools.Benchmarking.MatrixMultiplicationTimer;
+import Tools.DQN_Visualiser;
 import Tools.Environment_Visualiser;
 import Tools.Pathfinding.Pathfinder;
 import Training.*;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Main {
+    static final int MatBlockSize = 58;
+
     public static void main(String[] args) {
         Random rand = new Random();
 
-        int width=200, height=200;
-        int octaves = 6;
+        int width=720, height=720;
+        int octaves = 8;
         float persistence = 0.9f;
         float step = 0.01f;
 
@@ -35,25 +42,40 @@ public class Main {
         inputArr[numSquares+2][0] = endX;
         inputArr[numSquares+3][0] = endY;
 
-
         Matrix input = new Matrix(inputArr);
 
-        // new PerlinNoise_Visualiser(new Perlin2D(octaves, persistence), step);
-
-        testPathfinding(new Vector2D(0, 0), new Vector2D(environment.getWidth()-1, environment.getHeight()-1), environment);
-
+        // Testing: --------------------------
         /*
+        MatrixMultiplicationTimer timer = new MatrixMultiplicationTimer();
+
+        final long timeSlow = timer.time1024BasicMultiplication();
+        final long timeFast = timer.time1024WithBlocks(MatBlockSize);
+
+        System.out.println("Timer for simple approach: " + timeSlow/1e6 + " milliseconds.");
+        System.out.println("Timer for fastest approach ("+MatBlockSize+"): " + timeFast/1e6 + " milliseconds.");
+         */
+
+        Matrix test1 = Matrix.getNumberedMatrix(2, 3);
+        System.out.println(test1);
+        Matrix test2 = Matrix.getNumberedMatrix(1, 2);
+        System.out.println(test2);
+
+        System.out.println("Mat Res:");
+        System.out.println(Matrix.multiply(test1, test2, 4));
+        System.out.println("finished");
+
+        // testPathfinding(environment.getRandomCoordinateInBounds(), environment.getRandomCoordinateInBounds(), environment);
+
         ActivationFunction sig = new Sigmoid();
         List<Layer> layers = List.of(
-                new Layer(numSquares, 7, sig, 0),
+                new Layer(numSquares+4, 7, sig, 0),
                 new Layer(7, 8, sig, 0),
                 new Layer(8, 5, sig, 0)
         );
 
         DQN net = new DQN(numSquares, layers, 4, 1, sig, 0);
 
-        System.out.println(net.getOutput(input));
-        */
+        // System.out.println(net.getOutput(input));
 
         // new DQN_Visualiser(net);
     }

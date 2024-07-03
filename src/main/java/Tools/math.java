@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.Set;
 
 public class math {
+    static Random random = new Random();
     public static float Q_rsqrt(float x, int precision) { // from Quake III
         float xhalf = 0.5f * x;
         int i = Float.floatToIntBits(x);
@@ -24,6 +25,9 @@ public class math {
         return x * Q_rsqrt(x, 3);
     }
     public static float randomFloat(float min, float max, Random random) {
+        return random.nextFloat() * (max - min) + min;
+    }
+    public static float randomFloat(float min, float max) {
         return random.nextFloat() * (max - min) + min;
     }
     public static float percentAccuracy(float predictedWeight, float actualWeight) {

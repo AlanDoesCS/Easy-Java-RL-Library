@@ -1,6 +1,8 @@
 package Training;
 
 import Structures.Matrix;
+import Structures.Vector2D;
+import Tools.math;
 
 public abstract class GridEnvironment extends Environment {
     public int width, height;
@@ -42,6 +44,10 @@ public abstract class GridEnvironment extends Environment {
         int x = i % width;
         int y = i / width;
         set(x, y, value);
+    }
+
+    public Vector2D getRandomCoordinateInBounds() {
+        return new Vector2D(math.randomFloat(0, width), math.randomFloat(0, height));
     }
 
     public String toString() {
