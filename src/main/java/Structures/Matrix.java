@@ -1,10 +1,14 @@
 package Structures;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ForkJoinPool;
 
 public class Matrix {
+    private static final int TILE_SIZE = 32;
+    private static final int UNROLL_FACTOR = 4;
+    private static final int PARALLELISM_THRESHOLD = 1024;
+    private static final ForkJoinPool POOL = ForkJoinPool.commonPool();
+
     private float[][] data;
     int rows, cols;
 
@@ -92,6 +96,20 @@ public class Matrix {
         return this;
     }
 
+    private static Matrix transpose(Matrix matrix) {
+        int rows = matrix.data.length;
+        int cols = matrix.data[0].length;
+        Matrix transposed = new Matrix(cols, rows);
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                transposed.data[j][i] = matrix.data[i][j];
+            }
+        }
+
+        return transposed;
+    }
+
     public static Matrix getIdentityMatrix(int width) {
         float[][] data = new float[width][width];
         for (int i = 0; i < width; i++) {
@@ -118,90 +136,127 @@ public class Matrix {
         return m;
     }
 
-    public static Matrix transpose(Matrix B) {
-        return B.transpose();
+    private static class MultiplyTask extends RecursiveAction {
+        private Matrix A, BT, C;
+        private int rowStart, rowEnd, colStart, colEnd, depthStart, depthEnd;
+
+        MultiplyTask(Matrix A, Matrix BT, Matrix C,
+                     int rowStart, int rowEnd,
+                     int colStart, int colEnd,
+                     int depthStart, int depthEnd) {
+            this.A = A; this.BT = BT; this.C = C;
+            this.rowStart = rowStart; this.rowEnd = rowEnd;
+            this.colStart = colStart; this.colEnd = colEnd;
+            this.depthStart = depthStart; this.depthEnd = depthEnd;
+        }
+
+        @Override
+        protected void compute() {
+            int rowSize = rowEnd - rowStart;
+            int colSize = colEnd - colStart;
+            int depthSize = depthEnd - depthStart;
+
+            if (rowSize * colSize * depthSize <= PARALLELISM_THRESHOLD) {
+                multiplySequential();
+                return;
+            }
+
+            if (rowSize >= colSize && rowSize >= depthSize) {
+                int mid = rowStart + rowSize / 2;
+                invokeAll(
+                        new MultiplyTask(A, BT, C, rowStart, mid, colStart, colEnd, depthStart, depthEnd),
+                        new MultiplyTask(A, BT, C, mid, rowEnd, colStart, colEnd, depthStart, depthEnd)
+                );
+            } else if (colSize >= depthSize) {
+                int mid = colStart + colSize / 2;
+                invokeAll(
+                        new MultiplyTask(A, BT, C, rowStart, rowEnd, colStart, mid, depthStart, depthEnd),
+                        new MultiplyTask(A, BT, C, rowStart, rowEnd, mid, colEnd, depthStart, depthEnd)
+                );
+            } else {
+                int mid = depthStart + depthSize / 2;
+                invokeAll(
+                        new MultiplyTask(A, BT, C, rowStart, rowEnd, colStart, colEnd, depthStart, mid),
+                        new MultiplyTask(A, BT, C, rowStart, rowEnd, colStart, colEnd, mid, depthEnd)
+                );
+            }
+        }
+
+        private void multiplySequential() {
+            for (int i0 = rowStart; i0 < rowEnd; i0 += TILE_SIZE) {
+                for (int j0 = colStart; j0 < colEnd; j0 += TILE_SIZE) {
+                    for (int k0 = depthStart; k0 < depthEnd; k0 += TILE_SIZE) {
+                        multiplyTile(i0, j0, k0);
+                    }
+                }
+            }
+        }
+
+        private void multiplyTile(int i0, int j0, int k0) {
+            int iMax = Math.min(i0 + TILE_SIZE, rowEnd);
+            int jMax = Math.min(j0 + TILE_SIZE, colEnd);
+            int kMax = Math.min(k0 + TILE_SIZE, depthEnd);
+
+            for (int i = i0; i < iMax; i++) {
+                for (int j = j0; j < jMax; j += UNROLL_FACTOR) {
+                    float sum0 = C.data[i][j];
+                    float sum1 = j + 1 < jMax ? C.data[i][j + 1] : 0;
+                    float sum2 = j + 2 < jMax ? C.data[i][j + 2] : 0;
+                    float sum3 = j + 3 < jMax ? C.data[i][j + 3] : 0;
+
+                    for (int k = k0; k < kMax; k++) {
+                        float aik = A.data[i][k];
+                        sum0 += aik * BT.data[j][k];
+                        if (j + 1 < jMax) sum1 += aik * BT.data[j + 1][k];
+                        if (j + 2 < jMax) sum2 += aik * BT.data[j + 2][k];
+                        if (j + 3 < jMax) sum3 += aik * BT.data[j + 3][k];
+                    }
+
+                    C.data[i][j] = sum0;
+                    if (j + 1 < jMax) C.data[i][j + 1] = sum1;
+                    if (j + 2 < jMax) C.data[i][j + 2] = sum2;
+                    if (j + 3 < jMax) C.data[i][j + 3] = sum3;
+                }
+            }
+        }
     }
 
-    // Slower Matrix multiplication
     @Deprecated
+    public static Matrix multiply_deprecated(Matrix A, Matrix B) {
+        if (A.cols != B.rows) {
+            throw new IllegalArgumentException("A's columns must match B's rows");
+        }
+
+        int rowsA = A.rows;
+        int colsB = B.cols;
+        int colsA = A.cols;
+
+        Matrix C = new Matrix(rowsA, colsB);
+
+        for (int i = 0; i < rowsA; i++) {
+            for (int j = 0; j < colsB; j++) {
+                float sum = 0;
+                for (int k = 0; k < colsA; k++) {
+                    sum += A.data[i][k] * B.data[k][j];
+                }
+                C.data[i][j] = sum;
+            }
+        }
+
+        return C;
+    }
+
     public static Matrix multiply(Matrix A, Matrix B) {
         if (A.cols != B.rows) {
-            throw new IllegalArgumentException("Invalid matrix dimensions");
+            throw new IllegalArgumentException("A's columns must match B's rows");
         }
 
-        Matrix result = new Matrix(A.rows, B.cols);
-        for (int i = 0; i < result.rows; i++) {
-            for (int j = 0; j < result.cols; j++) {
-                for (int k = 0; k < A.cols; k++) {
-                    result.data[i][j] += A.data[i][k] * B.data[k][j];
-                }
-            }
-        }
-        return result;
-    }
+        Matrix C = new Matrix(A.rows, B.cols);
+        Matrix BT = transpose(B);
 
-    /*
-    Faster matrix multiplication algorithm, written after watching this video:
-    https://www.youtube.com/watch?v=QGYvbsHDPxo (Please go watch, it's really great)
+        POOL.invoke(new MultiplyTask(A, BT, C, 0, A.rows, 0, B.cols, 0, A.cols));
 
-    Also yes, it is faster for large matrices than an approach with fewer loops
-    ---
-
-    Steps:
-    - Validate input
-    - Transpose matrix B for improved cache efficiency
-    - Outer loops to create blocks (i, j, k)
-    - Compute values for inner blocks, using threaded approach
-    - return resulting Matrix
-     */
-
-    public static Matrix multiply(Matrix A, Matrix B, int blockSize)  {
-        if (A.cols != B.rows) {
-            throw new IllegalArgumentException("Invalid matrix dimensions: Cannot multiply "+A.dims()+", "+B.dims()+": (A.c) "+A.cols+"!= (B.r)"+B.rows);
-        }
-
-        Matrix result = new Matrix(A.rows, B.cols);
-        B.transpose();  // Transpose matrix B for better cache efficiency
-
-        // executor for threads
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-        for (int i = 0; i < A.rows; i += blockSize) {
-            for (int j = 0; j < B.cols; j += blockSize) {
-                for (int k = 0; k < A.cols; k += blockSize) {
-                    final int iStart = i;
-                    final int jStart = j;
-                    final int kStart = k;
-
-                    executor.execute(() -> {
-                        for (int ii = iStart; ii < Math.min(iStart + blockSize, A.rows); ii++) {
-                            for (int jj = jStart; jj < Math.min(jStart + blockSize, B.cols); jj++) {
-                                float sum = 0;
-                                for (int kk = kStart; kk < Math.min(kStart + blockSize, A.cols); kk++) {
-                                    System.out.println(ii + ", " + jj + ", " + kk);
-                                    sum += A.data[ii][kk] * B.data[jj][kk];
-                                }
-                                synchronized (result) {
-                                    result.data[ii][jj] += sum;
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        executor.shutdown();
-        try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            // Restore the interrupted status
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Matrix multiplication was interrupted", e);
-        }
-
-
-        return result;
+        return C;
     }
 
     private String dims() {

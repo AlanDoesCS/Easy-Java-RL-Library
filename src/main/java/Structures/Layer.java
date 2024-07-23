@@ -18,7 +18,7 @@ public class Layer {
     }
 
     public Matrix compute(Matrix input) {
-        return Matrix.multiply(weights, input, 16);
+        return Matrix.multiply(weights, input);
     }
 
     public int getOutputSize() {

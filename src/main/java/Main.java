@@ -19,10 +19,16 @@ public class Main {
     public static void main(String[] args) {
         Random rand = new Random();
 
-        int width=720, height=720;
-        int octaves = 8;
-        float persistence = 0.9f;
-        float step = 0.01f;
+        final int width=720, height=720;
+        final int octaves = 8;
+        final float persistence = 0.9f;
+        final float step = 0.01f;
+
+        System.out.println("Basic:");
+        System.out.println(MatrixMultiplicationTimer.time1024BasicMultiplication());
+
+        System.out.println("Fast:");
+        System.out.println(MatrixMultiplicationTimer.time1024Fast());
 
         PerlinGridEnvironment environment = new PerlinGridEnvironment(width, height, octaves, persistence, step);
         int numSquares = environment.getNumSquares();
@@ -44,24 +50,13 @@ public class Main {
 
         Matrix input = new Matrix(inputArr);
 
-        // Testing: --------------------------
-        /*
-        MatrixMultiplicationTimer timer = new MatrixMultiplicationTimer();
-
-        final long timeSlow = timer.time1024BasicMultiplication();
-        final long timeFast = timer.time1024WithBlocks(MatBlockSize);
-
-        System.out.println("Timer for simple approach: " + timeSlow/1e6 + " milliseconds.");
-        System.out.println("Timer for fastest approach ("+MatBlockSize+"): " + timeFast/1e6 + " milliseconds.");
-         */
-
         Matrix test1 = Matrix.getNumberedMatrix(2, 3);
         System.out.println(test1);
         Matrix test2 = Matrix.getNumberedMatrix(1, 2);
         System.out.println(test2);
 
         System.out.println("Mat Res:");
-        System.out.println(Matrix.multiply(test1, test2, 4));
+        System.out.println(Matrix.multiply(test1, test2));
         System.out.println("finished");
 
         // testPathfinding(environment.getRandomCoordinateInBounds(), environment.getRandomCoordinateInBounds(), environment);
