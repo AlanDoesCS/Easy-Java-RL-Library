@@ -5,11 +5,8 @@ import Training.ActivationFunction;
 import java.util.List;
 
 public class DQN extends NN {
-
-    private float learningRate, bias;
+    private float bias;
     private final int inputSize, outputSize;
-    private final List<Layer> hiddenLayers;
-    private final Layer outputLayer;
 
     public DQN(int inputSize, List<Layer> hiddenLayers, int outputSize, float learningRate, ActivationFunction phi, float bias) {
         this.hiddenLayers  = hiddenLayers;
@@ -20,7 +17,6 @@ public class DQN extends NN {
         this.outputSize = outputSize;
     }
 
-    @Override
     public Matrix getOutput(Matrix input) {
         for (Layer layer : hiddenLayers) {
             input = layer.compute(input);
@@ -29,9 +25,18 @@ public class DQN extends NN {
     }
 
     public void addLayer(int size, ActivationFunction phi, float bias) {
-
+        hiddenLayers.add(new Layer(hiddenLayers.getLast().getOutputSize(), size, phi, bias));
     }
 
+
+
+    /*
+    -----------------------------------------------------------------------------
+
+    ACCESSORS AND MUTATORS
+
+    -----------------------------------------------------------------------------
+    */
     public int layers() {
         return hiddenLayers.size()+2; //input + hidden + output
     }

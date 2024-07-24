@@ -96,6 +96,90 @@ public class Matrix {
         return this;
     }
 
+    private String dims() {
+        return "[r:"+rows+", c:"+cols+"]";
+    }
+
+    public Matrix copy() {
+        return new Matrix(data);
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+
+        final int dp = 3;
+        int multiplier = (int) Math.pow(10, dp);
+        for (int i = 0; i < rows; i++) {
+            sb.append("\n[");
+            for (int j = 0; j < cols; j++) {
+                float roundedVal = (float) Math.round(data[i][j]*multiplier)/multiplier;
+                sb.append(roundedVal);
+                if (j < cols - 1) {
+                    sb.append(",\t");
+                }
+            }
+            sb.append("]");
+            if (i < rows - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("\n]");
+        return sb.toString();
+    }
+
+    public float get(int x, int y) {
+        return data[y][x];
+    }
+
+    public void set(int x, int y, float value) {
+        data[y][x] = value;
+    }
+
+    /*
+    -----------------------------------------------------------------------------
+
+    STATIC METHODS
+
+    -----------------------------------------------------------------------------
+     */
+
+    public static Matrix add(Matrix a, Matrix b) {
+        Matrix res = a.copy();
+        if (a.rows != b.rows || a.cols != b.cols) {
+            throw new IllegalArgumentException("The matrices must have the same dimensions.");
+        }
+
+        for (int i = 0; i < res.rows; i++) {
+            for (int j = 0; j < res.cols; j++) {
+                res.data[i][j] = a.data[i][j] + b.data[i][j];
+            }
+        }
+
+        return res;
+    }
+
+    public static Matrix subtract(Matrix a, Matrix b) {
+        Matrix res = a.copy();
+        if (a.rows != b.rows || a.cols != b.cols) {
+            throw new IllegalArgumentException("The matrices must have the same dimensions.");
+        }
+
+        for (int i = 0; i < res.rows; i++) {
+            for (int j = 0; j < res.cols; j++) {
+                res.data[i][j] = a.data[i][j] - b.data[i][j];
+            }
+        }
+
+        return res;
+    }
+
+    public static Matrix multiply(Matrix multiply, float learningRate) {
+        Matrix res = multiply.copy();
+        res.multiply(learningRate);
+        return res;
+    }
+
     private static Matrix transpose(Matrix matrix) {
         int rows = matrix.data.length;
         int cols = matrix.data[0].length;
@@ -136,9 +220,37 @@ public class Matrix {
         return m;
     }
 
+    /*
+    -----------------------------------------------------------------------------
+
+    MULTIPLICATION
+
+    -----------------------------------------------------------------------------
+    */
+
+    public static Matrix multiply(Matrix A, Matrix B) {
+        if (A.cols != B.rows) {
+            throw new IllegalArgumentException("A's columns must match B's rows");
+        }
+
+        Matrix C = new Matrix(A.rows, B.cols);
+        Matrix BT = transpose(B);
+
+        POOL.invoke(new MultiplyTask(A, BT, C, 0, A.rows, 0, B.cols, 0, A.cols));
+
+        return C;
+    }
+
+    public void multiply(Matrix B) {
+        Matrix res = multiply(this, B);
+        this.rows = res.rows;
+        this.cols = res.cols;
+        this.data = res.data;
+    }
+
     private static class MultiplyTask extends RecursiveAction {
-        private Matrix A, BT, C;
-        private int rowStart, rowEnd, colStart, colEnd, depthStart, depthEnd;
+        private final Matrix A, BT, C;
+        private final int rowStart, rowEnd, colStart, colEnd, depthStart, depthEnd;
 
         MultiplyTask(Matrix A, Matrix BT, Matrix C,
                      int rowStart, int rowEnd,
@@ -149,7 +261,6 @@ public class Matrix {
             this.colStart = colStart; this.colEnd = colEnd;
             this.depthStart = depthStart; this.depthEnd = depthEnd;
         }
-
         @Override
         protected void compute() {
             int rowSize = rowEnd - rowStart;
@@ -181,7 +292,6 @@ public class Matrix {
                 );
             }
         }
-
         private void multiplySequential() {
             for (int i0 = rowStart; i0 < rowEnd; i0 += TILE_SIZE) {
                 for (int j0 = colStart; j0 < colEnd; j0 += TILE_SIZE) {
@@ -191,7 +301,6 @@ public class Matrix {
                 }
             }
         }
-
         private void multiplyTile(int i0, int j0, int k0) {
             int iMax = Math.min(i0 + TILE_SIZE, rowEnd);
             int jMax = Math.min(j0 + TILE_SIZE, colEnd);
@@ -219,80 +328,5 @@ public class Matrix {
                 }
             }
         }
-    }
-
-    @Deprecated
-    public static Matrix multiply_deprecated(Matrix A, Matrix B) {
-        if (A.cols != B.rows) {
-            throw new IllegalArgumentException("A's columns must match B's rows");
-        }
-
-        int rowsA = A.rows;
-        int colsB = B.cols;
-        int colsA = A.cols;
-
-        Matrix C = new Matrix(rowsA, colsB);
-
-        for (int i = 0; i < rowsA; i++) {
-            for (int j = 0; j < colsB; j++) {
-                float sum = 0;
-                for (int k = 0; k < colsA; k++) {
-                    sum += A.data[i][k] * B.data[k][j];
-                }
-                C.data[i][j] = sum;
-            }
-        }
-
-        return C;
-    }
-
-    public static Matrix multiply(Matrix A, Matrix B) {
-        if (A.cols != B.rows) {
-            throw new IllegalArgumentException("A's columns must match B's rows");
-        }
-
-        Matrix C = new Matrix(A.rows, B.cols);
-        Matrix BT = transpose(B);
-
-        POOL.invoke(new MultiplyTask(A, BT, C, 0, A.rows, 0, B.cols, 0, A.cols));
-
-        return C;
-    }
-
-    private String dims() {
-        return "[r:"+rows+", c:"+cols+"]";
-    }
-
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-
-        final int dp = 3;
-        int multiplier = (int) Math.pow(10, dp);
-        for (int i = 0; i < rows; i++) {
-            sb.append("\n[");
-            for (int j = 0; j < cols; j++) {
-                float roundedVal = (float) Math.round(data[i][j]*multiplier)/multiplier;
-                sb.append(roundedVal);
-                if (j < cols - 1) {
-                    sb.append(",\t");
-                }
-            }
-            sb.append("]");
-            if (i < rows - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("\n]");
-        return sb.toString();
-    }
-
-    public float get(int x, int y) {
-        return data[y][x];
-    }
-
-    public void set(int x, int y, float value) {
-        data[y][x] = value;
     }
 }

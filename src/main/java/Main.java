@@ -2,8 +2,6 @@ import Structures.DQN;
 import Structures.Layer;
 import Structures.Matrix;
 import Structures.Vector2D;
-import Tools.Benchmarking.MatrixMultiplicationTimer;
-import Tools.DQN_Visualiser;
 import Tools.Environment_Visualiser;
 import Tools.Pathfinding.Pathfinder;
 import Training.*;
@@ -14,8 +12,6 @@ import java.util.List;
 import java.util.Random;
 
 public class Main {
-    static final int MatBlockSize = 58;
-
     public static void main(String[] args) {
         Random rand = new Random();
 
@@ -23,12 +19,6 @@ public class Main {
         final int octaves = 8;
         final float persistence = 0.9f;
         final float step = 0.01f;
-
-        System.out.println("Basic:");
-        System.out.println(MatrixMultiplicationTimer.time1024BasicMultiplication());
-
-        System.out.println("Fast:");
-        System.out.println(MatrixMultiplicationTimer.time1024Fast());
 
         PerlinGridEnvironment environment = new PerlinGridEnvironment(width, height, octaves, persistence, step);
         int numSquares = environment.getNumSquares();
