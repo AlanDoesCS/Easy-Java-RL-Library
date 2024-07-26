@@ -2,6 +2,7 @@ package Structures;
 
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Matrix {
     private static final int TILE_SIZE = 32;
@@ -233,12 +234,12 @@ public class Matrix {
             throw new IllegalArgumentException("A's columns must match B's rows");
         }
 
-        Matrix C = new Matrix(A.rows, B.cols);
+        AtomicReference<float[][]> C = new AtomicReference<>(new float[A.rows][B.cols]);
         Matrix BT = transpose(B);
 
         POOL.invoke(new MultiplyTask(A, BT, C, 0, A.rows, 0, B.cols, 0, A.cols));
 
-        return C;
+        return new Matrix(C.get());
     }
 
     public void multiply(Matrix B) {
@@ -248,19 +249,30 @@ public class Matrix {
         this.data = res.data;
     }
 
+    public int getHeight() {
+        return rows;
+    }
+
     private static class MultiplyTask extends RecursiveAction {
-        private final Matrix A, BT, C;
+        private final Matrix A, BT;
+        private final AtomicReference<float[][]> C;
         private final int rowStart, rowEnd, colStart, colEnd, depthStart, depthEnd;
 
-        MultiplyTask(Matrix A, Matrix BT, Matrix C,
+        MultiplyTask(Matrix A, Matrix BT, AtomicReference<float[][]> C,
                      int rowStart, int rowEnd,
                      int colStart, int colEnd,
                      int depthStart, int depthEnd) {
-            this.A = A; this.BT = BT; this.C = C;
-            this.rowStart = rowStart; this.rowEnd = rowEnd;
-            this.colStart = colStart; this.colEnd = colEnd;
-            this.depthStart = depthStart; this.depthEnd = depthEnd;
+            this.A = A;
+            this.BT = BT;
+            this.C = C;
+            this.rowStart = rowStart;
+            this.rowEnd = rowEnd;
+            this.colStart = colStart;
+            this.colEnd = colEnd;
+            this.depthStart = depthStart;
+            this.depthEnd = depthEnd;
         }
+
         @Override
         protected void compute() {
             int rowSize = rowEnd - rowStart;
@@ -292,26 +304,27 @@ public class Matrix {
                 );
             }
         }
+
         private void multiplySequential() {
+            float[][] localC = new float[rowEnd - rowStart][colEnd - colStart];
             for (int i0 = rowStart; i0 < rowEnd; i0 += TILE_SIZE) {
                 for (int j0 = colStart; j0 < colEnd; j0 += TILE_SIZE) {
                     for (int k0 = depthStart; k0 < depthEnd; k0 += TILE_SIZE) {
-                        multiplyTile(i0, j0, k0);
+                        multiplyTile(i0, j0, k0, localC);
                     }
                 }
             }
+            mergeResult(localC);
         }
-        private void multiplyTile(int i0, int j0, int k0) {
+
+        private void multiplyTile(int i0, int j0, int k0, float[][] localC) {
             int iMax = Math.min(i0 + TILE_SIZE, rowEnd);
             int jMax = Math.min(j0 + TILE_SIZE, colEnd);
             int kMax = Math.min(k0 + TILE_SIZE, depthEnd);
 
             for (int i = i0; i < iMax; i++) {
                 for (int j = j0; j < jMax; j += UNROLL_FACTOR) {
-                    float sum0 = C.data[i][j];
-                    float sum1 = j + 1 < jMax ? C.data[i][j + 1] : 0;
-                    float sum2 = j + 2 < jMax ? C.data[i][j + 2] : 0;
-                    float sum3 = j + 3 < jMax ? C.data[i][j + 3] : 0;
+                    float sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
 
                     for (int k = k0; k < kMax; k++) {
                         float aik = A.data[i][k];
@@ -321,10 +334,21 @@ public class Matrix {
                         if (j + 3 < jMax) sum3 += aik * BT.data[j + 3][k];
                     }
 
-                    C.data[i][j] = sum0;
-                    if (j + 1 < jMax) C.data[i][j + 1] = sum1;
-                    if (j + 2 < jMax) C.data[i][j + 2] = sum2;
-                    if (j + 3 < jMax) C.data[i][j + 3] = sum3;
+                    localC[i - rowStart][j - colStart] += sum0;
+                    if (j + 1 < jMax) localC[i - rowStart][j + 1 - colStart] += sum1;
+                    if (j + 2 < jMax) localC[i - rowStart][j + 2 - colStart] += sum2;
+                    if (j + 3 < jMax) localC[i - rowStart][j + 3 - colStart] += sum3;
+                }
+            }
+        }
+
+        private void mergeResult(float[][] localC) {
+            float[][] globalC = C.get();
+            synchronized (C) {
+                for (int i = 0; i < localC.length; i++) {
+                    for (int j = 0; j < localC[0].length; j++) {
+                        globalC[i + rowStart][j + colStart] += localC[i][j];
+                    }
                 }
             }
         }

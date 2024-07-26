@@ -40,27 +40,35 @@ public class Main {
 
         Matrix input = new Matrix(inputArr);
 
-        Matrix test1 = Matrix.getNumberedMatrix(2, 3);
-        System.out.println(test1);
-        Matrix test2 = Matrix.getNumberedMatrix(1, 2);
-        System.out.println(test2);
-
-        System.out.println("Mat Res:");
-        System.out.println(Matrix.multiply(test1, test2));
-        System.out.println("finished");
+        System.out.println(input);
 
         // testPathfinding(environment.getRandomCoordinateInBounds(), environment.getRandomCoordinateInBounds(), environment);
 
+        Matrix testInput = new Matrix(new float[][]{
+                {0.2f},
+                {-0.2f},
+                {0.6f},
+                {-0.4f},
+                {0.1f},
+                {0.9f}
+        });
+
         ActivationFunction sig = new Sigmoid();
         List<Layer> layers = List.of(
-                new Layer(numSquares+4, 7, sig, 0),
+                new Layer(input.getHeight(), 7, sig, 0),
                 new Layer(7, 8, sig, 0),
                 new Layer(8, 5, sig, 0)
         );
 
         DQN net = new DQN(numSquares, layers, 4, 1, sig, 0);
 
-        // System.out.println(net.getOutput(input));
+        for (int i = 0; i < 5; i++) {
+            System.out.println("Run " + (i+1) + ":");
+            Matrix output = net.getOutput(input);
+            System.out.println(output);
+            System.out.println();
+        }
+
 
         // new DQN_Visualiser(net);
     }

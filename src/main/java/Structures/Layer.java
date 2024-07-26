@@ -18,7 +18,15 @@ public class Layer {
     }
 
     public Matrix compute(Matrix input) {
-        return Matrix.multiply(weights, input);
+        Matrix result = Matrix.multiply(weights, input);
+        result.add(biases);
+        // Apply activation function
+        for (int r = 0; r < result.rows; r++) {
+            for (int c = 0; c < result.cols; c++) {
+                result.set(c, r, phi.activate(result.get(c, r)));
+            }
+        }
+        return result;
     }
 
     public int getOutputSize() {
