@@ -5,14 +5,12 @@ import Training.ActivationFunction;
 import java.util.List;
 
 public class DQN extends NN {
-    private float bias;
     private final int inputSize, outputSize;
 
-    public DQN(int inputSize, List<Layer> hiddenLayers, int outputSize, float learningRate, ActivationFunction phi, float bias) {
+    public DQN(int inputSize, List<Layer> hiddenLayers, int outputSize, float learningRate, ActivationFunction outputActivation, float outputBias) {
         this.hiddenLayers  = hiddenLayers;
-        this.outputLayer = new Layer(hiddenLayers.getLast().getOutputSize(), outputSize, phi, bias);
+        this.outputLayer = new Layer(hiddenLayers.getLast().getOutputSize(), outputSize, outputActivation, outputBias);
         this.learningRate = learningRate;
-        this.bias = bias;
         this.inputSize = inputSize;
         this.outputSize = outputSize;
     }

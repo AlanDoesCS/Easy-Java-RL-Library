@@ -7,11 +7,14 @@ import Tools.math;
 public abstract class GridEnvironment extends Environment {
     public int width, height;
     private Matrix gridMatrix;
+    private Vector2D agentPosition, goalPosition;
 
     public GridEnvironment(int width, int height) {
         this.width = width;
         this.height = height;
-        gridMatrix = new Matrix(width, height);
+        this.agentPosition = getRandomCoordinateInBounds();
+        this.goalPosition = getRandomCoordinateInBounds();
+        this.gridMatrix = new Matrix(width, height);
     }
 
     public int getNumSquares() {
@@ -44,6 +47,13 @@ public abstract class GridEnvironment extends Environment {
         int x = i % width;
         int y = i / width;
         set(x, y, value);
+    }
+
+    public void setAgentPosition(int x, int y) {
+        this.agentPosition.set(x, y);
+    }
+    public void setGoalPosition(int x, int y) {
+        this.goalPosition.set(x, y);
     }
 
     public Vector2D getRandomCoordinateInBounds() {

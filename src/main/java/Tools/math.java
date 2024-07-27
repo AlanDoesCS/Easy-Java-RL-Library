@@ -30,6 +30,9 @@ public class math {
     public static float randomFloat(float min, float max) {
         return random.nextFloat() * (max - min) + min;
     }
+    public static float random() {
+        return random.nextFloat();
+    }
     public static float percentAccuracy(float predictedWeight, float actualWeight) {
         return (1 - Math.abs(actualWeight-predictedWeight)/actualWeight) * 100;
     }

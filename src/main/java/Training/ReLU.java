@@ -8,7 +8,6 @@ public class ReLU extends ActivationFunction {
 
     @Override
     public float derivative(float x) {
-        return 1;
+        return x > 0 ? 1 : 0;
     }
-
 }

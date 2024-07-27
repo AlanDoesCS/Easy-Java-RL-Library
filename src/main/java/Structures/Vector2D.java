@@ -54,4 +54,9 @@ public class Vector2D {
     public void multiplyJ(float multiplier) {
         this.j *= multiplier;
     }
+
+    public void set(int i, int j) {
+        this.i = i;
+        this.j = j;
+    }
 }
