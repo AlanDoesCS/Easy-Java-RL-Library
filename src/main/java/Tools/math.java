@@ -30,6 +30,9 @@ public class math {
     public static float randomFloat(float min, float max) {
         return random.nextFloat() * (max - min) + min;
     }
+    public static int randomInt(int min, int max) {
+        return random.nextInt((max - min) + 1) + min;
+    }
     public static float random() {
         return random.nextFloat();
     }
@@ -48,5 +51,4 @@ public class math {
         if (noise < min) return min;
         return Math.min(noise, max);
     }
-
 }

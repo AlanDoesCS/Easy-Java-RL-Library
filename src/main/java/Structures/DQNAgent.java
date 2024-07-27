@@ -12,10 +12,10 @@ public class DQNAgent {
     private final int stateSpace;     // number of variables used to describe environment state
     private final int actionSpace;    // number of actions the agent can take in the environment
 
-    public DQNAgent(int stateSpace, int actionSpace, List<Layer> hiddenLayers, float epsilon, float gamma, float learningRate, ActivationFunction outputActivation, float outputBias) {
+    public DQNAgent(int actionSpace, List<Layer> hiddenLayers, float epsilon, float gamma, float learningRate, ActivationFunction outputActivation, float outputBias) {
         this.epsilon = epsilon;
         this.gamma = gamma;
-        this.stateSpace = stateSpace;
+        this.stateSpace = hiddenLayers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
 
         this.dqn = new DQN(stateSpace, hiddenLayers, actionSpace, learningRate, outputActivation, outputBias);
