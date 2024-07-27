@@ -37,4 +37,24 @@ public class DQNAgent {
             return actionIndex;
         }
     }
+
+    public void train(Matrix state, int action, float reward, Matrix nextState, boolean done) {
+        Matrix currentQValues = dqn.getOutput(state);   // get predicted q values
+        Matrix target = currentQValues.copy();
+        Matrix nextQValues = dqn.getOutput(nextState);
+
+        // get max Q value for next state
+        float maxNextQ = nextQValues.get(0, 0);
+        for (int i = 1; i < actionSpace; i++) {
+            if (nextQValues.get(0, i) > maxNextQ) {
+                maxNextQ = nextQValues.get(0, i);
+            }
+        }
+
+        float targetValue = done ? reward : reward + gamma * maxNextQ;
+        target.set(0, action, targetValue);
+
+        // update network
+        dqn.backpropagate(state, target, currentQValues);
+    }
 }
