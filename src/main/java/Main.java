@@ -2,7 +2,6 @@ import Structures.*;
 import Tools.DQN_Visualiser;
 import Tools.Environment_Visualiser;
 import Tools.Pathfinding.Pathfinder;
-import Tools.math;
 import Training.*;
 
 import java.awt.*;
@@ -12,7 +11,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        final int width=5, height=5;
+        final int width=720, height=720;
 
         PerlinGridEnvironment environment = new PerlinGridEnvironment(width, height, 8, 0.9f, 0.01f);
 

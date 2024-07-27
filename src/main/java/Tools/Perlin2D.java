@@ -10,6 +10,7 @@ import java.util.Random;
 public class Perlin2D extends PerlinNoise {
     Map<Integer, Map<Integer, Vector2D>> gradients2D = new HashMap<>();
     Random random = new Random();
+    Vector2D randomOffset = new Vector2D(random.nextFloat(), random.nextFloat());
 
     public Perlin2D(int octaves, float persistence) {
         super(octaves, persistence);
@@ -37,8 +38,8 @@ public class Perlin2D extends PerlinNoise {
         for (int i=0; i<octaves; i++) {
             float frequency = frequencies[i];
             float amplitude = amplitudes[i];
-            float xPos = x * frequency;
-            float yPos = y * frequency;
+            float xPos = (x+randomOffset.getI()) * frequency;
+            float yPos = (y+randomOffset.getJ()) * frequency;
 
             Vector2D position = new Vector2D(xPos, yPos);
 
