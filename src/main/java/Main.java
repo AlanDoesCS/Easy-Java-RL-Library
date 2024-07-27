@@ -11,13 +11,15 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        final int width=720, height=720;
+        final int width=30, height=30;
 
         PerlinGridEnvironment environment = new PerlinGridEnvironment(width, height, 8, 0.9f, 0.01f);
+        MazeGridEnvironment mazeEnvironment = new MazeGridEnvironment(width, height);
 
-        System.out.println(environment.getState());
+        System.out.println(mazeEnvironment.getGridMatrix());
+        Environment_Visualiser vis = new Environment_Visualiser(mazeEnvironment);
 
-        testPathfinding(environment.getAgentPosition(), environment.getGoalPosition(), environment);
+        //testPathfinding(environment.getAgentPosition(), environment.getGoalPosition(), environment);
 
         ActivationFunction sig = new Sigmoid();
         ActivationFunction relu = new ReLU();

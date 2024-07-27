@@ -42,12 +42,17 @@ public abstract class GridEnvironment extends Environment {
     public Vector2D getGoalPosition() {
         return goalPosition;
     }
+    public Matrix getGridMatrix() {
+        return gridMatrix;
+    }
 
     // fill matrix
     abstract void fill();
-    public abstract void refill();
+    public void refill() {
+        fill();
+    }
 
-    public void createNewScene() {
+    public void randomize() {
         refill();
     }
 
@@ -90,6 +95,16 @@ public abstract class GridEnvironment extends Environment {
     }
     public void setGoalPosition(int x, int y) {
         this.goalPosition.set(x, y);
+    }
+    public void setAgentPosition(Vector2D position) {
+        this.agentPosition = position;
+    }
+    public void setGoalPosition(Vector2D position) {
+        this.goalPosition = position;
+    }
+
+    public boolean isInBounds(int x, int y) {
+        return x > 0 && x < width - 1 && y > 0 && y < height - 1;
     }
 
     public Vector2D getRandomCoordinateInBounds() {

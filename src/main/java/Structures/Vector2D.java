@@ -59,4 +59,9 @@ public class Vector2D {
         this.i = i;
         this.j = j;
     }
+
+    public void set(float i, float j) {
+        this.i = i;
+        this.j = j;
+    }
 }

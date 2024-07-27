@@ -18,9 +18,4 @@ public class RandomGridEnvironment extends GridEnvironment {
              set(i, rand.nextFloat());
          }
      }
-
-     @Override
-     public void refill() {
-         fill();
-     }
 }
