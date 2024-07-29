@@ -10,8 +10,7 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-
-        final int width=30, height=30;
+        final int width=720, height=720;
 
         PerlinGridEnvironment environment = new PerlinGridEnvironment(width, height, 8, 0.9f, 0.01f);
         MazeGridEnvironment mazeEnvironment = new MazeGridEnvironment(width, height);
@@ -19,6 +18,7 @@ public class Main {
         System.out.println(mazeEnvironment.getGridMatrix());
         Environment_Visualiser vis = new Environment_Visualiser(mazeEnvironment);
 
+        System.out.println(mazeEnvironment.getState());
         //testPathfinding(environment.getAgentPosition(), environment.getGoalPosition(), environment);
 
         ActivationFunction sig = new Sigmoid();

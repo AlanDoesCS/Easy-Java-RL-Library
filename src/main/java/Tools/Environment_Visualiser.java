@@ -66,7 +66,7 @@ public class Environment_Visualiser extends Visualiser {
     }
 
     public Environment_Visualiser(MazeGridEnvironment environment) {
-        super("Perlin Grid environment", width, height);
+        super("Maze Grid environment", width, height);
 
         if (environment == null) throw new NullPointerException("Cannot visualise an environment if it is null!");
 

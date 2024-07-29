@@ -3,9 +3,11 @@ package Training;
 import Structures.Vector2D;
 import Tools.math;
 
-public class MazeGridEnvironment extends GridEnvironment {  // Maze generated using recursive backtracking
+import java.util.Stack;
+
+public class MazeGridEnvironment extends GridEnvironment {  // Maze generated using a modified recursive backtracking approach that uses a stack instead
     private static final float WALL = 1f;
-    private static final float PATH = 0f;
+    private static final float PATH = -1f;
 
     public MazeGridEnvironment(int width, int height) {
         super(width, height);
@@ -18,26 +20,51 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
     void fill() {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                set(x, y, 1); // 1 represents a wall
+                set(x, y, WALL); // 1 represents a wall
             }
         }
 
-        generateMaze((int) getAgentPosition().getI(), (int) getAgentPosition().getJ());
+        int startX = math.randomInt(0, width - 1);
+        int startY = math.randomInt(0, height - 1);
+
+        generateMaze(startX, startY);
     }
 
-    private void generateMaze(int x, int y) {
-        set(x, y, PATH);
+    private void generateMaze(int startX, int startY) {
+        // keep track of cells to visit: prevent reaching max recursive depth
+        Stack<Vector2D> stack = new Stack<>();
+        stack.push(new Vector2D(startX, startY));
+        set(startX, startY, PATH);
 
-        int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
-        shuffleArray(directions);
+        while (!stack.isEmpty()) {  // visit all accessible cells
+            Vector2D current = stack.peek();
+            int x = (int) current.getI();
+            int y = (int) current.getJ();
 
-        for (int[] dir : directions) {
-            int newX = x + dir[0] * 2;
-            int newY = y + dir[1] * 2;
+            int[][] directions = {{0, 2}, {2, 0}, {0, -2}, {-2, 0}};
 
-            if (isInBounds(newX, newY) && get(newX, newY) == WALL) {
-                set(x + dir[0], y + dir[1], PATH);
-                generateMaze(newX, newY);
+            // randomize direction order to ensure maze randomness
+            shuffleArray(directions);
+
+            boolean moved = false;
+
+            for (int[] dir : directions) {
+                int newX = x + dir[0];
+                int newY = y + dir[1];
+
+                if (isInBounds(newX, newY) && get(newX, newY) == WALL) {
+                    set(x + dir[0] / 2, y + dir[1] / 2, PATH);
+                    set(newX, newY, PATH);
+
+                    stack.push(new Vector2D(newX, newY));
+                    moved = true;
+                    break;
+                }
+            }
+
+            // if we did not move to a new cell, backtrack
+            if (!moved) {
+                stack.pop();
             }
         }
     }
@@ -48,6 +75,8 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
             position = getRandomCoordinateInBounds();
             position.set((int) position.getI(), (int) position.getJ());
         } while (get((int) position.getI(), (int) position.getJ()) == WALL);
+
+        System.out.println("Found valid position: " + position + " has: " + get((int) position.getI(), (int) position.getJ()));
 
         return position;
     }

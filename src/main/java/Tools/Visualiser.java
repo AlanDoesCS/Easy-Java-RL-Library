@@ -9,10 +9,10 @@ public abstract class Visualiser extends JFrame {
     final int width, height;
     JPanel panel;
 
-    static Color colorOf(float noise) { // -1: Black, 1: White, (continuous)
-        float normNoise = (noise+1)/2;
+    static Color colorOf(float noise) { // 1: Black, -1: White, (continuous)
+        float normNoise = (noise + 1) / 2;
         normNoise = Math.min(Math.max(normNoise, 0), 1);
-        int b = (int) (255*normNoise); // brightness (greyscale)
+        int b = (int) (255 * (1 - normNoise)); // invert brightness (greyscale)
         return new Color(b, b, b);
     }
 
