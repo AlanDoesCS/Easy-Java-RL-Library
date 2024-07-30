@@ -2,7 +2,6 @@ package Tools;
 
 import Structures.Vector2D;
 import Training.GridEnvironment;
-import Training.PerlinGridEnvironment;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,6 +47,26 @@ public class Environment_Visualiser extends Visualiser {
                 for (int pathIndex=0; pathIndex<pathsFollowed.size(); pathIndex++) {
                     ArrayList<Vector2D> path = pathsFollowed.get(pathIndex);
 
+                    Color color = pathColors.get(pathIndex);
+                    Color startColor = darker(color);
+                    Color finishColor = brighter(color);
+                    g2.setColor(startColor);
+
+                    for (int i=0; i<path.size(); i++) {
+                        Vector2D c = path.get(i);
+
+                        // Calculate the progress along the path (0 to 1)
+                        float progress = (float) i / (path.size() - 2);
+
+                        // Interpolate between start and end colors
+                        Color segmentColor = fadeColor(startColor, progress, finishColor);
+                        g2.setColor(segmentColor);
+
+                        g2.fillRect(
+                                (int) (c.getI()*squareWIDTH), (int) (c.getJ()*squareHEIGHT), squareWIDTH, squareHEIGHT
+                        );
+                    }
+
                     // Draw the start square as green
                     Vector2D start = path.getFirst();
                     g2.setColor(Color.GREEN);
@@ -61,18 +80,6 @@ public class Environment_Visualiser extends Visualiser {
                     g2.fillRect(
                             (int) (finish.getI()*squareWIDTH), (int) (finish.getJ()*squareHEIGHT), squareWIDTH, squareHEIGHT
                     );
-
-                    Color color = pathColors.get(pathIndex);
-                    g2.setColor(color);
-
-                    for (int i=0; i<path.size()-1; i++) {
-                        Vector2D c = path.get(i);
-                        Vector2D n = path.get(i+1);
-                        g2.drawLine(
-                                (int) ((c.getI()+0.5)*squareWIDTH), (int) ((c.getJ()+0.5)*squareHEIGHT),
-                                (int) ((n.getI()+0.5)*squareWIDTH), (int) ((n.getJ()+0.5)*squareHEIGHT)
-                        );
-                    }
                 }
             }
         };
