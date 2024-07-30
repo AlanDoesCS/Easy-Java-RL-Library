@@ -69,12 +69,15 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         }
     }
 
+    boolean IsValidPositionInBounds(int x, int y) {
+        return get(x, y) == PATH;
+    }
     private Vector2D findValidPositionInBounds() {  // to be used for finding
         Vector2D position;
         do {
             position = getRandomCoordinateInBounds();
             position.set((int) position.getI(), (int) position.getJ());
-        } while (get((int) position.getI(), (int) position.getJ()) == WALL);
+        } while (!IsValidPositionInBounds((int) position.getI(), (int) position.getJ()));
 
         System.out.println("Found valid position: " + position + " has: " + get((int) position.getI(), (int) position.getJ()));
 
@@ -86,6 +89,25 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         refill();
         setAgentPosition(findValidPositionInBounds());
         setGoalPosition(findValidPositionInBounds());
+    }
+
+    @Override
+    public MoveResult step(int action) {
+        float reward = 0;
+        Vector2D currentPosition = getAgentPosition();
+        Vector2D newPosition = currentPosition.copy();
+
+        PerlinGridEnvironment.getNewPosFromAction(action, newPosition);
+
+        if (IsValidPositionInBounds((int) newPosition.getI(), (int) newPosition.getJ())) {
+            setAgentPosition(newPosition);
+        }
+
+        boolean done = newPosition.equals(getGoalPosition());
+
+        reward += done ? getCompletionReward() : -1;
+
+        return new MoveResult(getState(), reward, done);
     }
 
     private void shuffleArray(int[][] array) {  // Fisher-Yates algorithm

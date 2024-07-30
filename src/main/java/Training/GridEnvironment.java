@@ -5,18 +5,6 @@ import Structures.Vector2D;
 import Tools.math;
 
 public abstract class GridEnvironment extends Environment {
-    public static class MoveResult {
-        public Matrix state;
-        public float reward;
-        public boolean done;
-
-        public MoveResult(Matrix state, float reward, boolean done) {
-            this.state = state;
-            this.reward = reward;
-            this.done = done;
-        }
-    }
-
     public int width, height;
     private Matrix gridMatrix, stateMatrix;
     private Vector2D agentPosition, goalPosition;
@@ -111,6 +99,19 @@ public abstract class GridEnvironment extends Environment {
 
     public Vector2D getRandomCoordinateInBounds() {
         return new Vector2D(math.randomInt(0, width-1), math.randomInt(0, height-1));
+    }
+
+    static void getNewPosFromAction(int action, Vector2D newPosition) {
+        switch(action) {
+            case 0: newPosition.addJ(-1); break; // Move up
+            case 1: newPosition.addI(1); break;  // Move right
+            case 2: newPosition.addJ(1); break;  // Move down
+            case 3: newPosition.addI(-1); break; // Move left
+        }
+    }
+
+    float getCompletionReward() {
+        return math.fastSqrt(getStateSpace()-4);
     }
 
     public String toString() {

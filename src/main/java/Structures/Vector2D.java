@@ -64,4 +64,15 @@ public class Vector2D {
         this.i = i;
         this.j = j;
     }
+
+    public void addI(float amount) {
+        this.i += amount;
+    }
+    public void addJ(float amount) {
+        this.j += amount;
+    }
+
+    public Vector2D copy() {
+        return new Vector2D(i, j);
+    }
 }
