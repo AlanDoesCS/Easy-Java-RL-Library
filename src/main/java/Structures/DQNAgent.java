@@ -8,7 +8,7 @@ import Tools.math;
 public class DQNAgent {
     private DQN dqn;
     private final float epsilon;      // exploration rate for epsilon greedy
-    private final float gamma;        // discount factor
+    private final float gamma;        // discount factor - how much future rewards should be prioritised
     private final int stateSpace;     // number of variables used to describe environment state
     private final int actionSpace;    // number of actions the agent can take in the environment
 
@@ -56,5 +56,13 @@ public class DQNAgent {
 
         // update network
         dqn.backpropagate(state, target, currentQValues);
+    }
+
+    public void saveAgent(String filename) {
+        dqn.saveNN(filename);
+    }
+
+    public void loadAgent(String filename) {
+        dqn.loadNN(filename);
     }
 }

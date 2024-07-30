@@ -54,6 +54,8 @@ public abstract class GridEnvironment extends Environment {
 
     public void randomize() {
         refill();
+        this.agentPosition = getRandomCoordinateInBounds();
+        this.goalPosition = getRandomCoordinateInBounds();
     }
 
     public float get(int x, int y) {

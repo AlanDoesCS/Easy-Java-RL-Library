@@ -10,7 +10,7 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        final int width=100, height=100;
+        final int width=720, height=720;
 
         PerlinGridEnvironment perlinEnvironment = new PerlinGridEnvironment(width, height, 8, 0.9f, 0.01f);
         MazeGridEnvironment mazeEnvironment = new MazeGridEnvironment(width, height);
@@ -21,7 +21,6 @@ public class Main {
 
         GridEnvironment environment = mazeEnvironment;
 
-        System.out.println(environment.getState());
         testPathfinding(environment.getAgentPosition(), environment.getGoalPosition(), environment);
 
         List<Layer> layers = List.of(
@@ -37,5 +36,6 @@ public class Main {
         ArrayList<Vector2D> shortestPath = Pathfinder.dijkstra(start, end, environment);
         Environment_Visualiser vis = new Environment_Visualiser(environment);
         vis.addPath(shortestPath, new Color(15, 148, 9));
+        // TODO: make colour fade from dark to light
     }
 }

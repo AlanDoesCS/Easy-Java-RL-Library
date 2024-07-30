@@ -1,10 +1,11 @@
 package Structures;
 
+import java.io.Serializable;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class Matrix {
+public class Matrix implements Serializable {
     private static final int TILE_SIZE = 32;
     private static final int UNROLL_FACTOR = 4;
     private static final int PARALLELISM_THRESHOLD = 1024;

@@ -10,6 +10,8 @@ public abstract class NN {
     float learningRate; // alpha
 
     public abstract Matrix getOutput(Matrix input);
+    public abstract void saveNN(String filename);
+    public abstract void loadNN(String filename);
 
     private Matrix applyDerivative(Matrix input, ActivationFunction activationFunction) {
         Matrix res = new Matrix(input.rows, input.cols);

@@ -2,6 +2,11 @@ package Structures;
 
 import Training.ActivationFunction;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 public class DQN extends NN {
@@ -26,7 +31,37 @@ public class DQN extends NN {
         hiddenLayers.add(new Layer(hiddenLayers.getLast().getOutputSize(), size, phi, bias));
     }
 
+    @Override
+    public void saveNN(String filename) {
+        try (ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(filename))) {
+            outStream.writeInt(hiddenLayers.size());
+            for (Layer layer : hiddenLayers) {
+                outStream.writeObject(layer.weights);
+                outStream.writeObject(layer.biases);
+            }
 
+            outStream.writeObject(outputLayer.weights);
+            outStream.writeObject(outputLayer.biases);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void loadNN(String filename) {
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(filename))) {
+            int hiddenLayerCount = inputStream.readInt();
+            for (int i = 0; i < hiddenLayerCount; i++) {
+                hiddenLayers.get(i).weights = (Matrix) inputStream.readObject();
+                hiddenLayers.get(i).biases = (Matrix) inputStream.readObject();
+            }
+
+            outputLayer.weights = (Matrix) inputStream.readObject();
+            outputLayer.biases = (Matrix) inputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 
     /*
     -----------------------------------------------------------------------------
