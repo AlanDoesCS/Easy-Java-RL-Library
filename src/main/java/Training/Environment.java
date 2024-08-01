@@ -70,6 +70,8 @@ public abstract class Environment {
 
     public abstract MoveResult step(int action);
 
+    public abstract int getActionSpace();
+
     public static class MoveResult {
         public Matrix state;
         public float reward;

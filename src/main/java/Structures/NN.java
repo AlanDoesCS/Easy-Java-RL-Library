@@ -17,7 +17,7 @@ public abstract class NN {
         Matrix res = new Matrix(input.rows, input.cols);
         for (int i = 0; i < input.rows; i++) {
             for (int j = 0; j < input.cols; j++) {
-                res.set(i, j, activationFunction.derivative(input.get(i, j)));
+                res.set(j, i, activationFunction.derivative(input.get(j, i)));
             }
         }
         return res;
@@ -27,37 +27,36 @@ public abstract class NN {
         Matrix outErr = Matrix.subtract(target, output);
 
         // calculate gradient at output layer
-        Matrix outGrad = applyDerivative(output, outputLayer.phi);
-        outGrad = Matrix.multiply(Matrix.multiply(outGrad, outErr), learningRate);
+        Matrix outGrad = Matrix.elementWiseMultiply(outErr, applyDerivative(output, outputLayer.phi));
 
         // calculate delta for output layer weights
-        Matrix outDelta = Matrix.multiply(outGrad, hiddenLayers.getLast().compute(input));
+        Matrix outDelta = Matrix.multiply(outGrad, hiddenLayers.getLast().compute(input).transpose());
 
         // update outputLayer first
-        outputLayer.weights.add(outDelta);
-        outputLayer.biases.add(outGrad);
+        outputLayer.weights.add(Matrix.multiply(outDelta, learningRate));
+        outputLayer.biases.add(Matrix.multiply(outGrad, learningRate));
 
         // go back through hidden layers and update
         Matrix currErr = outErr;
+        Matrix currGrad = outGrad;
+
         for (int i = hiddenLayers.size() - 1; i >= 0; i--) {
             Layer currentLayer = hiddenLayers.get(i);
             Layer nextLayer = (i == hiddenLayers.size() - 1) ? outputLayer : hiddenLayers.get(i + 1);
 
             // calculate error for the current layer
-            currErr = Matrix.multiply(nextLayer.weights, currErr);
+            currErr = Matrix.multiply(nextLayer.weights.transpose(), currGrad);
 
             // calculate gradient for current layer
-            Matrix currentGradient = applyDerivative(currentLayer.compute(input), currentLayer.phi);
-            currentGradient.multiply(currErr);
-            currentGradient.multiply(learningRate);
+            Matrix layerOutput = (i == 0) ? input : hiddenLayers.get(i - 1).compute(input);
+            currGrad = Matrix.elementWiseMultiply(currErr, applyDerivative(currentLayer.compute(input), currentLayer.phi));
 
             // calculate delta for the current layer weights
-            Matrix currentInput = (i == 0) ? input : hiddenLayers.get(i - 1).compute(input);
-            Matrix currentDelta = Matrix.multiply(currentGradient, currentInput);
+            Matrix currentDelta = Matrix.multiply(currGrad, layerOutput.transpose());
 
             // update current layer weights and biases
-            currentLayer.weights.add(currentDelta);
-            currentLayer.biases.add(currentGradient);
+            currentLayer.weights.add(Matrix.multiply(currentDelta, learningRate));
+            currentLayer.biases.add(Matrix.multiply(currGrad, learningRate));
         }
     }
 }

@@ -79,8 +79,6 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
             position.set((int) position.getI(), (int) position.getJ());
         } while (!IsValidPositionInBounds((int) position.getI(), (int) position.getJ()));
 
-        System.out.println("Found valid position: " + position + " has: " + get((int) position.getI(), (int) position.getJ()));
-
         return position;
     }
 

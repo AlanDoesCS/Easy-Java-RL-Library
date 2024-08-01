@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 public class Matrix implements Serializable {
     private static final int TILE_SIZE = 32;
@@ -230,9 +231,25 @@ public class Matrix implements Serializable {
     -----------------------------------------------------------------------------
     */
 
+    public static Matrix elementWiseMultiply(Matrix A, Matrix B) {
+        if (A.rows != B.rows || A.cols != B.cols) {
+            throw new IllegalArgumentException("Matrices must have the same dimensions for element-wise multiplication. (A:"+A.dims()+" != B:"+B.dims()+")");
+        }
+
+        Matrix result = new Matrix(A.rows, A.cols);
+
+        IntStream.range(0, A.rows).parallel().forEach(i -> {
+            for (int j = 0; j < A.cols; j++) {
+                result.data[i][j] = A.data[i][j] * B.data[i][j];
+            }
+        });
+
+        return result;
+    }
+
     public static Matrix multiply(Matrix A, Matrix B) {
         if (A.cols != B.rows) {
-            throw new IllegalArgumentException("A's columns must match B's rows");
+            throw new IllegalArgumentException("A's columns must match B's rows ("+A.cols+"!="+B.rows+") - A.dims="+A.dims()+", B.dims="+B.dims());
         }
 
         AtomicReference<float[][]> C = new AtomicReference<>(new float[A.rows][B.cols]);

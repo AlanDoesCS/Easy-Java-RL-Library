@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-        Environment.setDimensions(500, 500);
+        Environment.setDimensions(50, 50);
 
         Trainer trainer;
         try {
@@ -26,12 +26,12 @@ public class Main {
         ActivationFunction relu = new ReLU();
 
         List<Layer> layers = List.of(
-                new Layer(trainer.getStateSpace(), 512, sig, 0),
-                new Layer(512, 512, sig, 0),
-                new Layer(512, 512, sig, 0)
+                new Layer(trainer.getStateSpace(), 100, sig, 0),
+                new Layer(100, 200, sig, 0),
+                new Layer(200, 300, sig, 0)
         );
 
-        DQNAgent dqnAgent = new DQNAgent(4, layers, 0.1f, 0.99f, 0.001f, relu, 0);
+        DQNAgent dqnAgent = new DQNAgent(trainer.getActionSpace(), layers, 0.1f, 0.99f, 0.001f, relu, 0);
 
         trainer.trainAgent(dqnAgent, 6000, 100);
     }

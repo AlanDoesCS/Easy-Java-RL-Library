@@ -12,12 +12,14 @@ import java.util.Set;
 public class Trainer {
     Set<Class<? extends Environment>> environmentClasses;
     int stateSpace;
+    int actionSpace;
 
     public Trainer(Set<Class<? extends Environment>> environments) throws InvalidTypeException {
         this.environmentClasses = environments;
 
         Environment temp = Environment.of((Class<? extends Environment>) environmentClasses.toArray()[0]);
         this.stateSpace = temp.getStateSpace();
+        this.actionSpace = temp.getActionSpace();
     }
 
     public void trainAgent(DQNAgent agent, int numEpisodes, int savePeriod) {
@@ -58,5 +60,9 @@ public class Trainer {
 
     public int getStateSpace() {
         return stateSpace;
+    }
+
+    public int getActionSpace() {
+        return actionSpace;
     }
 }
