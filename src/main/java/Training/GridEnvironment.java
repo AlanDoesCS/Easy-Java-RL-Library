@@ -14,7 +14,7 @@ public abstract class GridEnvironment extends Environment {
         this.height = height;
         this.agentPosition = getRandomCoordinateInBounds();
         this.goalPosition = getRandomCoordinateInBounds();
-        this.gridMatrix = new Matrix(width, height);
+        this.gridMatrix = new Matrix(height, width);
         this.stateMatrix = new Matrix(getNumSquares()+4, 1);
     }
 
