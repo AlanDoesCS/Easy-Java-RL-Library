@@ -2,6 +2,7 @@ package Training;
 
 import Structures.DQNAgent;
 import Structures.Matrix;
+import Tools.Environment_Visualiser;
 import Tools.math;
 import com.sun.jdi.InvalidTypeException;
 
@@ -11,15 +12,9 @@ import java.util.Set;
 
 public class Trainer {
     Set<Class<? extends Environment>> environmentClasses;
-    int stateSpace;
-    int actionSpace;
 
     public Trainer(Set<Class<? extends Environment>> environments) throws InvalidTypeException {
         this.environmentClasses = environments;
-
-        Environment temp = Environment.of((Class<? extends Environment>) environmentClasses.toArray()[0]);
-        this.stateSpace = temp.getStateSpace();
-        this.actionSpace = temp.getActionSpace();
     }
 
     public void trainAgent(DQNAgent agent, int numEpisodes, int savePeriod) {
@@ -37,6 +32,8 @@ public class Trainer {
         for (int episode = 1; episode <= numEpisodes; episode++) {
             Environment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
+
+            System.out.println("Episode " + episode + ", environment: "+environment.getType());
 
             Matrix state = environment.getState();
             boolean done = false;
@@ -56,13 +53,5 @@ public class Trainer {
                 agent.saveAgent("agent_" + episode + ".dat");
             }
         }
-    }
-
-    public int getStateSpace() {
-        return stateSpace;
-    }
-
-    public int getActionSpace() {
-        return actionSpace;
     }
 }

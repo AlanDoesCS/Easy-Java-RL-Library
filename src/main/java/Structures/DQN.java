@@ -21,10 +21,8 @@ public class DQN extends NN {
     }
 
     public Matrix getOutput(Matrix input) {
-        for (Layer layer : hiddenLayers) {
-            input = layer.compute(input);
-        }
-        return outputLayer.compute(input); // is output after all layers
+        List<Matrix> layerInputs = forwardPass(input);
+        return outputLayer.compute(layerInputs.getLast());
     }
 
     public void addLayer(int size, ActivationFunction phi, float bias) {

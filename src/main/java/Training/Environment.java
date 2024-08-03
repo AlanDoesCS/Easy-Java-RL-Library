@@ -8,7 +8,27 @@ public abstract class Environment {
     // defaults
     static int gridWidth = 30, gridHeight = 30;
     static int octaves = 8;
+    static int stateSpace=-1, actionSpace=-1;
     static float persistence = 0.9f, step = 0.01f;
+
+    public static int getActionSpace() {
+        return actionSpace;
+    }
+    public static int getStateSpace() {
+        return stateSpace;
+    }
+    public static void setActionSpace(int actionSpace) {
+        if (actionSpace < 1) throw new IllegalArgumentException("actionSpace must be greater than 1, not "+actionSpace);
+        Environment.actionSpace = actionSpace;
+    }
+    public static void setStateSpace(int stateSpace) {
+        if (stateSpace < 1) throw new IllegalArgumentException("stateSpace must be greater than 1, not "+stateSpace);
+        Environment.stateSpace = stateSpace;
+    }
+
+    public static int getGridSquares() {
+        return gridWidth*gridHeight;
+    }
 
     /*
         Randomize:
@@ -18,8 +38,6 @@ public abstract class Environment {
     */
     public abstract void randomize();
     public abstract Matrix getState();
-    public abstract int getStateSpace();
-
 
     // Environment instantiation table
     // Todo: should probably make a bit more expandable
@@ -70,7 +88,9 @@ public abstract class Environment {
 
     public abstract MoveResult step(int action);
 
-    public abstract int getActionSpace();
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
 
     public static class MoveResult {
         public Matrix state;

@@ -2,6 +2,7 @@ package Structures;
 
 import Training.ActivationFunction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class NN {
@@ -23,14 +24,29 @@ public abstract class NN {
         return res;
     }
 
+    List<Matrix> forwardPass(Matrix input) {    // input is the same as environment state
+        List<Matrix> layerInputs = new ArrayList<>();
+        layerInputs.add(input); // environment state
+
+        Matrix currentInput = input;
+        for (Layer layer : hiddenLayers) {
+            currentInput = layer.compute(currentInput);
+            layerInputs.add(currentInput);
+        }
+
+        return layerInputs;
+    }
+
     public void backpropagate(Matrix input, Matrix target, Matrix output) {
+        List<Matrix> layerInputs = forwardPass(input);
+
         Matrix outErr = Matrix.subtract(target, output);
 
         // calculate gradient at output layer
         Matrix outGrad = Matrix.elementWiseMultiply(outErr, applyDerivative(output, outputLayer.phi));
 
         // calculate delta for output layer weights
-        Matrix outDelta = Matrix.multiply(outGrad, hiddenLayers.getLast().compute(input).transpose());
+        Matrix outDelta = Matrix.multiply(outGrad, layerInputs.getLast().transpose());
 
         // update outputLayer first
         outputLayer.weights.add(Matrix.multiply(outDelta, learningRate));
@@ -48,11 +64,11 @@ public abstract class NN {
             currErr = Matrix.multiply(nextLayer.weights.transpose(), currGrad);
 
             // calculate gradient for current layer
-            Matrix layerOutput = (i == 0) ? input : hiddenLayers.get(i - 1).compute(input);
-            currGrad = Matrix.elementWiseMultiply(currErr, applyDerivative(currentLayer.compute(input), currentLayer.phi));
+            Matrix layerOutput = currentLayer.compute(layerInputs.get(i));
+            currGrad = Matrix.elementWiseMultiply(currErr, applyDerivative(layerOutput, currentLayer.phi));
 
             // calculate delta for the current layer weights
-            Matrix currentDelta = Matrix.multiply(currGrad, layerOutput.transpose());
+            Matrix currentDelta = Matrix.multiply(currGrad, layerInputs.get(i).transpose());
 
             // update current layer weights and biases
             currentLayer.weights.add(Matrix.multiply(currentDelta, learningRate));

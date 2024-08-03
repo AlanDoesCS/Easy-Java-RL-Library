@@ -21,7 +21,6 @@ public abstract class GridEnvironment extends Environment {
     public int getNumSquares() {
         return width * height;
     }
-    public int getStateSpace() {return stateMatrix.getHeight();}
     public int getWidth() { return width; }
     public int getHeight() { return height; }
     public Vector2D getAgentPosition() {
@@ -59,7 +58,7 @@ public abstract class GridEnvironment extends Environment {
         int i=0;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                stateMatrix.set(0, i++, get(x,y));
+                stateMatrix.set(0, i++, get(x*y));
             }
         }
         stateMatrix.set(0, i++, agentPosition.getI());
@@ -116,9 +115,5 @@ public abstract class GridEnvironment extends Environment {
 
     public String toString() {
         return gridMatrix.toString();
-    }
-
-    public int getActionSpace() { // 0: UP, 1: RIGHT, 2: DOWN, 3: LEFT
-        return 4;
     }
 }

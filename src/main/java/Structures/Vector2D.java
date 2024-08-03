@@ -75,4 +75,8 @@ public class Vector2D {
     public Vector2D copy() {
         return new Vector2D(i, j);
     }
+
+    public boolean equals(Vector2D other) {
+        return (i == other.i) && (j == other.j);
+    }
 }

@@ -86,20 +86,10 @@ public class Matrix implements Serializable {
     }
 
     public Matrix transpose() {
-        float[][] newData = new float[cols][rows];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                newData[j][i] = data[i][j];
-            }
-        }
-        data = newData;
-        int temp = rows;
-        rows = cols;
-        cols = temp;
-        return this;
+        return transpose(this.copy());
     }
 
-    private String dims() {
+    public String dims() {
         return "[r:"+rows+", c:"+cols+"]";
     }
 
@@ -183,7 +173,7 @@ public class Matrix implements Serializable {
         return res;
     }
 
-    private static Matrix transpose(Matrix matrix) {
+    public static Matrix transpose(Matrix matrix) {
         int rows = matrix.data.length;
         int cols = matrix.data[0].length;
         Matrix transposed = new Matrix(cols, rows);
@@ -249,6 +239,7 @@ public class Matrix implements Serializable {
 
     public static Matrix multiply(Matrix A, Matrix B) {
         if (A.cols != B.rows) {
+            System.out.println(B);
             throw new IllegalArgumentException("A's columns must match B's rows ("+A.cols+"!="+B.rows+") - A.dims="+A.dims()+", B.dims="+B.dims());
         }
 

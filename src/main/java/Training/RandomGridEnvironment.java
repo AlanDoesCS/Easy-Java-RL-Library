@@ -29,6 +29,8 @@ public class RandomGridEnvironment extends GridEnvironment {
 
         if (isInBounds((int)newPosition.getI(), (int)newPosition.getJ())) {
             setAgentPosition(newPosition);
+        } else {
+            newPosition = currentPosition;
         }
 
         boolean done = newPosition.equals(getGoalPosition());

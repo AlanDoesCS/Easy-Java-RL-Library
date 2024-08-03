@@ -70,8 +70,10 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
     }
 
     boolean IsValidPositionInBounds(int x, int y) {
+        if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) return false;
         return get(x, y) == PATH;
     }
+
     private Vector2D findValidPositionInBounds() {  // to be used for finding
         Vector2D position;
         do {
@@ -99,6 +101,8 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
 
         if (IsValidPositionInBounds((int) newPosition.getI(), (int) newPosition.getJ())) {
             setAgentPosition(newPosition);
+        } else {
+            newPosition = currentPosition;
         }
 
         boolean done = newPosition.equals(getGoalPosition());

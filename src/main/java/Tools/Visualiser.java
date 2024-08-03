@@ -2,6 +2,7 @@ package Tools;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowEvent;
 
 public abstract class Visualiser extends JFrame {
     final int width, height;
@@ -48,5 +49,13 @@ public abstract class Visualiser extends JFrame {
         super(title);
         this.width = width;
         this.height = height;
+    }
+
+    public void close() {
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+    }
+
+    public void closeWithoutStopping() {
+        dispose();
     }
 }
