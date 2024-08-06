@@ -1,5 +1,6 @@
 import Structures.*;
 import Tools.Environment_Visualiser;
+import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
 import Training.*;
 
@@ -35,7 +36,18 @@ public class Main {
 
         DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f, relu, 0);
 
-        trainer.trainAgent(dqnAgent, 6000, 1000);
+        // trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease");
+
+        List<Vector2D> testPoints = List.of(
+                new Vector2D(10, 30),
+                new Vector2D(20, 1),
+                new Vector2D(30, 3),
+                new Vector2D(40, 12),
+                new Vector2D(50, 1),
+                new Vector2D(60, 52)
+        );
+        GraphPlotter plotter = new GraphPlotter("Test Plot", "plot", "X-Axis", "Y-Axis", testPoints, "ease");
+        plotter.setVisible(true);
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
