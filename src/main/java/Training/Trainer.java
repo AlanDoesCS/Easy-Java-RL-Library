@@ -3,7 +3,6 @@ package Training;
 import Structures.DQNAgent;
 import Structures.Matrix;
 import Structures.Vector2D;
-import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.math;
 import com.sun.jdi.InvalidTypeException;
@@ -69,7 +68,7 @@ public class Trainer {
                 agent.saveAgent("agent_" + episode + ".dat");
 
                 if (plot) {
-                    plotter = new GraphPlotter("DQN training, ep: "+episode, "plot", "Episode", "Cumulative Reward", points, varargs);
+                    plotter = new GraphPlotter("DQN training, ep: "+episode, GraphPlotter.Types.LINE, "Episode", "Cumulative Reward", points, varargs);
                     plotter.setVisible(true);
                     plotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
                 }

@@ -5,28 +5,52 @@ import Structures.Vector2D;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 
 public class GraphPlotter extends JFrame {
+    // STATIC VARS
+    public static enum Types {
+        SCATTER, LINE
+    }
 
-    private final List<Vector2D> points;
-    private final String graphType;
+    // INSTANCE VARS
+    private PriorityQueue<Vector2D> points = new PriorityQueue<>(Comparator.comparing(Vector2D::getI));
+    private Types graphType;
+    private String XAxisLabel, YAxisLabel;
+    List<String> args;
 
-    private final boolean useEase;  // whether to use an ease function
+    private boolean useEase;  // whether to use an ease function
 
-    public GraphPlotter(String graphTitle, String graphType, String XAxisLabel, String YAxisLabel, List<Vector2D> points, String... varargs) {
+    private GraphPanel graphPanel;
+
+    //For calculating getting grid bounds:
+    private float minX=Float.MAX_VALUE, maxX=Float.MIN_VALUE, minY=Float.MAX_VALUE, maxY=Float.MIN_VALUE;
+
+    //Styling:
+    private int padding = 40;
+
+    private void init(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2D> points, String... varargs) {
         this.graphType = graphType;
-        this.points = points;
-        List<String> varargs1 = Arrays.asList(varargs);
-        this.useEase = varargs1.contains("ease");
+        this.points.addAll(points);
+        this.args = Arrays.asList(varargs);
+        this.useEase = this.args.contains("ease");
+
+        this.XAxisLabel = XAxisLabel;
+        this.YAxisLabel = YAxisLabel;
 
         setTitle(graphTitle);
-        setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
 
         add(new GraphPanel());
+    }
+    public GraphPlotter(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2D> points, String... varargs) {
+        init(graphTitle, graphType, XAxisLabel, YAxisLabel, points, varargs);
+    }
+    public GraphPlotter(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, String... varargs) {
+        init(graphTitle, graphType, XAxisLabel, YAxisLabel, new ArrayList<>(), varargs);
     }
 
     class GraphPanel extends JPanel {
@@ -36,7 +60,6 @@ public class GraphPlotter extends JFrame {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int padding = 40;
             int width = getWidth() - 2 * padding;
             int height = getHeight() - 2 * padding;
 
@@ -46,26 +69,41 @@ public class GraphPlotter extends JFrame {
 
             // plot points
             g2.setColor(Color.RED);
-            for (int i = 0; i < points.size(); i++) {
-                Vector2D point = points.get(i);
+
+            PriorityQueue<Vector2D> temp = new PriorityQueue<>(points);
+            Vector2D prevPoint = temp.peek();
+            int i=0;
+            while (!temp.isEmpty()) {
+                Vector2D point = temp.poll();
                 int x = (int) (point.getI() / 100 * width) + padding;
                 int y = getHeight() - ((int) (point.getJ() / 100 * height) + padding);
 
-                if (graphType.equalsIgnoreCase("scatter")) {
-                    g2.fillOval(x - 3, y - 3, 6, 6);
-                } else if (graphType.equalsIgnoreCase("plot")) {
-                    if (i > 0) {
-                        Vector2D prevPoint = points.get(i - 1);
-                        int prevX = (int) (prevPoint.getI() / 100 * width) + padding;
-                        int prevY = getHeight() - ((int) (prevPoint.getJ() / 100 * height) + padding);
-
-                        if (useEase) {
-                            drawEased(g2, prevX, prevY, x, y);
-                        } else {
-                            g2.drawLine(prevX, prevY, x, y);
-                        }
-                    }
+                switch (graphType) {
+                    case SCATTER:
+                        drawScatterPoint(g2, x, y);
+                        break;
+                    case LINE:
+                        drawPlotPoint(g2, prevPoint, x, y, width, height, padding, useEase);
+                        break;
+                    default:
+                        drawScatterPoint(g2, x, y);
                 }
+                prevPoint = point;
+            }
+        }
+
+        private void drawScatterPoint(Graphics2D g2, int x, int y) {
+            g2.fillOval(x - 3, y - 3, 6, 6);
+        }
+
+        private void drawPlotPoint(Graphics2D g2, Vector2D prevPoint, int x, int y, int width, int height, int padding, boolean useEase) {
+            int prevX = (int) (prevPoint.getI() / 100 * width) + padding;
+            int prevY = getHeight() - ((int) (prevPoint.getJ() / 100 * height) + padding);
+
+            if (useEase) {
+                drawEased(g2, prevX, prevY, x, y);
+            } else {
+                g2.drawLine(prevX, prevY, x, y);
             }
         }
 
@@ -78,5 +116,44 @@ public class GraphPlotter extends JFrame {
             path.curveTo(ctrlX1, y1, ctrlX2, y2, x2, y2);
             g2.draw(path);
         }
+    }
+
+    public void addPoint(Vector2D point) {
+        points.add(point);
+
+        // update graph bounds:
+        final float x = point.getI();
+        final float y = point.getJ();
+
+        if (x < minX) {
+            minX = x;
+        }
+        if (x > maxX) {
+            maxX = x;
+        }
+        if (y < minY) {
+            minY = y;
+        }
+        if (y > maxY) {
+            maxY = y;
+        }
+    }
+
+    public void reset() {
+        //reset data
+        points.clear();
+        minX = Float.MAX_VALUE;
+        maxX = Float.MIN_VALUE;
+        minY = Float.MAX_VALUE;
+        maxY = Float.MIN_VALUE;
+        repaint();
+    }
+
+    public void plot() {
+        SwingUtilities.invokeLater(this::repaint);
+    }
+
+    public int getNumPoints() {
+        return points.size();
     }
 }

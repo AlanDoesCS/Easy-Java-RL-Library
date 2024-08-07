@@ -2,6 +2,7 @@ import Structures.*;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
+import Tools.math;
 import Training.*;
 
 import com.sun.jdi.InvalidTypeException;
@@ -38,16 +39,25 @@ public class Main {
 
         // trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease");
 
-        List<Vector2D> testPoints = List.of(
-                new Vector2D(10, 30),
-                new Vector2D(20, 1),
-                new Vector2D(30, 3),
-                new Vector2D(40, 12),
-                new Vector2D(50, 1),
-                new Vector2D(60, 52)
-        );
-        GraphPlotter plotter = new GraphPlotter("Test Plot", "plot", "X-Axis", "Y-Axis", testPoints, "ease");
+        GraphPlotter plotter = new GraphPlotter("Test Plot", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "ease");
         plotter.setVisible(true);
+
+        int numsPerIter = 5;
+        int iters = 10;
+
+        for (int i = 0; i < iters; i++) {
+            for (int j = 0; j < numsPerIter; j++) {
+                Vector2D point = new Vector2D(math.randomFloat(1, 100), math.randomFloat(1, 100));
+                plotter.addPoint(point);
+                System.out.println(point);
+            }
+            plotter.plot();
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
