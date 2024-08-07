@@ -39,24 +39,18 @@ public class Main {
 
         // trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease");
 
-        GraphPlotter plotter = new GraphPlotter("Test Plot", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "ease");
+        GraphPlotter plotter = new GraphPlotter("Test Plot", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "ease", "axis_ticks");
         plotter.setVisible(true);
 
-        int numsPerIter = 5;
+        int numsPerIter = 10;
         int iters = 10;
 
         for (int i = 0; i < iters; i++) {
             for (int j = 0; j < numsPerIter; j++) {
-                Vector2D point = new Vector2D(math.randomFloat(1, 100), math.randomFloat(1, 100));
+                Vector2D point = new Vector2D((float) (i*j)+0.1f, (float) Math.log(i*j+0.1f));
                 plotter.addPoint(point);
-                System.out.println(point);
             }
             plotter.plot();
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
     }
 

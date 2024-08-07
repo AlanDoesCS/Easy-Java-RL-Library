@@ -20,7 +20,9 @@ public class GraphPlotter extends JFrame {
     private String XAxisLabel, YAxisLabel;
     List<String> args;
 
-    private boolean useEase;  // whether to use an ease function
+    // Plot settings
+    private boolean useEase=false;  // whether to use an ease function
+    private boolean showAxisTicks=false;
 
     private GraphPanel graphPanel;
 
@@ -34,14 +36,16 @@ public class GraphPlotter extends JFrame {
         this.graphType = graphType;
         this.points.addAll(points);
         this.args = Arrays.asList(varargs);
+
         this.useEase = this.args.contains("ease");
+        this.showAxisTicks = this.args.contains("axis_ticks");
 
         this.XAxisLabel = XAxisLabel;
         this.YAxisLabel = YAxisLabel;
 
         setTitle(graphTitle);
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         add(new GraphPanel());
@@ -67,6 +71,17 @@ public class GraphPlotter extends JFrame {
             g2.drawLine(padding, getHeight() - padding, padding, padding);
             g2.drawLine(padding, getHeight() - padding, getWidth() - padding, getHeight() - padding);
 
+            // Draw axis labels
+            g2.setFont(new Font("Arial", Font.PLAIN, 14));
+            g2.drawString(XAxisLabel, getWidth() / 2, getHeight() - padding / 2);
+            g2.rotate(-Math.PI / 2);
+            g2.drawString(YAxisLabel, -getHeight() / 2, padding / 2);
+            g2.rotate(Math.PI / 2);
+
+            if (showAxisTicks) {
+                drawAxisTicks(g2, width, height);
+            }
+
             // plot points
             g2.setColor(Color.RED);
 
@@ -75,8 +90,8 @@ public class GraphPlotter extends JFrame {
             int i=0;
             while (!temp.isEmpty()) {
                 Vector2D point = temp.poll();
-                int x = (int) (point.getI() / 100 * width) + padding;
-                int y = getHeight() - ((int) (point.getJ() / 100 * height) + padding);
+                int x = padding + (int) ((point.getI() - minX) / (maxX - minX) * width);
+                int y = getHeight() - padding - (int) ((point.getJ() - minY) / (maxY - minY) * height);
 
                 switch (graphType) {
                     case SCATTER:
@@ -92,13 +107,50 @@ public class GraphPlotter extends JFrame {
             }
         }
 
+        private void drawAxisTicks(Graphics2D g2, int width, int height) {
+            int tickSize = 5;
+            double xTickSpacing = calculateTickSpacing(minX, maxX);
+            double yTickSpacing = calculateTickSpacing(minY, maxY);
+
+            for (double x = Math.ceil(minX / xTickSpacing) * xTickSpacing; x <= maxX; x += xTickSpacing) {
+                int xPos = padding + (int) ((x - minX) / (maxX - minX) * width);
+                g2.drawLine(xPos, getHeight() - padding, xPos, getHeight() - padding + tickSize);
+                g2.drawString(String.format("%.1f", x), xPos - 10, getHeight() - padding + 20);
+            }
+
+            for (double y = Math.ceil(minY / yTickSpacing) * yTickSpacing; y <= maxY; y += yTickSpacing) {
+                int yPos = getHeight() - padding - (int) ((y - minY) / (maxY - minY) * height);
+                g2.drawLine(padding - tickSize, yPos, padding, yPos);
+                g2.drawString(String.format("%.1f", y), padding - 40, yPos + 5);
+            }
+        }
+
+        private double calculateTickSpacing(double min, double max) {
+            double range = max - min;
+            double logRange = Math.log10(range);
+            int exponent = (int) Math.floor(logRange);
+            double fraction = Math.pow(10, logRange - exponent);
+
+            double tickSpacing;
+            if (fraction < 1.5) {
+                tickSpacing = 0.1;
+            } else if (fraction < 3) {
+                tickSpacing = 0.2;
+            } else if (fraction < 7) {
+                tickSpacing = 0.5;
+            } else {
+                tickSpacing = 1;
+            }
+            return tickSpacing * Math.pow(10, exponent);
+        }
+
         private void drawScatterPoint(Graphics2D g2, int x, int y) {
             g2.fillOval(x - 3, y - 3, 6, 6);
         }
 
         private void drawPlotPoint(Graphics2D g2, Vector2D prevPoint, int x, int y, int width, int height, int padding, boolean useEase) {
-            int prevX = (int) (prevPoint.getI() / 100 * width) + padding;
-            int prevY = getHeight() - ((int) (prevPoint.getJ() / 100 * height) + padding);
+            int prevX = padding + (int) ((prevPoint.getI() - minX) / (maxX - minX) * width);
+            int prevY = getHeight() - padding - (int) ((prevPoint.getJ() - minY) / (maxY - minY) * height);
 
             if (useEase) {
                 drawEased(g2, prevX, prevY, x, y);
@@ -125,18 +177,10 @@ public class GraphPlotter extends JFrame {
         final float x = point.getI();
         final float y = point.getJ();
 
-        if (x < minX) {
-            minX = x;
-        }
-        if (x > maxX) {
-            maxX = x;
-        }
-        if (y < minY) {
-            minY = y;
-        }
-        if (y > maxY) {
-            maxY = y;
-        }
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
     }
 
     public void reset() {
