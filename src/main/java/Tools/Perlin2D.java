@@ -32,7 +32,7 @@ public class Perlin2D extends PerlinNoise {
         return rowGradientMap.get(x);
     }
 
-    public float noise (float x, float y) {
+    public float noise(float x, float y) {
         float noise = 0.0f;
 
         for (int i=0; i<octaves; i++) {
@@ -72,6 +72,10 @@ public class Perlin2D extends PerlinNoise {
         }
         return math.clamp(noise, -1f, 1f);
         //return Math.round(noise*5)/5f; // For "stepped" results
+    }
+
+    public float noise(float x, float y, float target_min, float target_max) {
+        return math.scale(noise(x, y), -1, 1, target_min, target_max);
     }
 
     public Matrix toMatrix(int xPixels, int yPixels, float step) {

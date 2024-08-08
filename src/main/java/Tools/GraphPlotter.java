@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+import java.util.function.Function;
 
 public class GraphPlotter extends JFrame {
     // STATIC VARS
@@ -30,7 +31,7 @@ public class GraphPlotter extends JFrame {
     private float minX=Float.MAX_VALUE, maxX=Float.MIN_VALUE, minY=Float.MAX_VALUE, maxY=Float.MIN_VALUE;
 
     //Styling:
-    private int padding = 40;
+    private int padding = 50;
 
     private void init(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2D> points, String... varargs) {
         this.graphType = graphType;
@@ -73,13 +74,19 @@ public class GraphPlotter extends JFrame {
 
             // Draw axis labels
             g2.setFont(new Font("Arial", Font.PLAIN, 14));
-            g2.drawString(XAxisLabel, getWidth() / 2, getHeight() - padding / 2);
-            g2.rotate(-Math.PI / 2);
-            g2.drawString(YAxisLabel, -getHeight() / 2, padding / 2);
-            g2.rotate(Math.PI / 2);
 
             if (showAxisTicks) {
+                g2.drawString(XAxisLabel, getWidth() / 2, getHeight() - padding / 3);
+                g2.rotate(-Math.PI / 2);
+                g2.drawString(YAxisLabel, -getHeight() / 2, padding / 3);
+                g2.rotate(Math.PI / 2);
+
                 drawAxisTicks(g2, width, height);
+            } else {
+                g2.drawString(XAxisLabel, getWidth() / 2, getHeight() - padding / 2);
+                g2.rotate(-Math.PI / 2);
+                g2.drawString(YAxisLabel, -getHeight() / 2, padding / 2);
+                g2.rotate(Math.PI / 2);
             }
 
             // plot points
@@ -87,7 +94,6 @@ public class GraphPlotter extends JFrame {
 
             PriorityQueue<Vector2D> temp = new PriorityQueue<>(points);
             Vector2D prevPoint = temp.peek();
-            int i=0;
             while (!temp.isEmpty()) {
                 Vector2D point = temp.poll();
                 int x = padding + (int) ((point.getI() - minX) / (maxX - minX) * width);
@@ -121,7 +127,7 @@ public class GraphPlotter extends JFrame {
             for (double y = Math.ceil(minY / yTickSpacing) * yTickSpacing; y <= maxY; y += yTickSpacing) {
                 int yPos = getHeight() - padding - (int) ((y - minY) / (maxY - minY) * height);
                 g2.drawLine(padding - tickSize, yPos, padding, yPos);
-                g2.drawString(String.format("%.1f", y), padding - 40, yPos + 5);
+                g2.drawString(String.format("%.1f", y), padding - 30, yPos + 5);
             }
         }
 
@@ -195,6 +201,13 @@ public class GraphPlotter extends JFrame {
 
     public void plot() {
         SwingUtilities.invokeLater(this::repaint);
+    }
+
+    public void plot(Function<Float, Float> f, float start, float end, float step) {
+        for (float i = start; i < end; i += step) {
+            addPoint(new Vector2D(i, f.apply(i)));
+        }
+        plot();
     }
 
     public int getNumPoints() {

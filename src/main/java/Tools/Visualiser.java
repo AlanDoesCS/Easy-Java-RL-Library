@@ -8,10 +8,17 @@ public abstract class Visualiser extends JFrame {
     final int width, height;
     JPanel panel;
 
-    static Color colorOf(float noise) { // 1: Black, -1: White, (continuous)
-        float normNoise = (noise + 1) / 2;
-        normNoise = Math.min(Math.max(normNoise, 0), 1);
-        int b = (int) (255 * (1 - normNoise)); // invert brightness (greyscale)
+    /**
+     * Converts a float value to a grayscale color in the range [min, max]
+     *
+     * @param v the float value to convert in range [min, max]
+     * @param min the minimum value that v can take
+     * @param max the maximum value that v can take
+     * @return new Color instance of grayscale color
+     */
+    static Color colorOf(float v, float min, float max) {
+        float normalised = math.normalise(v, min, max);
+        int b = (int) (255 * (1 - normalised)); // invert brightness (greyscale) - min is white, max is black
         return new Color(b, b, b);
     }
 
@@ -22,9 +29,9 @@ public abstract class Visualiser extends JFrame {
     }
 
     static Color fadeColor(Color startColor, float progress, Color finishColor) {
-        int segment_r = (int) (startColor.getRed() + progress * (finishColor.getRed() - startColor.getRed()));
-        int segment_g = (int) (startColor.getGreen() + progress * (finishColor.getGreen() - startColor.getGreen()));
-        int segment_b = (int) (startColor.getBlue() + progress * (finishColor.getBlue() - startColor.getBlue()));
+        int segment_r = (int) math.lerp(progress, startColor.getRed(), finishColor.getRed());
+        int segment_g = (int) math.lerp(progress, startColor.getGreen(), finishColor.getGreen());
+        int segment_b = (int) math.lerp(progress, startColor.getBlue(), finishColor.getBlue());
 
         return new Color(segment_r, segment_g, segment_b);
     }
@@ -49,13 +56,5 @@ public abstract class Visualiser extends JFrame {
         super(title);
         this.width = width;
         this.height = height;
-    }
-
-    public void close() {
-        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
-    }
-
-    public void closeWithoutStopping() {
-        dispose();
     }
 }

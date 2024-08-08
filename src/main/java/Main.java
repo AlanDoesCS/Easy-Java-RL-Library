@@ -2,7 +2,7 @@ import Structures.*;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
-import Tools.math;
+import Tools.Perlin1D;
 import Training.*;
 
 import com.sun.jdi.InvalidTypeException;
@@ -14,6 +14,9 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
+        int octaves = 8;
+        float persistence = 0.4f;
+
         Environment.setDimensions(10, 10);
         Environment.setStateSpace(Environment.getGridSquares()+4);
         Environment.setActionSpace(4);
@@ -39,19 +42,28 @@ public class Main {
 
         // trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease");
 
-        GraphPlotter plotter = new GraphPlotter("Test Plot", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "ease", "axis_ticks");
+        GraphPlotter plotter = new GraphPlotter("Test Plot (y = log x)", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "axis_ticks");
         plotter.setVisible(true);
 
-        int numsPerIter = 10;
-        int iters = 10;
+        Perlin1D p = new Perlin1D(octaves, persistence);
 
-        for (int i = 0; i < iters; i++) {
-            for (int j = 0; j < numsPerIter; j++) {
-                Vector2D point = new Vector2D((float) (i*j)+0.1f, (float) Math.log(i*j+0.1f));
-                plotter.addPoint(point);
-            }
-            plotter.plot();
+        GraphPlotter plotter1 = new GraphPlotter("Perlin Noise 1D", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis");
+        plotter1.setVisible(true);
+
+        for (float i = 0; i < 10; i+=0.01f) {
+            plotter.addPoint(new Vector2D(i, (float) Math.log(i+0.1f)));
+            plotter1.addPoint(new Vector2D(i, p.noise(i)));
         }
+        plotter.plot();
+        plotter1.plot();
+
+        GraphPlotter plotter2 = new GraphPlotter("Test Plot 2 (y = tan(sin(cos(x^2)))^5)", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "axis_ticks");
+        plotter2.setVisible(true);
+        plotter2.plot(Main::func, 0f, 10f, 0.01f);
+    }
+
+    public static Float func(Float x) {
+        return (float) Math.pow(Math.tan(Math.sin(Math.cos(x * x))), 5);
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {

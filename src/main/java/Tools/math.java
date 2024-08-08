@@ -8,12 +8,20 @@ import java.util.Set;
 
 public class math {
     static Random random = new Random();
-    public static float Q_rsqrt(float x, int precision) { // from Quake III
+
+    /**
+     * Computes the fast inverse square root of a number using the Quake III algorithm.
+     *
+     * @param x the number to compute the inverse square root of
+     * @param precision the number of newton iterations to done on the result; a precision of 3 is usually sufficient
+     * @return the inverse square root of x
+     */
+    public static float Q_rsqrt(float x, int precision) {
         float xhalf = 0.5f * x;
         int i = Float.floatToIntBits(x);
         i = 0x5f3759df - (i >> 1);
         x = Float.intBitsToFloat(i);
-        for (int iter = 0; iter < precision; ++iter) { // precision of 3 seems sufficient in most cases
+        for (int iter = 0; iter < precision; ++iter) {
             x *= (1.5f - xhalf * x * x);
         }
         return x;
@@ -43,5 +51,16 @@ public class math {
     public static float clamp(float value, float min, float max) {
         if (value < min) return min;
         return Math.min(value, max);
+    }
+    public static float lerp(float t, float a, float b) { // t is between 0 and 1
+        return a + t * ( b - a );
+    }
+    // normalise a 1D vector in range [from_min, from_max] to [0, 1]
+    public static float normalise(float value, float from_min, float from_max) {
+        return (value - from_min)/(from_max - from_min);
+    }
+    public static float scale(float value, float min_start, float max_start, float min_end, float max_end) {
+        value = normalise(value, min_start, max_start);
+        return value * (max_end - min_end) + min_end;
     }
 }

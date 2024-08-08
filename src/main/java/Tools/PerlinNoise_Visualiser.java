@@ -27,7 +27,7 @@ public class PerlinNoise_Visualiser extends Visualiser {
 
                 for (int x=0; x<width-xPadding; x++) {
                     float noise = perlin.noise(x*step);
-                    g2.setColor(colorOf(noise));
+                    g2.setColor(colorOf(noise, -1, 1));
                     int vPos = (int) (midHeight + noise*(vRange/2));
                     int hPos = xPadding+x;
                     g2.drawRect(hPos, vPos, 1, 1);
@@ -56,7 +56,7 @@ public class PerlinNoise_Visualiser extends Visualiser {
                 for (int y=0; y<height; y++) {
                     for (int x=0; x<width; x++) {
                         float noise = pxs.get(x, y);
-                        g2.setColor(colorOf(noise));
+                        g2.setColor(colorOf(noise, -1, 1));
                         g2.drawRect(x, y, 1, 1);
                     }
                 }

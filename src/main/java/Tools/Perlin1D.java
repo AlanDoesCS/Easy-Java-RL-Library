@@ -44,4 +44,8 @@ public class Perlin1D extends PerlinNoise {
         }
         return noise;
     }
+
+    public float noise(float x, float target_min, float target_max) {
+        return math.scale(noise(x), -1, 1, target_min, target_max);
+    }
 }
