@@ -12,6 +12,11 @@ public class Vector2D {
         this.j = j;
     }
 
+    public Vector2D(Vector2D agentPosition) {
+        this.i = agentPosition.i;
+        this.j = agentPosition.j;
+    }
+
     public static float dot(Vector2D a, Vector2D b) {
         return a.i*b.i + a.j*b.j;
     }

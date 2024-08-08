@@ -74,8 +74,8 @@ public class Perlin2D extends PerlinNoise {
         //return Math.round(noise*5)/5f; // For "stepped" results
     }
 
-    public float noise(float x, float y, float target_min, float target_max) {
-        return math.scale(noise(x, y), -1, 1, target_min, target_max);
+    public float noise(float x, float y, float range_min, float range_max) {
+        return math.scale(noise(x, y), -1, 1, range_min, range_max);
     }
 
     public Matrix toMatrix(int xPixels, int yPixels, float step) {

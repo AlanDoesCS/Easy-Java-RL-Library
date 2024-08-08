@@ -14,12 +14,12 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-        int octaves = 8;
-        float persistence = 0.4f;
+        int octaves = 10;
+        float persistence = 0.8f;
 
-        Environment.setDimensions(10, 10);
+        Environment.setDimensions(20, 20);
         Environment.setStateSpace(Environment.getGridSquares()+4);
-        Environment.setActionSpace(4);
+        Environment.setActionSpace(5);
 
         Trainer trainer;
         try {
@@ -40,35 +40,12 @@ public class Main {
 
         DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f, relu, 0);
 
-        // trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease");
-
-        GraphPlotter plotter = new GraphPlotter("Test Plot (y = log x)", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "axis_ticks");
-        plotter.setVisible(true);
-
-        Perlin1D p = new Perlin1D(octaves, persistence);
-
-        GraphPlotter plotter1 = new GraphPlotter("Perlin Noise 1D", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis");
-        plotter1.setVisible(true);
-
-        for (float i = 0; i < 10; i+=0.01f) {
-            plotter.addPoint(new Vector2D(i, (float) Math.log(i+0.1f)));
-            plotter1.addPoint(new Vector2D(i, p.noise(i)));
-        }
-        plotter.plot();
-        plotter1.plot();
-
-        GraphPlotter plotter2 = new GraphPlotter("Test Plot 2 (y = tan(sin(cos(x^2)))^5)", GraphPlotter.Types.LINE, "X-Axis", "Y-Axis", "axis_ticks");
-        plotter2.setVisible(true);
-        plotter2.plot(Main::func, 0f, 10f, 0.01f);
-    }
-
-    public static Float func(Float x) {
-        return (float) Math.pow(Math.tan(Math.sin(Math.cos(x * x))), 5);
+        trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease", "axis_ticks", "verbose");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
         ArrayList<Vector2D> shortestPath = Pathfinder.dijkstra(start, end, environment);
         Environment_Visualiser vis = new Environment_Visualiser(environment);
-        vis.addPath(shortestPath, new Color(0, 128, 128));
+        vis.addPath(shortestPath, Color.RED);//new Color(0, 128, 128));
     }
 }

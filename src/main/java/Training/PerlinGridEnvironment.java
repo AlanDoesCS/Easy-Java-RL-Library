@@ -32,7 +32,7 @@ public class PerlinGridEnvironment extends GridEnvironment {
 
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {
-                float noiseValue = perlin.noise(x*step, y*step);
+                float noiseValue = perlin.noise(x*step, y*step, 0, 1);
                 set(x, y, noiseValue);
                 destination.set(x, y, noiseValue);
             }

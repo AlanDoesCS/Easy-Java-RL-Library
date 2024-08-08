@@ -167,9 +167,9 @@ public class Matrix implements Serializable {
         return res;
     }
 
-    public static Matrix multiply(Matrix multiply, float learningRate) {
-        Matrix res = multiply.copy();
-        res.multiply(learningRate);
+    public static Matrix multiply(Matrix matrix, float value) {
+        Matrix res = matrix.copy();
+        res.multiply(value);
         return res;
     }
 

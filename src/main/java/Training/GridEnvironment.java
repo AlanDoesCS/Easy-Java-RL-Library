@@ -7,12 +7,15 @@ import Tools.math;
 public abstract class GridEnvironment extends Environment {
     public int width, height;
     private Matrix gridMatrix, stateMatrix;
-    private Vector2D agentPosition, goalPosition;
+    private Vector2D startPosition;
+    private Vector2D agentPosition;
+    private Vector2D goalPosition;
 
     public GridEnvironment(int width, int height) {
         this.width = width;
         this.height = height;
         this.agentPosition = getRandomCoordinateInBounds();
+        this.startPosition = new Vector2D(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
         this.gridMatrix = new Matrix(height, width);
         this.stateMatrix = new Matrix(getNumSquares()+4, 1);
@@ -23,12 +26,7 @@ public abstract class GridEnvironment extends Environment {
     }
     public int getWidth() { return width; }
     public int getHeight() { return height; }
-    public Vector2D getAgentPosition() {
-        return agentPosition;
-    }
-    public Vector2D getGoalPosition() {
-        return goalPosition;
-    }
+
     public Matrix getGridMatrix() {
         return gridMatrix;
     }
@@ -42,6 +40,7 @@ public abstract class GridEnvironment extends Environment {
     public void randomize() {
         refill();
         this.agentPosition = getRandomCoordinateInBounds();
+        this.startPosition = new Vector2D(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
     }
 
@@ -85,11 +84,27 @@ public abstract class GridEnvironment extends Environment {
     public void setGoalPosition(int x, int y) {
         this.goalPosition.set(x, y);
     }
+    public void setStartPosition(int x, int y) {
+        this.startPosition.set(x, y);
+    }
     public void setAgentPosition(Vector2D position) {
         this.agentPosition = position;
     }
     public void setGoalPosition(Vector2D position) {
         this.goalPosition = position;
+    }
+    public void setStartPosition(Vector2D position) {
+        this.startPosition = position;
+    }
+
+    public Vector2D getAgentPosition() {
+        return agentPosition;
+    }
+    public Vector2D getGoalPosition() {
+        return goalPosition;
+    }
+    public Vector2D getStartPosition() {
+        return startPosition;
     }
 
     public boolean isInBounds(int x, int y) {
@@ -106,6 +121,7 @@ public abstract class GridEnvironment extends Environment {
             case 1: newPosition.addI(1); break;  // Move right
             case 2: newPosition.addJ(1); break;  // Move down
             case 3: newPosition.addI(-1); break; // Move left
+            case 4: break; // Do nothing
         }
     }
 

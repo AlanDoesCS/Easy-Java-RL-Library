@@ -6,8 +6,8 @@ import Tools.math;
 import java.util.Stack;
 
 public class MazeGridEnvironment extends GridEnvironment {  // Maze generated using a modified recursive backtracking approach that uses a stack instead
-    private static final float WALL = 1f;
-    private static final float PATH = -1f;
+    private static final float WALL = 1;
+    private static final float PATH = 0.1f;
 
     public MazeGridEnvironment(int width, int height) {
         super(width, height);
@@ -20,7 +20,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
     void fill() {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                set(x, y, WALL); // 1 represents a wall
+                set(x, y, WALL);
             }
         }
 
@@ -74,7 +74,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         return get(x, y) == PATH;
     }
 
-    private Vector2D findValidPositionInBounds() {  // to be used for finding
+    public Vector2D findValidPositionInBounds() {  // to be used for finding
         Vector2D position;
         do {
             position = getRandomCoordinateInBounds();

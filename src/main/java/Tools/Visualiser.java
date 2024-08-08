@@ -29,9 +29,9 @@ public abstract class Visualiser extends JFrame {
     }
 
     static Color fadeColor(Color startColor, float progress, Color finishColor) {
-        int segment_r = (int) math.lerp(progress, startColor.getRed(), finishColor.getRed());
-        int segment_g = (int) math.lerp(progress, startColor.getGreen(), finishColor.getGreen());
-        int segment_b = (int) math.lerp(progress, startColor.getBlue(), finishColor.getBlue());
+        int segment_r = (int) math.clamp(math.lerp(progress, startColor.getRed(), finishColor.getRed()), 0, 255);
+        int segment_g = (int) math.clamp(math.lerp(progress, startColor.getGreen(), finishColor.getGreen()), 0, 255);
+        int segment_b = (int) math.clamp(math.lerp(progress, startColor.getBlue(), finishColor.getBlue()), 0, 255);
 
         return new Color(segment_r, segment_g, segment_b);
     }
