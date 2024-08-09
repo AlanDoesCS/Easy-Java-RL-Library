@@ -12,34 +12,31 @@ import java.util.List;
 public class DQN extends NN {
     private final int inputSize, outputSize;
 
-    public DQN(int inputSize, List<Layer> hiddenLayers, int outputSize, float learningRate, ActivationFunction outputActivation, float outputBias) {
-        this.hiddenLayers  = hiddenLayers;
-        this.outputLayer = new Layer(hiddenLayers.getLast().getOutputSize(), outputSize, outputActivation, outputBias);
+    public DQN(int inputSize, List<Layer> layers, float learningRate) {
+        this.layers = layers;
         this.learningRate = learningRate;
         this.inputSize = inputSize;
-        this.outputSize = outputSize;
+        this.outputSize = layers.getLast().getOutputSize();
     }
 
+    @Override
     public Matrix getOutput(Matrix input) {
-        List<Matrix> layerInputs = forwardPass(input);
-        return outputLayer.compute(layerInputs.getLast());
+        List<Matrix> layerOutputs = forwardPass(input);
+        return layerOutputs.getLast();
     }
 
-    public void addLayer(int size, ActivationFunction phi, float bias) {
-        hiddenLayers.add(new Layer(hiddenLayers.getLast().getOutputSize(), size, phi, bias));
+    public void addLayer(Layer layer) {
+        layers.add(layer);
     }
 
     @Override
     public void saveNN(String filename) {
         try (ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(filename))) {
-            outStream.writeInt(hiddenLayers.size());
-            for (Layer layer : hiddenLayers) {
-                outStream.writeObject(layer.weights);
-                outStream.writeObject(layer.biases);
-            }
+            outStream.writeInt(layers.size());
 
-            outStream.writeObject(outputLayer.weights);
-            outStream.writeObject(outputLayer.biases);
+            for (Layer layer : layers) {
+                outStream.writeObject(layer);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -48,28 +45,18 @@ public class DQN extends NN {
     @Override
     public void loadNN(String filename) {
         try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(filename))) {
-            int hiddenLayerCount = inputStream.readInt();
-            for (int i = 0; i < hiddenLayerCount; i++) {
-                hiddenLayers.get(i).weights = (Matrix) inputStream.readObject();
-                hiddenLayers.get(i).biases = (Matrix) inputStream.readObject();
-            }
+            int layerCount = inputStream.readInt();
 
-            outputLayer.weights = (Matrix) inputStream.readObject();
-            outputLayer.biases = (Matrix) inputStream.readObject();
+            for (int i = 0; i < layerCount; i++) {
+                layers.set(i, (Layer) inputStream.readObject());
+            }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    /*
-    -----------------------------------------------------------------------------
-
-    ACCESSORS AND MUTATORS
-
-    -----------------------------------------------------------------------------
-    */
-    public int layers() {
-        return hiddenLayers.size()+2; //input + hidden + output
+    public int numLayers() {
+        return layers.size();
     }
 
     public int getInputSize() {
@@ -80,11 +67,11 @@ public class DQN extends NN {
         return outputSize;
     }
 
-    public Layer getHiddenLayer(int i) {
-        return hiddenLayers.get(i);
+    public Layer getLayer(int i) {
+        return layers.get(i);
     }
 
     public Layer getOutputLayer() {
-        return outputLayer;
+        return layers.getLast();
     }
 }

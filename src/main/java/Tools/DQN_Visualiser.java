@@ -18,7 +18,7 @@ public class DQN_Visualiser extends JFrame {
         setSize(width, height);
 
         // Node visualisation
-        int numLayers = network.layers();
+        int numLayers = network.numLayers();
         float hSpacing = (float) width /(numLayers+1);
 
         ArrayList<Node[]> layers = new ArrayList<>(numLayers);
@@ -26,7 +26,7 @@ public class DQN_Visualiser extends JFrame {
         layers.add(Node.ArrayOfInput(network.getInputSize(), height, hSpacing)); // input
 
         for (int layerIndex=1; layerIndex<numLayers-1; layerIndex++) { // hidden
-            Layer layer = network.getHiddenLayer(layerIndex-1);
+            Layer layer = network.getLayer(layerIndex-1);
             layers.add(Node.ArrayOf(layer, height, hSpacing, layerIndex));
         }
 

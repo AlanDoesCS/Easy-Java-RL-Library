@@ -6,8 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class NN {
-    List<Layer> hiddenLayers;
-    Layer outputLayer;
+    List<Layer> layers;
     float learningRate; // alpha
 
     public abstract Matrix getOutput(Matrix input);
@@ -24,55 +23,31 @@ public abstract class NN {
         return res;
     }
 
-    List<Matrix> forwardPass(Matrix input) {    // input is the same as environment state
-        List<Matrix> layerInputs = new ArrayList<>();
-        layerInputs.add(input); // environment state
+    protected List<Matrix> forwardPass(Matrix input) {
+        List<Matrix> layerOutputs = new ArrayList<>();
+        layerOutputs.add(input);
 
         Matrix currentInput = input;
-        for (Layer layer : hiddenLayers) {
+        for (Layer layer : layers) {
             currentInput = layer.compute(currentInput);
-            layerInputs.add(currentInput);
+            layerOutputs.add(currentInput);
         }
 
-        return layerInputs;
+        return layerOutputs;
     }
 
-    public void backpropagate(Matrix input, Matrix target, Matrix output) {
-        List<Matrix> layerInputs = forwardPass(input);
+    public void backpropagate(Matrix input, Matrix target, List<Matrix> layerOutputs) {
+        Matrix output = layerOutputs.getLast();
 
-        Matrix outErr = Matrix.subtract(target, output);
+        Matrix error = Matrix.subtract(target, output);
+        Matrix gradientOutput = error; // MSE Loss
 
-        // calculate gradient at output layer
-        Matrix outGrad = Matrix.elementWiseMultiply(outErr, applyDerivative(output, outputLayer.phi));
+        for (int i = layers.size() - 1; i >= 0; i--) {
+            Layer currentLayer = layers.get(i);
+            Matrix layerInput = layerOutputs.get(i);
 
-        // calculate delta for output layer weights
-        Matrix outDelta = Matrix.multiply(outGrad, layerInputs.getLast().transpose());
-
-        // update outputLayer first
-        outputLayer.weights.add(Matrix.multiply(outDelta, learningRate));
-        outputLayer.biases.add(Matrix.multiply(outGrad, learningRate));
-
-        // go back through hidden layers and update
-        Matrix currErr = outErr;
-        Matrix currGrad = outGrad;
-
-        for (int i = hiddenLayers.size() - 1; i >= 0; i--) {
-            Layer currentLayer = hiddenLayers.get(i);
-            Layer nextLayer = (i == hiddenLayers.size() - 1) ? outputLayer : hiddenLayers.get(i + 1);
-
-            // calculate error for the current layer
-            currErr = Matrix.multiply(nextLayer.weights.transpose(), currGrad);
-
-            // calculate gradient for current layer
-            Matrix layerOutput = currentLayer.compute(layerInputs.get(i));
-            currGrad = Matrix.elementWiseMultiply(currErr, applyDerivative(layerOutput, currentLayer.phi));
-
-            // calculate delta for the current layer weights
-            Matrix currentDelta = Matrix.multiply(currGrad, layerInputs.get(i).transpose());
-
-            // update current layer weights and biases
-            currentLayer.weights.add(Matrix.multiply(currentDelta, learningRate));
-            currentLayer.biases.add(Matrix.multiply(currGrad, learningRate));
+            gradientOutput = currentLayer.backpropagate(layerInput, gradientOutput);
+            currentLayer.updateParameters(learningRate);
         }
     }
 }

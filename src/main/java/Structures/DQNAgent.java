@@ -12,13 +12,13 @@ public class DQNAgent {
     private final int stateSpace;     // number of variables used to describe environment state
     private final int actionSpace;    // number of actions the agent can take in the environment
 
-    public DQNAgent(int actionSpace, List<Layer> hiddenLayers, float epsilon, float gamma, float learningRate, ActivationFunction outputActivation, float outputBias) {
+    public DQNAgent(int actionSpace, List<Layer> layers, float epsilon, float gamma, float learningRate) {
         this.epsilon = epsilon;
         this.gamma = gamma;
-        this.stateSpace = hiddenLayers.getFirst().getInputSize();
+        this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
 
-        this.dqn = new DQN(stateSpace, hiddenLayers, actionSpace, learningRate, outputActivation, outputBias);
+        this.dqn = new DQN(stateSpace, layers, learningRate);
     }
 
     public int chooseAction(Matrix state) {
@@ -39,7 +39,9 @@ public class DQNAgent {
     }
 
     public void train(Matrix state, int action, float reward, Matrix nextState, boolean done) {
-        Matrix currentQValues = dqn.getOutput(state);   // get predicted q values
+        List<Matrix> layerOutputs = dqn.forwardPass(state);
+        Matrix currentQValues = layerOutputs.getLast(); // get predicted q values
+
         Matrix target = currentQValues.copy();
         Matrix nextQValues = dqn.getOutput(nextState);
 
@@ -55,7 +57,7 @@ public class DQNAgent {
         target.set(0, action, targetValue);
 
         // update network
-        dqn.backpropagate(state, target, currentQValues);
+        dqn.backpropagate(state, target, layerOutputs);
     }
 
     public void saveAgent(String filename) {

@@ -30,6 +30,13 @@ public abstract class Environment {
         return gridWidth*gridHeight;
     }
 
+    public static int getGridWidth() {
+        return gridWidth;
+    }
+    public static int getGridHeight() {
+        return gridHeight;
+    }
+
     /*
         Randomize:
         Randomize the environment

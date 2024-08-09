@@ -32,15 +32,20 @@ public class Main {
         ActivationFunction sig = new Sigmoid();
         ActivationFunction relu = new ReLU();
 
-        List<Layer> layers = Layer.createHiddenLayers(
-                List.of(100, 200, 300),
+        List<Layer> layers = new ArrayList<>();
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 1, 3, 1, 1, 1, 1, 1));
+
+        List<MLPLayer> MLPLayers = MLPLayer.createMLPLayers(
+                Environment.getStateSpace(),    // input size
+                List.of(300, 300, 300),
                 List.of(sig, sig, sig),
                 List.of(0, 0, 0)
         );
+        layers.addAll(MLPLayers);
 
-        DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f, relu, 0);
+        DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f);
 
-        trainer.trainAgent(dqnAgent, 6000, 1, "plot", "ease", "axis_ticks", "verbose");
+        trainer.trainAgent(dqnAgent, 6000, 1000, 10, "plot", "ease", "axis_ticks");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
