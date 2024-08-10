@@ -62,8 +62,10 @@ public class ConvLayer extends Layer {
         Arrays.fill(biases, 0);
     }
 
-    @Override
     public Matrix compute(Matrix input) {
+        if (input.getWidth() != 1) {
+            throw new IllegalArgumentException("Input must be a column matrix");
+        }
         AtomicReference<float[]> outputRef = new AtomicReference<>(new float[outputSize]);
         POOL.invoke(new ComputeTask(input, outputRef, 0, numFilters));
         return new Matrix(outputRef.get(), outputHeight * outputWidth, numFilters);
@@ -106,7 +108,8 @@ public class ConvLayer extends Layer {
                                     int inputI = i * strideY - paddingY + k;
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
-                                        sum += input.get(d * inputWidth * inputHeight + inputI * inputWidth + inputJ, 0) * filters[f][d][k][l];
+                                        int inputIndex = (d * inputHeight * inputWidth) + (inputI * inputWidth) + inputJ;
+                                        sum += input.get(0, inputIndex) * filters[f][d][k][l];
                                     }
                                 }
                             }

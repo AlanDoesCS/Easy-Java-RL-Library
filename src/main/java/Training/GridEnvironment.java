@@ -18,7 +18,7 @@ public abstract class GridEnvironment extends Environment {
         this.startPosition = new Vector2D(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
         this.gridMatrix = new Matrix(height, width);
-        this.stateMatrix = new Matrix(getNumSquares()+4, 1);
+        this.stateMatrix = new Matrix(getNumSquares()+width+height, 1); // width+height for one hot encoding of agent position
     }
 
     public int getNumSquares() {
@@ -57,16 +57,27 @@ public abstract class GridEnvironment extends Environment {
         int i=0;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                stateMatrix.set(0, i++, get(x*y));
+                stateMatrix.set(0, i++, get(x, y));
             }
         }
-        stateMatrix.set(0, i++, agentPosition.getI());
-        stateMatrix.set(0, i++, agentPosition.getJ());
+        // position X
+        int startOffset = width*height;
+        encodeOneHot(stateMatrix, startOffset, width, (int) getAgentPosition().getX());
 
-        // End Position:
-        stateMatrix.set(0, i++, goalPosition.getI());
-        stateMatrix.set(0, i, goalPosition.getJ());
+        startOffset += width;
+
+        // position Y
+        encodeOneHot(stateMatrix, startOffset, height, (int) getAgentPosition().getY());
         return stateMatrix;
+    }
+
+    private void encodeOneHot(Matrix columnMatrixTarget, int startOffset, int length, int... trueBitIndices) {
+        for (int i = startOffset; i < startOffset+length; i++) {
+            columnMatrixTarget.set(0, i, 0);
+        }
+        for (int trueBitIndex : trueBitIndices) {
+            columnMatrixTarget.set(0, startOffset+trueBitIndex, 1);
+        }
     }
 
     public void set(int x, int y, float value) {

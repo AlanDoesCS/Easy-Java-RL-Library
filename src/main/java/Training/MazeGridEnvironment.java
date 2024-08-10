@@ -38,8 +38,8 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
 
         while (!stack.isEmpty()) {  // visit all accessible cells
             Vector2D current = stack.peek();
-            int x = (int) current.getI();
-            int y = (int) current.getJ();
+            int x = (int) current.getX();
+            int y = (int) current.getY();
 
             int[][] directions = {{0, 2}, {2, 0}, {0, -2}, {-2, 0}};
 
@@ -78,8 +78,8 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         Vector2D position;
         do {
             position = getRandomCoordinateInBounds();
-            position.set((int) position.getI(), (int) position.getJ());
-        } while (!IsValidPositionInBounds((int) position.getI(), (int) position.getJ()));
+            position.set((int) position.getX(), (int) position.getY());
+        } while (!IsValidPositionInBounds((int) position.getX(), (int) position.getY()));
 
         return position;
     }
@@ -99,7 +99,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
 
         PerlinGridEnvironment.getNewPosFromAction(action, newPosition);
 
-        if (IsValidPositionInBounds((int) newPosition.getI(), (int) newPosition.getJ())) {
+        if (IsValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY())) {
             setAgentPosition(newPosition);
         } else {
             newPosition = currentPosition;

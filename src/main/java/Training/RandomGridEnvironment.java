@@ -27,7 +27,7 @@ public class RandomGridEnvironment extends GridEnvironment {
         Vector2D newPosition = currentPosition.copy();
         getNewPosFromAction(action, newPosition);
 
-        if (isInBounds((int)newPosition.getI(), (int)newPosition.getJ())) {
+        if (isInBounds((int)newPosition.getX(), (int)newPosition.getY())) {
             setAgentPosition(newPosition);
         } else {
             newPosition = currentPosition;
@@ -35,7 +35,7 @@ public class RandomGridEnvironment extends GridEnvironment {
 
         boolean done = newPosition.equals(getGoalPosition());
 
-        float reward = done ? getCompletionReward() : get((int)newPosition.getI(), (int)newPosition.getJ());
+        float reward = done ? getCompletionReward() : get((int)newPosition.getX(), (int)newPosition.getY());
 
         return new MoveResult(getState(), reward, done);
     }

@@ -63,7 +63,7 @@ public class Environment_Visualiser extends Visualiser {
                         g2.setColor(segmentColor);
 
                         g2.fillRect(
-                                (int) (c.getI()*squareWIDTH), (int) (c.getJ()*squareHEIGHT), squareWIDTH, squareHEIGHT
+                                (int) (c.getX()*squareWIDTH), (int) (c.getY()*squareHEIGHT), squareWIDTH, squareHEIGHT
                         );
                     }
 
@@ -71,14 +71,14 @@ public class Environment_Visualiser extends Visualiser {
                     Vector2D start = path.getFirst();
                     g2.setColor(Color.GREEN);
                     g2.fillRect(
-                            (int) (start.getI()*squareWIDTH), (int) (start.getJ()*squareHEIGHT), squareWIDTH, squareHEIGHT
+                            (int) (start.getX()*squareWIDTH), (int) (start.getY()*squareHEIGHT), squareWIDTH, squareHEIGHT
                     );
 
                     // Draw the finish square as red
                     Vector2D finish = path.getLast();
                     g2.setColor(Color.RED);
                     g2.fillRect(
-                            (int) (finish.getI()*squareWIDTH), (int) (finish.getJ()*squareHEIGHT), squareWIDTH, squareHEIGHT
+                            (int) (finish.getX()*squareWIDTH), (int) (finish.getY()*squareHEIGHT), squareWIDTH, squareHEIGHT
                     );
                 }
             }

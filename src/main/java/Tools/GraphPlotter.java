@@ -16,7 +16,7 @@ public class GraphPlotter extends JFrame {
     }
 
     // INSTANCE VARS
-    private PriorityQueue<Vector2D> points = new PriorityQueue<>(Comparator.comparing(Vector2D::getI));
+    private PriorityQueue<Vector2D> points = new PriorityQueue<>(Comparator.comparing(Vector2D::getX));
     private Types graphType;
     private String XAxisLabel, YAxisLabel;
     List<String> args;
@@ -96,8 +96,8 @@ public class GraphPlotter extends JFrame {
             Vector2D prevPoint = temp.peek();
             while (!temp.isEmpty()) {
                 Vector2D point = temp.poll();
-                int x = padding + (int) ((point.getI() - minX) / (maxX - minX) * width);
-                int y = getHeight() - padding - (int) ((point.getJ() - minY) / (maxY - minY) * height);
+                int x = padding + (int) ((point.getX() - minX) / (maxX - minX) * width);
+                int y = getHeight() - padding - (int) ((point.getY() - minY) / (maxY - minY) * height);
 
                 switch (graphType) {
                     case SCATTER:
@@ -155,8 +155,8 @@ public class GraphPlotter extends JFrame {
         }
 
         private void drawPlotPoint(Graphics2D g2, Vector2D prevPoint, int x, int y, int width, int height, int padding, boolean useEase) {
-            int prevX = padding + (int) ((prevPoint.getI() - minX) / (maxX - minX) * width);
-            int prevY = getHeight() - padding - (int) ((prevPoint.getJ() - minY) / (maxY - minY) * height);
+            int prevX = padding + (int) ((prevPoint.getX() - minX) / (maxX - minX) * width);
+            int prevY = getHeight() - padding - (int) ((prevPoint.getY() - minY) / (maxY - minY) * height);
 
             if (useEase) {
                 drawEased(g2, prevX, prevY, x, y);
@@ -180,8 +180,8 @@ public class GraphPlotter extends JFrame {
         points.add(point);
 
         // update graph bounds:
-        final float x = point.getI();
-        final float y = point.getJ();
+        final float x = point.getX();
+        final float y = point.getY();
 
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;

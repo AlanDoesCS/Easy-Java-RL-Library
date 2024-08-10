@@ -18,10 +18,10 @@ public class Pathfinder {
         NodeGrid nodeGrid = new NodeGrid(environment.width, environment.height, environment);
         PriorityQueue<GraphNode> Q = new PriorityQueue<>(environment.getNumSquares(), nodeComparator);
 
-        int x0 = (int) start.getI();
-        int y0 = (int) start.getJ();
-        int x1 = (int) end.getI();
-        int y1 = (int) end.getJ();
+        int x0 = (int) start.getX();
+        int y0 = (int) start.getY();
+        int x1 = (int) end.getX();
+        int y1 = (int) end.getY();
 
         GraphNode startNode = nodeGrid.getNode(x0, y0);
         startNode.dist = 0;

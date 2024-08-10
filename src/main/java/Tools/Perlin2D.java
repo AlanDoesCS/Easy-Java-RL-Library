@@ -38,8 +38,8 @@ public class Perlin2D extends PerlinNoise {
         for (int i=0; i<octaves; i++) {
             float frequency = frequencies[i];
             float amplitude = amplitudes[i];
-            float xPos = (x+randomOffset.getI()) * frequency;
-            float yPos = (y+randomOffset.getJ()) * frequency;
+            float xPos = (x+randomOffset.getX()) * frequency;
+            float yPos = (y+randomOffset.getY()) * frequency;
 
             Vector2D position = new Vector2D(xPos, yPos);
 

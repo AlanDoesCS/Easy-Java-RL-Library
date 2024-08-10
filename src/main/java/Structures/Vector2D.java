@@ -5,24 +5,24 @@ import Tools.math;
 import java.util.Random;
 
 public class Vector2D {
-    float i, j;
+    float x, y;
 
-    public Vector2D(float i, float j) {
-        this.i = i;
-        this.j = j;
+    public Vector2D(float x, float y) {
+        this.x = x;
+        this.y = y;
     }
 
     public Vector2D(Vector2D agentPosition) {
-        this.i = agentPosition.i;
-        this.j = agentPosition.j;
+        this.x = agentPosition.x;
+        this.y = agentPosition.y;
     }
 
     public static float dot(Vector2D a, Vector2D b) {
-        return a.i*b.i + a.j*b.j;
+        return a.x *b.x + a.y *b.y;
     }
 
     public static Vector2D subtract(Vector2D A, Vector2D B) {
-        return new Vector2D(A.i-B.i, A.j-B.j);
+        return new Vector2D(A.x -B.x, A.y -B.y);
     }
 
     public static Vector2D randomUnitVect(Random random) {
@@ -32,56 +32,56 @@ public class Vector2D {
     }
 
     public void normalise() {
-        float magnitude = math.fastSqrt(i*i+j*j);
-        i /= magnitude;
-        j /= magnitude;
+        float magnitude = math.fastSqrt(x * x + y * y);
+        x /= magnitude;
+        y /= magnitude;
     }
 
-    public float getI() {
-        return i;
+    public float getX() {
+        return x;
     }
-    public float getJ() {
-        return j;
+    public float getY() {
+        return y;
     }
 
     public String toString() {
-        return "Vector(" + "i=" + i + ", j=" + j + ')';
+        return "Vector(" + "x=" + x + ", y=" + y + ')';
     }
 
     public void add(float I, float J) {
-        i += I;
-        j += J;
+        x += I;
+        y += J;
     }
 
-    public void multiplyI(float multiplier) {
-        this.i *= multiplier;
+    public void multiplyX(float multiplier) {
+        this.x *= multiplier;
     }
-    public void multiplyJ(float multiplier) {
-        this.j *= multiplier;
-    }
-
-    public void set(int i, int j) {
-        this.i = i;
-        this.j = j;
+    public void multiplyY(float multiplier) {
+        this.y *= multiplier;
     }
 
-    public void set(float i, float j) {
-        this.i = i;
-        this.j = j;
+    public void set(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public void set(float x, float y) {
+        this.x = x;
+        this.y = y;
     }
 
     public void addI(float amount) {
-        this.i += amount;
+        this.x += amount;
     }
     public void addJ(float amount) {
-        this.j += amount;
+        this.y += amount;
     }
 
     public Vector2D copy() {
-        return new Vector2D(i, j);
+        return new Vector2D(x, y);
     }
 
     public boolean equals(Vector2D other) {
-        return (i == other.i) && (j == other.j);
+        return (x == other.x) && (y == other.y);
     }
 }

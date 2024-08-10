@@ -280,6 +280,10 @@ public class Matrix implements Serializable {
         return rows;
     }
 
+    public int getWidth() {
+        return cols;
+    }
+
     private static class MultiplyTask extends RecursiveAction {
         private final Matrix A, BT;
         private final AtomicReference<float[][]> C;
