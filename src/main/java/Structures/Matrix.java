@@ -27,6 +27,20 @@ public class Matrix implements Serializable {
         this.cols = data[0].length;
     }
 
+    public Matrix(float[] data, int rows, int cols) {
+        if (data.length != rows * cols) {
+            throw new IllegalArgumentException("Data length does not match the specified dimensions");
+        }
+        this.rows = rows;
+        this.cols = cols;
+        this.data = new float[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                this.data[i][j] = data[i * cols + j];
+            }
+        }
+    }
+
     public void fill(float value) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -49,6 +63,10 @@ public class Matrix implements Serializable {
                 data[i][j] += n;
             }
         }
+    }
+
+    public void add(int row, int column, float value) {
+        data[row][column] += value;
     }
 
     public void add(Matrix m) {
