@@ -36,7 +36,7 @@ public class Main {
         layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 1, 3, 1, 1, 1, 1, 1));
 
         List<MLPLayer> MLPLayers = MLPLayer.createMLPLayers(
-                Environment.getStateSpace(),    // input size
+                layers.getFirst().getOutputSize(),  // input size
                 List.of(300, 300, 300),
                 List.of(sig, sig, sig),
                 List.of(0, 0, 0)

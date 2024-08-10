@@ -171,7 +171,7 @@ public class ConvLayer extends Layer {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
                         int outputIndex = f * outputWidth * outputHeight + i * outputWidth + j;
-                        float gradientValue = gradientOutput.get(outputIndex, 0);
+                        float gradientValue = gradientOutput.get(0, outputIndex);
 
                         gradientBiases[f] += gradientValue;
 
@@ -182,7 +182,7 @@ public class ConvLayer extends Layer {
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
                                         int inputIndex = d * inputWidth * inputHeight + inputI * inputWidth + inputJ;
-                                        float inputValue = input.get(inputIndex, 0);
+                                        float inputValue = input.get(0, inputIndex);
                                         gradientFilters[f][d][k][l] += gradientValue * inputValue;
                                         gradientInput.add(inputIndex, 0, gradientValue * filters[f][d][k][l]);
                                     }
