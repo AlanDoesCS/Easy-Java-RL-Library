@@ -1,6 +1,7 @@
 package Training;
 
 import Structures.Matrix;
+import Structures.Tensor;
 import com.sun.jdi.InvalidTypeException;
 import jdk.jshell.spi.ExecutionControl;
 
@@ -44,7 +45,7 @@ public abstract class Environment {
         - MUST ALSO RANDOMIZE START AND TARGET POSITIONS
     */
     public abstract void randomize();
-    public abstract Matrix getState();
+    public abstract Tensor getState();
 
     // Environment instantiation table
     // Todo: should probably make a bit more expandable
@@ -79,6 +80,8 @@ public abstract class Environment {
     public static void setDimensions(int width, int height) {
         gridWidth = width;
         gridHeight = height;
+
+        setStateSpace(width*height + width + height); // 2D grid plus one hot coordinate encoding
     }
 
     public static void setOctaves(int octaves) {
@@ -100,11 +103,11 @@ public abstract class Environment {
     }
 
     public static class MoveResult {
-        public Matrix state;
+        public Tensor state;
         public float reward;
         public boolean done;
 
-        public MoveResult(Matrix state, float reward, boolean done) {
+        public MoveResult(Tensor state, float reward, boolean done) {
             this.state = state;
             this.reward = reward;
             this.done = done;

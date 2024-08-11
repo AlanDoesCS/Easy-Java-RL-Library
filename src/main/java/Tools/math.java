@@ -35,9 +35,24 @@ public class math {
     public static float randomFloat(float min, float max, Random random) {
         return random.nextFloat() * (max - min) + min;
     }
+    /**
+     * Generates a random float within the specified range [min, max].
+     *
+     * @param min the minimum value of the range (inclusive)
+     * @param max the maximum value of the range (inclusive)
+     * @return a random float between min (inclusive) and max (inclusive)
+     */
     public static float randomFloat(float min, float max) {
         return random.nextFloat() * (max - min) + min;
     }
+
+    /**
+     * Generates a random integer within the specified range [min, max].
+     *
+     * @param min the minimum value of the range (inclusive)
+     * @param max the maximum value of the range (inclusive)
+     * @return a random integer between min (inclusive) and max (inclusive)
+     */
     public static int randomInt(int min, int max) {
         return random.nextInt((max - min) + 1) + min;
     }

@@ -2,6 +2,7 @@ package Training;
 
 import Structures.DQNAgent;
 import Structures.Matrix;
+import Structures.Tensor;
 import Structures.Vector2D;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
@@ -10,7 +11,6 @@ import Tools.math;
 import com.sun.jdi.InvalidTypeException;
 
 import javax.swing.*;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +23,15 @@ public class Trainer {
         this.environmentClasses = environments;
     }
 
+    /**
+     * Trains a DQN agent over a specified number of episodes.
+     *
+     * @param agent the DQN agent to train
+     * @param numEpisodes the number of episodes to train the agent
+     * @param savePeriod the period over which the agent should be saved
+     * @param visualiserUpdatePeriod the period over which to update the visualisations (if any)
+     * @param varargs additional arguments for training options
+     */
     public void trainAgent(DQNAgent agent, int numEpisodes, int savePeriod, int visualiserUpdatePeriod, String... varargs) {
         List<String> args = Arrays.asList(varargs);
         boolean verbose = args.contains("verbose");
@@ -57,32 +66,37 @@ public class Trainer {
 
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
+        ExperienceReplay replay = new ExperienceReplay(10000);
+        int batchSize = 32;
+
         for (int episode = 1; episode <= numEpisodes; episode++) {
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
 
-            if (verbose) {
-                System.out.println("Episode " + episode + ", environment: " + environment.getType());
-                System.out.println("Start: " + environment.getStartPosition() + ", End: " + environment.getGoalPosition());
-            }
-
-            Matrix state = environment.getState();
-            boolean done;
+            Tensor state = environment.getState();
+            boolean done = false;
             float totalReward = 0;
             ArrayList<Vector2D> dqnPath = new ArrayList<>();
 
-            do {
+            while (!done) {
                 int action = agent.chooseAction(state);
                 dqnPath.add(environment.getAgentPosition());
                 Environment.MoveResult result = environment.step(action);
-                agent.train(state, action, result.reward, result.state, result.done);
+
+                // Add experience to replay buffer
+                replay.add(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
+
                 state = result.state;
                 done = result.done;
                 totalReward += result.reward;
-            } while (!done && dqnPath.size() < environment.getNumSquares());
 
-            if (!done) {    // penalise not finishing
-                totalReward -= 1000;
+                // Train on a batch of experiences
+                if (replay.size() > batchSize) {
+                    List<ExperienceReplay.Experience> batch = replay.sample(batchSize);
+                    for (ExperienceReplay.Experience exp : batch) {
+                        agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
+                    }
+                }
             }
 
             if (plot) plotter.addPoint(new Vector2D(episode, totalReward));

@@ -21,11 +21,11 @@ public class DQNAgent {
         this.dqn = new DQN(stateSpace, layers, learningRate);
     }
 
-    public int chooseAction(Matrix state) {
+    public int chooseAction(Tensor state) {
         if (math.random() < epsilon) {
             return (int) (Math.random() * actionSpace);
         } else {
-            Matrix qValues = dqn.getOutput(state);
+            Matrix qValues = (Matrix) dqn.getOutput(state);
             int actionIndex = 0;
             float max = qValues.get(0, 0);
             for (int i = 1; i < actionSpace; i++) {
@@ -38,12 +38,12 @@ public class DQNAgent {
         }
     }
 
-    public void train(Matrix state, int action, float reward, Matrix nextState, boolean done) {
-        List<Matrix> layerOutputs = dqn.forwardPass(state);
-        Matrix currentQValues = layerOutputs.getLast(); // get predicted q values
+    public void train(Object state, int action, float reward, Object nextState, boolean done) {
+        List<Object> layerOutputs = dqn.forwardPass(state);
+        Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
 
         Matrix target = currentQValues.copy();
-        Matrix nextQValues = dqn.getOutput(nextState);
+        Matrix nextQValues = (Matrix) dqn.getOutput(nextState);
 
         // get max Q value for next state
         float maxNextQ = nextQValues.get(0, 0);

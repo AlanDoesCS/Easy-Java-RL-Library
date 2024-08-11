@@ -1,7 +1,5 @@
 package Structures;
 
-import Training.ActivationFunction;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,8 +18,8 @@ public class DQN extends NN {
     }
 
     @Override
-    public Matrix getOutput(Matrix input) {
-        List<Matrix> layerOutputs = forwardPass(input);
+    public Object getOutput(Object input) {
+        List<Object> layerOutputs = forwardPass(input);
         return layerOutputs.getLast();
     }
 

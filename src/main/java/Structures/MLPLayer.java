@@ -24,29 +24,44 @@ public class MLPLayer extends Layer {
     }
 
     @Override
-    public Matrix compute(Matrix input) {
-        Matrix result = Matrix.multiply(weights, input);
+    public Object compute(Object input) {
+        if (!(input instanceof Matrix matrixInput)) {
+            throw new IllegalArgumentException("Expected input to be a Matrix.");
+        }
+
+        Matrix result = Matrix.multiply(weights, matrixInput);
         result.add(biases);
+
         // Apply activation function
         for (int r = 0; r < result.rows; r++) {
             for (int c = 0; c < result.cols; c++) {
-                result.set(c, r, phi.activate(result.get(c, r)));
+                result.set(r, c, phi.activate(result.get(r, c)));
             }
         }
         return result;
     }
 
     @Override
-    public Matrix backpropagate(Matrix input, Matrix gradientOutput) {
-        gradientWeights = Matrix.multiply(gradientOutput, input.transpose());
-        gradientBiases = gradientOutput;
+    public Matrix backpropagate(Object input, Object gradientOutput) {
+        if (!(input instanceof Matrix)) {
+            throw new IllegalArgumentException("Expected input to be a Matrix.");
+        }
+        if (!(gradientOutput instanceof Matrix)) {
+            throw new IllegalArgumentException("Expected gradientOutput to be a Matrix.");
+        }
 
-        Matrix gradientInput = Matrix.multiply(weights.transpose(), gradientOutput);
+        Matrix matrixInput = (Matrix) input;
+        Matrix matrixGradientOutput = (Matrix) gradientOutput;
+
+        gradientWeights = Matrix.multiply(matrixGradientOutput, matrixInput.transpose());
+        gradientBiases = matrixGradientOutput;
+
+        Matrix gradientInput = Matrix.multiply(weights.transpose(), matrixGradientOutput);
 
         // Apply activation function derivative
         for (int i = 0; i < gradientInput.rows; i++) {
             for (int j = 0; j < gradientInput.cols; j++) {
-                gradientInput.set(j, i, gradientInput.get(j, i) * phi.derivative(input.get(j, i)));
+                gradientInput.set(i, j, gradientInput.get(i, j) * phi.derivative(matrixInput.get(i, j)));
             }
         }
 
@@ -64,13 +79,6 @@ public class MLPLayer extends Layer {
         return "MLPLayer: in:" + inputSize + "\tout:" + outputSize + "\tactivation:" + phi;
     }
 
-    /*
-    ---------------------------------------------------------
-
-    STATIC METHODS
-
-    ---------------------------------------------------------
-     */
     public static List<MLPLayer> createMLPLayers(int inputSize, List<Integer> sizes, List<ActivationFunction> activationFunctions, List<Integer> biases) {
         if (sizes.size() != activationFunctions.size() || sizes.size() != biases.size() || activationFunctions.size() != biases.size()) {
             throw new IllegalArgumentException("Lists must have the same size: "+sizes.size()+", "+activationFunctions.size()+", "+biases.size());

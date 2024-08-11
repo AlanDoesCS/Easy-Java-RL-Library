@@ -62,13 +62,29 @@ public class ConvLayer extends Layer {
         Arrays.fill(biases, 0);
     }
 
-    public Matrix compute(Matrix input) {
-        if (input.getWidth() != 1) {
+    @Override
+    public Object compute(Object input) {
+        if (!(input instanceof Matrix matrixInput)) {
+            throw new IllegalArgumentException("Expected input to be a Matrix.");
+        }
+
+        if (matrixInput.getWidth() != 1) {
             throw new IllegalArgumentException("Input must be a column matrix");
         }
+
         AtomicReference<float[]> outputRef = new AtomicReference<>(new float[outputSize]);
-        POOL.invoke(new ComputeTask(input, outputRef, 0, numFilters));
+        POOL.invoke(new ComputeTask(matrixInput, outputRef, 0, numFilters));
         return new Matrix(outputRef.get(), outputHeight * outputWidth, numFilters);
+    }
+
+    public int getOutputDepth() {
+        return numFilters;
+    }
+    public int getOutputHeight() {
+        return outputHeight;
+    }
+    public int getOutputWidth() {
+        return outputWidth;
     }
 
     private class ComputeTask extends RecursiveAction {
@@ -123,7 +139,14 @@ public class ConvLayer extends Layer {
     }
 
     @Override
-    public Matrix backpropagate(Matrix input, Matrix gradientOutput) {
+    public Matrix backpropagate(Object input, Object gradientOutput) {
+        if (!(input instanceof Matrix matrixInput)) {
+            throw new IllegalArgumentException("Expected input to be a Matrix.");
+        }
+        if (!(gradientOutput instanceof Matrix matrixGradientOutput)) {
+            throw new IllegalArgumentException("Expected gradientOutput to be a Matrix.");
+        }
+
         Matrix gradientInput = new Matrix(inputSize, 1);
 
         // Reset gradients
@@ -136,7 +159,7 @@ public class ConvLayer extends Layer {
         }
         Arrays.fill(gradientBiases, 0);
 
-        POOL.invoke(new BackpropagationTask(input, gradientOutput, gradientInput, 0, numFilters));
+        POOL.invoke(new BackpropagationTask(matrixInput, matrixGradientOutput, gradientInput, 0, numFilters));
 
         return gradientInput;
     }
