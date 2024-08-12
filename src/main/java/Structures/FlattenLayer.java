@@ -28,7 +28,7 @@ public class FlattenLayer extends Layer {
         for (int d = 0; d < inputDepth; d++) {
             for (int h = 0; h < inputHeight; h++) {
                 for (int w = 0; w < inputWidth; w++) {
-                    output.set(index++, 0, tensorInput.get(d, h, w));
+                    output.set(0, index++, tensorInput.get(d, h, w));
                 }
             }
         }

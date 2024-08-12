@@ -26,12 +26,12 @@ public class Main {
         }
 
         List<Layer> layers = new ArrayList<>();
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 1, 3, 1, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 16, 3, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 32, 3, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 32, 3, 64, 1, 1, 1, 1));
         ConvLayer lastConvLayer = (ConvLayer) layers.getLast();
-        layers.add(new FlattenLayer(lastConvLayer.getOutputDepth(), lastConvLayer.getOutputHeight(), lastConvLayer.getOutputWidth()));  // You'll need to implement this
-        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
+        layers.add(new FlattenLayer(lastConvLayer.getOutputDepth(), lastConvLayer.getOutputHeight(), lastConvLayer.getOutputWidth()));
+        layers.add(new MLPLayer(64 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
         layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
 
         DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f);

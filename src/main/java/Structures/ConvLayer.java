@@ -64,17 +64,17 @@ public class ConvLayer extends Layer {
 
     @Override
     public Object compute(Object input) {
-        if (!(input instanceof Matrix matrixInput)) {
-            throw new IllegalArgumentException("Expected input to be a Matrix.");
+        if (!(input instanceof Tensor tensorInput)) {
+            throw new IllegalArgumentException("Expected input to be a Tensor, instead got: " + input.getClass().getSimpleName());
         }
 
-        if (matrixInput.getWidth() != 1) {
-            throw new IllegalArgumentException("Input must be a column matrix");
+        if (tensorInput.getDepth() != inputDepth || tensorInput.getHeight() != inputHeight || tensorInput.getWidth() != inputWidth) {
+            throw new IllegalArgumentException("Input dimensions do not match expected dimensions: Expected: (" + inputDepth + ", " + inputHeight + ", " + inputWidth + "), Got: (" + tensorInput.getDepth() + ", " + tensorInput.getHeight() + ", " + tensorInput.getWidth() + ")");
         }
 
-        AtomicReference<float[]> outputRef = new AtomicReference<>(new float[outputSize]);
-        POOL.invoke(new ComputeTask(matrixInput, outputRef, 0, numFilters));
-        return new Matrix(outputRef.get(), outputHeight * outputWidth, numFilters);
+        float[][][] outputData = new float[numFilters][outputHeight][outputWidth];
+        POOL.invoke(new ComputeTask(tensorInput, outputData, 0, numFilters));
+        return new Tensor(outputData);
     }
 
     public int getOutputDepth() {
@@ -88,11 +88,11 @@ public class ConvLayer extends Layer {
     }
 
     private class ComputeTask extends RecursiveAction {
-        private final Matrix input;
-        private final AtomicReference<float[]> output;
+        private final Tensor input;
+        private final float[][][] output;
         private final int startFilter, endFilter;
 
-        ComputeTask(Matrix input, AtomicReference<float[]> output, int startFilter, int endFilter) {
+        ComputeTask(Tensor input, float[][][] output, int startFilter, int endFilter) {
             this.input = input;
             this.output = output;
             this.startFilter = startFilter;
@@ -113,7 +113,6 @@ public class ConvLayer extends Layer {
         }
 
         private void computeSequential() {
-            float[] outputArray = output.get();
             for (int f = startFilter; f < endFilter; f++) {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
@@ -124,14 +123,13 @@ public class ConvLayer extends Layer {
                                     int inputI = i * strideY - paddingY + k;
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
-                                        int inputIndex = (d * inputHeight * inputWidth) + (inputI * inputWidth) + inputJ;
-                                        sum += input.get(0, inputIndex) * filters[f][d][k][l];
+                                        sum += input.get(inputJ, inputI, d) * filters[f][d][k][l];
                                     }
                                 }
                             }
                         }
                         sum += biases[f];
-                        outputArray[f * outputWidth * outputHeight + i * outputWidth + j] = sum;
+                        output[f][i][j] = sum;
                     }
                 }
             }
@@ -139,15 +137,15 @@ public class ConvLayer extends Layer {
     }
 
     @Override
-    public Matrix backpropagate(Object input, Object gradientOutput) {
-        if (!(input instanceof Matrix matrixInput)) {
-            throw new IllegalArgumentException("Expected input to be a Matrix.");
+    public Tensor backpropagate(Object input, Object gradientOutput) {
+        if (!(input instanceof Tensor tensorInput)) {
+            throw new IllegalArgumentException("Expected input to be a Tensor.");
         }
-        if (!(gradientOutput instanceof Matrix matrixGradientOutput)) {
-            throw new IllegalArgumentException("Expected gradientOutput to be a Matrix.");
+        if (!(gradientOutput instanceof Tensor tensorGradientOutput)) {
+            throw new IllegalArgumentException("Expected gradientOutput to be a Tensor.");
         }
 
-        Matrix gradientInput = new Matrix(inputSize, 1);
+        Tensor gradientInput = new Tensor(inputDepth, inputHeight, inputWidth);
 
         // Reset gradients
         for (int f = 0; f < numFilters; f++) {
@@ -159,16 +157,16 @@ public class ConvLayer extends Layer {
         }
         Arrays.fill(gradientBiases, 0);
 
-        POOL.invoke(new BackpropagationTask(matrixInput, matrixGradientOutput, gradientInput, 0, numFilters));
+        POOL.invoke(new BackpropagationTask(tensorInput, tensorGradientOutput, gradientInput, 0, numFilters));
 
         return gradientInput;
     }
 
     private class BackpropagationTask extends RecursiveAction {
-        private final Matrix input, gradientOutput, gradientInput;
+        private final Tensor input, gradientOutput, gradientInput;
         private final int startFilter, endFilter;
 
-        BackpropagationTask(Matrix input, Matrix gradientOutput, Matrix gradientInput, int startFilter, int endFilter) {
+        BackpropagationTask(Tensor input, Tensor gradientOutput, Tensor gradientInput, int startFilter, int endFilter) {
             this.input = input;
             this.gradientOutput = gradientOutput;
             this.gradientInput = gradientInput;
@@ -193,8 +191,7 @@ public class ConvLayer extends Layer {
             for (int f = startFilter; f < endFilter; f++) {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
-                        int outputIndex = f * outputWidth * outputHeight + i * outputWidth + j;
-                        float gradientValue = gradientOutput.get(0, outputIndex);
+                        float gradientValue = gradientOutput.get(j, i, f);
 
                         gradientBiases[f] += gradientValue;
 
@@ -204,10 +201,9 @@ public class ConvLayer extends Layer {
                                     int inputI = i * strideY - paddingY + k;
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
-                                        int inputIndex = d * inputWidth * inputHeight + inputI * inputWidth + inputJ;
-                                        float inputValue = input.get(0, inputIndex);
+                                        float inputValue = input.get(inputJ, inputI, d);
                                         gradientFilters[f][d][k][l] += gradientValue * inputValue;
-                                        gradientInput.add(inputIndex, 0, gradientValue * filters[f][d][k][l]);
+                                        gradientInput.set(inputJ, inputI, d, gradientInput.get(inputJ, inputI, d) + gradientValue * filters[f][d][k][l]);
                                     }
                                 }
                             }
