@@ -67,7 +67,9 @@ public class Trainer {
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
         ExperienceReplay replay = new ExperienceReplay(10000);
-        int batchSize = 32;
+        int batchSize = 64;
+        int updatePeriod = 4;
+        int totalSteps;
 
         for (int episode = 1; episode <= numEpisodes; episode++) {
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
@@ -78,10 +80,14 @@ public class Trainer {
             float totalReward = 0;
             ArrayList<Vector2D> dqnPath = new ArrayList<>();
 
+            totalSteps = 0;
             while (!done) {
                 int action = agent.chooseAction(state);
                 dqnPath.add(environment.getAgentPosition());
                 Environment.MoveResult result = environment.step(action);
+                System.out.println("STEPPED: "+totalSteps+", Locations: (Agent:"+environment.getAgentPosition()+", Goal:"+environment.getGoalPosition()+")");
+
+                totalSteps++;
 
                 // Add experience to replay buffer
                 replay.add(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
@@ -91,7 +97,7 @@ public class Trainer {
                 totalReward += result.reward;
 
                 // Train on a batch of experiences
-                if (replay.size() > batchSize) {
+                if (totalSteps % updatePeriod==0 && replay.size() > batchSize) {
                     List<ExperienceReplay.Experience> batch = replay.sample(batchSize);
                     for (ExperienceReplay.Experience exp : batch) {
                         agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
@@ -99,6 +105,7 @@ public class Trainer {
                 }
             }
 
+            System.out.println("Episode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size());
             if (plot) plotter.addPoint(new Vector2D(episode, totalReward));
 
             if (episode % savePeriod == 0) {

@@ -34,9 +34,17 @@ public class Main {
         layers.add(new MLPLayer(64 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
         layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
 
-        DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f);
+        DQNAgent dqnAgent = new DQNAgent(
+                Environment.getActionSpace(),
+                layers,
+                1f,
+                0.995f,
+                0.01f,
+                0.99f,
+                0.001f
+        );
 
-        trainer.trainAgent(dqnAgent, 6000, 1000, 10, "plot", "ease", "axis_ticks");
+        trainer.trainAgent(dqnAgent, 6000, 1000, 10, "plot", "ease", "axis_ticks", "verbose");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {

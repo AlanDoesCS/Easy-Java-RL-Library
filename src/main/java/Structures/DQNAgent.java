@@ -7,13 +7,17 @@ import Tools.math;
 
 public class DQNAgent {
     private DQN dqn;
-    private final float epsilon;      // exploration rate for epsilon greedy
+    private float epsilon;            // exploration rate for epsilon greedy
+    private final float epsilonDecay; // rate of change of epsilon
+    private final float epsilonMin;
     private final float gamma;        // discount factor - how much future rewards should be prioritised
     private final int stateSpace;     // number of variables used to describe environment state
     private final int actionSpace;    // number of actions the agent can take in the environment
 
-    public DQNAgent(int actionSpace, List<Layer> layers, float epsilon, float gamma, float learningRate) {
-        this.epsilon = epsilon;
+    public DQNAgent(int actionSpace, List<Layer> layers, float initialEpsilon, float epsilonDecay, float epsilonMin, float gamma, float learningRate) {
+        this.epsilon = initialEpsilon;
+        this.epsilonDecay = epsilonDecay;
+        this.epsilonMin = epsilonMin;
         this.gamma = gamma;
         this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
@@ -58,6 +62,16 @@ public class DQNAgent {
 
         // update network
         dqn.backpropagate(state, target, layerOutputs);
+
+        decayEpsilon();
+    }
+
+    private void decayEpsilon() {
+        epsilon = Math.max(epsilonMin, epsilon * epsilonDecay);
+    }
+
+    public float getEpsilon() {
+        return epsilon;
     }
 
     public void saveAgent(String filename) {
