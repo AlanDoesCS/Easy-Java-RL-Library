@@ -20,7 +20,12 @@ public class FlattenLayer extends Layer {
         if (tensorInput.getDepth() != inputDepth ||
                 tensorInput.getHeight() != inputHeight ||
                 tensorInput.getWidth() != inputWidth) {
-            throw new IllegalArgumentException("Input dimensions do not match expected dimensions");
+            throw new IllegalArgumentException("Input dimensions do not match expected dimensions. "+
+                    String.format(
+                            "Expected: (%d, %d, %d), Received: (%d, %d, %d)",
+                            inputDepth, inputHeight, inputWidth, tensorInput.getDepth(), tensorInput.getHeight(), tensorInput.getWidth()
+                    )
+            );
         }
 
         Matrix output = new Matrix(outputSize, 1);
@@ -49,7 +54,7 @@ public class FlattenLayer extends Layer {
         for (int d = 0; d < inputDepth; d++) {
             for (int h = 0; h < inputHeight; h++) {
                 for (int w = 0; w < inputWidth; w++) {
-                    gradientInput.set(d, h, w, matrixGradientOutput.get(index++, 0));
+                    gradientInput.set(d, h, w, matrixGradientOutput.get(0, index++));
                 }
             }
         }

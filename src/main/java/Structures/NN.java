@@ -32,7 +32,6 @@ public abstract class NN {
         for (Layer layer : layers) {
             currentInput = layer.compute(currentInput);
             layerOutputs.add(currentInput);
-            System.out.println("Completed Layer: "+i++);
         }
 
         return layerOutputs;

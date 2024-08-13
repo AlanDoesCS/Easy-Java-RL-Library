@@ -19,11 +19,11 @@ public class Tensor {
     }
 
     // Accessors and Mutators
-    public float get(int x, int y, int z) {
-        return data[z][y][x];
+    public float get(int d, int h, int w) {
+        return data[d][h][w];
     }
-    public void set(int x, int y, int z, float value) {
-        data[z][y][x]=value;
+    public void set(int d, int h, int w, float value) {
+        data[d][h][w]=value;
     }
 
     public int getDepth() {

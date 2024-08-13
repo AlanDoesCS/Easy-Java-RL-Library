@@ -123,7 +123,7 @@ public class ConvLayer extends Layer {
                                     int inputI = i * strideY - paddingY + k;
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
-                                        sum += input.get(inputJ, inputI, d) * filters[f][d][k][l];
+                                        sum += input.get(d, inputI, inputJ) * filters[f][d][k][l];
                                     }
                                 }
                             }
@@ -191,7 +191,7 @@ public class ConvLayer extends Layer {
             for (int f = startFilter; f < endFilter; f++) {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
-                        float gradientValue = gradientOutput.get(j, i, f);
+                        float gradientValue = gradientOutput.get(f, i, j);
 
                         gradientBiases[f] += gradientValue;
 
@@ -201,9 +201,9 @@ public class ConvLayer extends Layer {
                                     int inputI = i * strideY - paddingY + k;
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
-                                        float inputValue = input.get(inputJ, inputI, d);
+                                        float inputValue = input.get(d, inputI, inputJ);
                                         gradientFilters[f][d][k][l] += gradientValue * inputValue;
-                                        gradientInput.set(inputJ, inputI, d, gradientInput.get(inputJ, inputI, d) + gradientValue * filters[f][d][k][l]);
+                                        gradientInput.set(d, inputI, inputJ, gradientInput.get(d, inputI, inputJ) + gradientValue * filters[f][d][k][l]);
                                     }
                                 }
                             }

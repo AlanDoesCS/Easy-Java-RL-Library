@@ -66,9 +66,9 @@ public abstract class GridEnvironment extends Environment {
         Tensor state = new Tensor(3, height, width);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                state.set(x, y, 0, get(x, y));  // Environment
-                state.set(x, y, 1, (x == agentPosition.getX() && y == agentPosition.getY()) ? 1 : 0);  // Agent
-                state.set(x, y, 2, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
+                state.set(0, y, x, get(x, y));  // Environment
+                state.set(1, y, x, (x == agentPosition.getX() && y == agentPosition.getY()) ? 1 : 0);  // Agent
+                state.set(2, y, x, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
             }
         }
         return state;

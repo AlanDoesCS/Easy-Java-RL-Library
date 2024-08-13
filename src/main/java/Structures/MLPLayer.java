@@ -35,7 +35,7 @@ public class MLPLayer extends Layer {
         // Apply activation function
         for (int r = 0; r < result.rows; r++) {
             for (int c = 0; c < result.cols; c++) {
-                result.set(r, c, phi.activate(result.get(r, c)));
+                result.set(c, r, phi.activate(result.get(c, r)));
             }
         }
         return result;
@@ -59,9 +59,9 @@ public class MLPLayer extends Layer {
         Matrix gradientInput = Matrix.multiply(weights.transpose(), matrixGradientOutput);
 
         // Apply activation function derivative
-        for (int i = 0; i < gradientInput.rows; i++) {
-            for (int j = 0; j < gradientInput.cols; j++) {
-                gradientInput.set(i, j, gradientInput.get(i, j) * phi.derivative(matrixInput.get(i, j)));
+        for (int r = 0; r < gradientInput.rows; r++) {
+            for (int c = 0; c < gradientInput.cols; c++) {
+                gradientInput.set(c, r, gradientInput.get(c, r) * phi.derivative(matrixInput.get(c, r)));
             }
         }
 
