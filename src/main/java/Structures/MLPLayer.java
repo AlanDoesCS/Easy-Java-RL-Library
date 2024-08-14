@@ -8,7 +8,7 @@ import java.util.List;
 
 public class MLPLayer extends Layer {
     Matrix weights, biases;
-    private Matrix gradientWeights, gradientBiases;
+    Matrix gradientWeights, gradientBiases;
     ActivationFunction phi;
 
     public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, float bias) {
@@ -21,6 +21,31 @@ public class MLPLayer extends Layer {
         gradientWeights = new Matrix(outputSize, inputSize);
         gradientBiases = new Matrix(outputSize, 1);
         phi = activation;
+    }
+
+    @Override
+    public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        if (!(targetLayer instanceof MLPLayer target)) {
+            throw new IllegalArgumentException(String.format("Target layer must be a MLPLayer (got: %s)", targetLayer.getClass().getSimpleName()));
+        }
+
+        Matrix.copy(this.weights, target.weights);
+        Matrix.copy(this.biases, target.biases);
+        Matrix.copy(this.gradientWeights, target.gradientWeights);
+        Matrix.copy(this.gradientBiases, target.gradientBiases);
+        target.phi = this.phi;
+
+        if (ignorePrimitives) return;
+
+        target.inputSize = this.inputSize;
+        target.outputSize = this.outputSize;
+    }
+
+    @Override
+    public MLPLayer copy() {
+        MLPLayer copy = new MLPLayer(inputSize, outputSize, phi, 0);
+        copyTo(copy, true);
+        return copy;
     }
 
     @Override

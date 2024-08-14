@@ -2,11 +2,13 @@ package Structures;
 
 import Training.ActivationFunction;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.ArrayList;
 import Tools.math;
 
 public class DQNAgent {
-    private DQN dqn;
+    private DQN mainDQN, targetDQN;
     private float epsilon;            // exploration rate for epsilon greedy
     private final float epsilonDecay; // rate of change of epsilon
     private final float epsilonMin;
@@ -22,14 +24,22 @@ public class DQNAgent {
         this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
 
-        this.dqn = new DQN(stateSpace, layers, learningRate);
+        this.mainDQN = new DQN(stateSpace, layers, learningRate);
+
+        // create a deep copy of mainDQN
+        List<Layer> targetLayers = new ArrayList<>(layers.size());
+        for (Layer layer : layers) {
+            targetLayers.add(layer.copy());
+        }
+
+        this.targetDQN = new DQN(stateSpace, targetLayers, learningRate);
     }
 
     public int chooseAction(Tensor state) {
         if (math.random() < epsilon) {
             return (int) (Math.random() * actionSpace);
         } else {
-            Matrix qValues = (Matrix) dqn.getOutput(state);
+            Matrix qValues = (Matrix) mainDQN.getOutput(state);
             int actionIndex = 0;
             float max = qValues.get(0, 0);
             for (int i = 1; i < actionSpace; i++) {
@@ -43,11 +53,11 @@ public class DQNAgent {
     }
 
     public void train(Object state, int action, float reward, Object nextState, boolean done) {
-        List<Object> layerOutputs = dqn.forwardPass(state);
+        List<Object> layerOutputs = mainDQN.forwardPass(state);
         Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
 
         Matrix target = currentQValues.copy();
-        Matrix nextQValues = (Matrix) dqn.getOutput(nextState);
+        Matrix nextQValues = (Matrix) mainDQN.getOutput(nextState);
 
         // get max Q value for next state
         float maxNextQ = nextQValues.get(0, 0);
@@ -61,7 +71,7 @@ public class DQNAgent {
         target.set(0, action, targetValue);
 
         // update network
-        dqn.backpropagate(state, target, layerOutputs);
+        mainDQN.backpropagate(state, target, layerOutputs);
 
         decayEpsilon();
     }
@@ -75,10 +85,10 @@ public class DQNAgent {
     }
 
     public void saveAgent(String filename) {
-        dqn.saveNN(filename);
+        mainDQN.saveNN(filename);
     }
 
     public void loadAgent(String filename) {
-        dqn.loadNN(filename);
+        mainDQN.loadNN(filename);
     }
 }

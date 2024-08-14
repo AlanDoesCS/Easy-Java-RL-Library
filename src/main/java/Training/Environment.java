@@ -81,7 +81,7 @@ public abstract class Environment {
         gridWidth = width;
         gridHeight = height;
 
-        setStateSpace(width*height + width + height); // 2D grid plus one hot coordinate encoding
+        setStateSpace(width*height*3);
     }
 
     public static void setOctaves(int octaves) {

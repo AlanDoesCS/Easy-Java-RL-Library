@@ -57,6 +57,16 @@ public class DQN extends NN {
         return layers.size();
     }
 
+    public static void copyNetworkWeightsAndBiases(DQN sourceNetwork, DQN targetNetwork) {
+        if (sourceNetwork.numLayers() != targetNetwork.numLayers()) {
+            throw new IllegalArgumentException(String.format("Source and target networks must have the same number of layers. (%d != %d)", sourceNetwork.numLayers(), targetNetwork.numLayers()));
+        }
+
+        for (int i = 0; i < sourceNetwork.numLayers(); i++) {
+            sourceNetwork.getLayer(i).copyTo(targetNetwork.getLayer(i), false);
+        }
+    }
+
     public int getInputSize() {
         return inputSize;
     }

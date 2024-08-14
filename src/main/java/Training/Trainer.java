@@ -24,13 +24,13 @@ public class Trainer {
     }
 
     /**
-     * Trains a DQN agent over a specified number of episodes.
+     * Trains the DQN agent using the specified parameters.
      *
-     * @param agent the DQN agent to train
-     * @param numEpisodes the number of episodes to train the agent
-     * @param savePeriod the period over which the agent should be saved
-     * @param visualiserUpdatePeriod the period over which to update the visualisations (if any)
-     * @param varargs additional arguments for training options
+     * @param agent                  the DQN agent to be trained
+     * @param numEpisodes            the number of episodes to train the agent
+     * @param savePeriod             the period (in episodes) at which the agent's state is saved
+     * @param visualiserUpdatePeriod the period (in episodes) at which the visualiser is updated
+     * @param varargs                additional arguments for training options (e.g., "verbose", "plot", "show_path")
      */
     public void trainAgent(DQNAgent agent, int numEpisodes, int savePeriod, int visualiserUpdatePeriod, String... varargs) {
         List<String> args = Arrays.asList(varargs);
@@ -85,7 +85,6 @@ public class Trainer {
                 int action = agent.chooseAction(state);
                 dqnPath.add(environment.getAgentPosition());
                 Environment.MoveResult result = environment.step(action);
-                System.out.println("STEPPED: "+totalSteps+", Locations: (Agent:"+environment.getAgentPosition()+", Goal:"+environment.getGoalPosition()+")");
 
                 totalSteps++;
 
@@ -103,9 +102,11 @@ public class Trainer {
                         agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
                     }
                 }
+
+                System.out.println("Current Position: "+environment.getAgentPosition()+", Goal Position: "+environment.getGoalPosition()+", Total Reward:"+totalReward);
             }
 
-            System.out.println("Episode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size());
+            System.out.println("Episode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size()+", Environment = "+environment.getClass().getSimpleName());
             if (plot) plotter.addPoint(new Vector2D(episode, totalReward));
 
             if (episode % savePeriod == 0) {

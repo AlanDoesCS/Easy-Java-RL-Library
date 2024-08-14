@@ -12,6 +12,27 @@ public class FlattenLayer extends Layer {
     }
 
     @Override
+    public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        if (!(targetLayer instanceof FlattenLayer target)) {
+            throw new IllegalArgumentException(String.format("Target layer must be a FlattenLayer (got: %s)", targetLayer.getClass().getSimpleName()));
+        }
+
+        if (ignorePrimitives) return;
+
+        target.inputSize = this.inputSize;
+        target.outputSize = this.outputSize;
+
+        target.inputDepth = this.inputDepth;
+        target.inputHeight = this.inputHeight;
+        target.inputWidth = this.inputWidth;
+    }
+
+    @Override
+    public FlattenLayer copy() {
+        return new FlattenLayer(inputDepth, inputHeight, inputWidth);
+    }
+
+    @Override
     public Object compute(Object input) {
         if (!(input instanceof Tensor tensorInput)) {
             throw new IllegalArgumentException("Expected input to be a Tensor.");

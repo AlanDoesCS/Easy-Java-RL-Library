@@ -112,7 +112,20 @@ public class Matrix implements Serializable {
     }
 
     public Matrix copy() {
-        return new Matrix(data);
+        float[][] newData = new float[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            System.arraycopy(data[i], 0, newData[i], 0, cols);
+        }
+        return new Matrix(newData);
+    }
+
+    public static void copy(Matrix source, Matrix target) {
+        if (source.rows != target.rows || source.cols != target.cols) {
+            throw new IllegalArgumentException("Source and target matrices must have the same dimensions.");
+        }
+        for (int i = 0; i < source.rows; i++) {
+            System.arraycopy(source.data[i], 0, target.data[i], 0, source.cols);
+        }
     }
 
     public String toString() {

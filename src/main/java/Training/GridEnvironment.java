@@ -75,6 +75,7 @@ public abstract class GridEnvironment extends Environment {
     }
 
     public MoveResult step(int action) {
+        float reward = 0;
         Vector2D currentPosition = getAgentPosition();
         Vector2D newPosition = currentPosition.copy();
 
@@ -87,6 +88,9 @@ public abstract class GridEnvironment extends Environment {
             newPosition = currentPosition;
         }
 
+        // punish not moving
+        if (newPosition.equals(currentPosition) && !newPosition.equals(goalPosition)) reward -= 5f;
+
         boolean done = newPosition.equals(getGoalPosition());
         boolean maxStepsReached = currentSteps >= maxSteps;
 
@@ -95,7 +99,7 @@ public abstract class GridEnvironment extends Environment {
             return new MoveResult(getState(), -getDNFPunishment(), done);
         }
 
-        float reward = done ? getCompletionReward() : -get((int)newPosition.getX(), (int)newPosition.getY());
+        reward += done ? getCompletionReward() : -get((int)newPosition.getX(), (int)newPosition.getY());
 
         return new MoveResult(getState(), reward, done);
     }
@@ -173,7 +177,7 @@ public abstract class GridEnvironment extends Environment {
     }
 
     float getCompletionReward() {
-        return math.fastSqrt(getStateSpace()-(width+height));
+        return math.fastSqrt(getStateSpace());
     }
 
     float getDNFPunishment() {

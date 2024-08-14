@@ -8,11 +8,24 @@ public abstract class Layer implements Serializable {
     protected int outputSize;
 
     public abstract Object compute(Object input);
+    /**
+     * Copies the current layer's parameters to the target layer.
+     *
+     * @param targetLayer the layer to which the parameters will be copied.
+     * @param ignorePrimitives if true, primitive fields will not be copied.
+     */
+    public abstract void copyTo(Layer targetLayer, boolean ignorePrimitives);
+    /**
+     * Creates a copy of the current layer.
+     *
+     * @return a new instance of the Layer class that is a copy of the current layer.
+     */
+    public abstract Layer copy();
     public abstract String toString();
+
     public int getOutputSize() {
         return outputSize;
     }
-
     public int getInputSize() {
         return inputSize;
     }

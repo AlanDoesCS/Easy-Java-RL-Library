@@ -3,6 +3,7 @@ package Structures;
 import Tools.math;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicReference;
@@ -17,13 +18,60 @@ public class ConvLayer extends Layer {
     private int paddingX, paddingY;
     private int filterSize; // assumes square filters
     private int numFilters;
-    private int inputWidth, inputHeight, inputDepth;
+    int inputWidth;
+    int inputHeight;
+    int inputDepth;
     private int outputWidth, outputHeight;
 
     private float[][][][] gradientFilters;
     private float[] gradientBiases;
 
-    public ConvLayer(int inputWidth, int inputHeight, int inputDepth, int filterSize, int numFilters, int strideX, int strideY, int paddingX, int paddingY) {
+    @Override
+    public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        if (!(targetLayer instanceof ConvLayer target)) {
+            throw new IllegalArgumentException(String.format("Target layer must be a ConvLayer (got: %s)", targetLayer.getClass().getSimpleName()));
+        }
+        for (int f = 0; f < this.filters.length; f++) {
+            for (int d = 0; d < this.filters[f].length; d++) {
+                for (int h = 0; h < this.filters[f][d].length; h++) {
+                    System.arraycopy(this.filters[f][d][h], 0, target.filters[f][d][h], 0, this.filters[f][d][h].length);
+                }
+            }
+        }
+        for (int f = 0; f < this.gradientFilters.length; f++) {
+            for (int d = 0; d < this.gradientFilters[f].length; d++) {
+                for (int h = 0; h < this.gradientFilters[f][d].length; h++) {
+                    System.arraycopy(this.gradientFilters[f][d][h], 0, target.gradientFilters[f][d][h], 0, this.gradientFilters[f][d][h].length);
+                }
+            }
+        }
+
+        System.arraycopy(this.biases, 0, target.biases, 0, this.biases.length);
+        System.arraycopy(this.gradientBiases, 0, target.gradientBiases, 0, this.gradientBiases.length);
+
+        if (ignorePrimitives) return;
+
+        target.strideX = this.strideX;
+        target.strideY = this.strideY;
+        target.paddingX = this.paddingX;
+        target.paddingY = this.paddingY;
+        target.filterSize = this.filterSize;
+        target.numFilters = this.numFilters;
+        target.inputWidth = this.inputWidth;
+        target.inputHeight = this.inputHeight;
+        target.inputDepth = this.inputDepth;
+        target.outputWidth = this.outputWidth;
+        target.outputHeight = this.outputHeight;
+    }
+
+    @Override
+    public Layer copy() {
+        ConvLayer copyLayer = new ConvLayer(inputWidth, inputHeight, inputDepth, filterSize, numFilters, strideX, strideY, paddingX, paddingY, "noInit");
+        copyTo(copyLayer, true);
+        return copyLayer;
+    }
+
+    public ConvLayer(int inputWidth, int inputHeight, int inputDepth, int filterSize, int numFilters, int strideX, int strideY, int paddingX, int paddingY, String... args) {
         this.inputSize = inputWidth * inputHeight * inputDepth;
         this.inputWidth = inputWidth;
         this.inputHeight = inputHeight;
@@ -44,6 +92,15 @@ public class ConvLayer extends Layer {
         biases = new float[numFilters];
         gradientFilters = new float[numFilters][inputDepth][filterSize][filterSize];
         gradientBiases = new float[numFilters];
+
+        if (args.length > 0) {
+            List<String> argList = List.of(args);
+
+            if (argList.contains("noInit")) {
+                return;
+            }
+        }
+
         initializeParameters();
     }
 
