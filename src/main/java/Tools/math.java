@@ -1,5 +1,6 @@
 package Tools;
 
+import Structures.Matrix;
 import Tools.Pathfinding.GraphNode;
 
 import java.util.ArrayList;
@@ -96,5 +97,18 @@ public class math {
     public static float scale(float value, float min_start, float max_start, float min_end, float max_end) {
         value = normalise(value, min_start, max_start);
         return value * (max_end - min_end) + min_end;
+    }
+
+    public static float max(Matrix matrix) {
+        float maxValue = matrix.get(0, 0);
+        for (int y = 0; y < matrix.getHeight(); y++) {
+            for (int x = 0; x < matrix.getWidth(); x++) {
+                if (matrix.get(x, y) > maxValue) {
+                    maxValue = matrix.get(x, y);
+                }
+            }
+
+        }
+        return maxValue;
     }
 }

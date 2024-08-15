@@ -26,6 +26,10 @@ public class Main {
         }
 
         List<Layer> layers = new ArrayList<>();
+
+
+        // More complex architecture
+        /*
         layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
         layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
         layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 32, 3, 64, 1, 1, 1, 1));
@@ -33,18 +37,27 @@ public class Main {
         layers.add(new FlattenLayer(lastConvLayer.getOutputDepth(), lastConvLayer.getOutputHeight(), lastConvLayer.getOutputWidth()));
         layers.add(new MLPLayer(64 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
         layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
+        */
+
+
+        // Simple architecture
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
+        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 128, new ReLU(), 0));
+        layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0));
 
         DQNAgent dqnAgent = new DQNAgent(
                 Environment.getActionSpace(),
                 layers,
                 1f,
-                0.995f,
+                0.9999f,
                 0.01f,
                 0.99f,
                 0.001f
         );
 
-        trainer.trainAgent(dqnAgent, 6000, 1000, 10, "plot", "ease", "axis_ticks", "verbose");
+        trainer.trainAgent(dqnAgent, 6000, 1000, 1, "plot", "ease", "axis_ticks", "verbose", "show_path");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {

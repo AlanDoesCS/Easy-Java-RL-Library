@@ -24,7 +24,6 @@ public abstract class GridEnvironment extends Environment {
         this.gridMatrix = new Matrix(height, width);
         this.stateTensor = new Tensor(3, height, width); // Environment, Agent, Goal channels
 
-
         this.maxSteps = width*height*2;
         this.currentSteps = 0;
     }
@@ -63,15 +62,14 @@ public abstract class GridEnvironment extends Environment {
     }
 
     public Tensor getState() {
-        Tensor state = new Tensor(3, height, width);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                state.set(0, y, x, get(x, y));  // Environment
-                state.set(1, y, x, (x == agentPosition.getX() && y == agentPosition.getY()) ? 1 : 0);  // Agent
-                state.set(2, y, x, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
+                stateTensor.set(0, y, x, get(x, y));  // Environment
+                stateTensor.set(1, y, x, (x == agentPosition.getX() && y == agentPosition.getY()) ? 1 : 0);  // Agent
+                stateTensor.set(2, y, x, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
             }
         }
-        return state;
+        return stateTensor;
     }
 
     public MoveResult step(int action) {
@@ -177,11 +175,11 @@ public abstract class GridEnvironment extends Environment {
     }
 
     float getCompletionReward() {
-        return math.fastSqrt(getStateSpace());
+        return math.clamp((float) getStateSpace()/3, 50, 200);
     }
 
     float getDNFPunishment() {
-        return (math.fastSqrt(getStateSpace()-(width+height)))/3;
+        return math.fastSqrt((float) getStateSpace()/3);
     }
 
     public String toString() {

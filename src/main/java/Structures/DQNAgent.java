@@ -15,6 +15,8 @@ public class DQNAgent {
     private final float gamma;        // discount factor - how much future rewards should be prioritised
     private final int stateSpace;     // number of variables used to describe environment state
     private final int actionSpace;    // number of actions the agent can take in the environment
+    private final int targetUpdateFrequency; // how often to update target network
+    private int stepCounter;
 
     public DQNAgent(int actionSpace, List<Layer> layers, float initialEpsilon, float epsilonDecay, float epsilonMin, float gamma, float learningRate) {
         this.epsilon = initialEpsilon;
@@ -23,16 +25,21 @@ public class DQNAgent {
         this.gamma = gamma;
         this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
+        this.targetUpdateFrequency = 100;
+        this.stepCounter = 0;
 
         this.mainDQN = new DQN(stateSpace, layers, learningRate);
 
         // create a deep copy of mainDQN
-        List<Layer> targetLayers = new ArrayList<>(layers.size());
-        for (Layer layer : layers) {
-            targetLayers.add(layer.copy());
-        }
+        this.targetDQN = new DQN(stateSpace, copyLayers(layers), learningRate);
+    }
 
-        this.targetDQN = new DQN(stateSpace, targetLayers, learningRate);
+    private List<Layer> copyLayers(List<Layer> layers) {
+        List<Layer> copiedLayers = new ArrayList<>(layers.size());
+        for (Layer layer : layers) {
+            copiedLayers.add(layer.copy());
+        }
+        return copiedLayers;
     }
 
     public int chooseAction(Tensor state) {
@@ -53,6 +60,8 @@ public class DQNAgent {
     }
 
     public void train(Object state, int action, float reward, Object nextState, boolean done) {
+        stepCounter++;
+
         List<Object> layerOutputs = mainDQN.forwardPass(state);
         Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
 
@@ -60,13 +69,7 @@ public class DQNAgent {
         Matrix nextQValues = (Matrix) mainDQN.getOutput(nextState);
 
         // get max Q value for next state
-        float maxNextQ = nextQValues.get(0, 0);
-        for (int i = 1; i < actionSpace; i++) {
-            if (nextQValues.get(0, i) > maxNextQ) {
-                maxNextQ = nextQValues.get(0, i);
-            }
-        }
-
+        float maxNextQ = math.max(nextQValues);
         float targetValue = done ? reward : reward + gamma * maxNextQ;
         target.set(0, action, targetValue);
 
@@ -74,6 +77,11 @@ public class DQNAgent {
         mainDQN.backpropagate(state, target, layerOutputs);
 
         decayEpsilon();
+
+        if (stepCounter % targetUpdateFrequency == 0) {
+            DQN.copyNetworkWeightsAndBiases(mainDQN, targetDQN);
+            stepCounter = 0;
+        }
     }
 
     private void decayEpsilon() {

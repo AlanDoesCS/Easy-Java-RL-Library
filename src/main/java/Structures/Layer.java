@@ -38,6 +38,14 @@ public abstract class Layer implements Serializable {
         return sb.toString();
     }
 
+    /**
+     * Performs the backpropagation algorithm on the layer.
+     *
+     * @param input the input to the layer.
+     * @param gradientOutput the gradient of the loss with respect to the output of the layer.
+     *                       - Can be either Matrix or Tensor
+     * @return the gradient of the loss with respect to the input of the layer.
+     */
     public abstract Object backpropagate(Object input, Object gradientOutput);
     public abstract void updateParameters(float learningRate);
 }

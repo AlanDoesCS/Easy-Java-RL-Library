@@ -1,7 +1,6 @@
 package Training;
 
 import Structures.DQNAgent;
-import Structures.Matrix;
 import Structures.Tensor;
 import Structures.Vector2D;
 import Tools.Environment_Visualiser;
@@ -11,6 +10,7 @@ import Tools.math;
 import com.sun.jdi.InvalidTypeException;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +46,8 @@ public class Trainer {
         }
 
         boolean showPath = args.contains("show_path");
-        Environment_Visualiser visualiser;  // for showing the path
+        Environment_Visualiser visualiser;  // for showing the path - Dijkstra's path
+        Environment_Visualiser visualiser2; // for showing the path - DQN's path
 
         if (verbose) {
             System.out.println("Training agent with "+numEpisodes+" episodes, saving every "+savePeriod+" episodes.");
@@ -66,12 +67,14 @@ public class Trainer {
 
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
-        ExperienceReplay replay = new ExperienceReplay(10000);
+        EpisodeReplay replay = new EpisodeReplay(1000);
         int batchSize = 64;
         int updatePeriod = 4;
         int totalSteps;
 
         for (int episode = 1; episode <= numEpisodes; episode++) {
+            EpisodeReplay.Episode currentEpisode = new EpisodeReplay.Episode();
+
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
 
@@ -88,25 +91,28 @@ public class Trainer {
 
                 totalSteps++;
 
-                // Add experience to replay buffer
-                replay.add(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
+                // Add experience to current episode
+                currentEpisode.addExperience(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
 
                 state = result.state;
                 done = result.done;
                 totalReward += result.reward;
 
-                // Train on a batch of experiences
-                if (totalSteps % updatePeriod==0 && replay.size() > batchSize) {
-                    List<ExperienceReplay.Experience> batch = replay.sample(batchSize);
-                    for (ExperienceReplay.Experience exp : batch) {
-                        agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
-                    }
-                }
-
-                System.out.println("Current Position: "+environment.getAgentPosition()+", Goal Position: "+environment.getGoalPosition()+", Total Reward:"+totalReward);
+                System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, totalReward);
             }
 
-            System.out.println("Episode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size()+", Environment = "+environment.getClass().getSimpleName());
+            replay.add(currentEpisode);
+            System.out.println("\nEpisode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size()+", Environment = "+environment.getClass().getSimpleName()+"\n");
+
+            if (replay.size() > 0) {
+                EpisodeReplay.Episode trainingEpisode = replay.sample();
+                for (ExperienceReplay.Experience exp : trainingEpisode.experiences) {
+                    agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
+                }
+            }
+
+            // Progress Tracking -------------------------------------------------------------
+
             if (plot) plotter.addPoint(new Vector2D(episode, totalReward));
 
             if (episode % savePeriod == 0) {
@@ -120,6 +126,8 @@ public class Trainer {
                 if (showPath) {
                     visualiser = new Environment_Visualiser(environment);
                     visualiser.addPath(Pathfinder.dijkstra(environment.getStartPosition(), environment.getGoalPosition(), environment), java.awt.Color.RED);
+                    visualiser2 = new Environment_Visualiser(environment);
+                    visualiser2.addPath(dqnPath, Color.GREEN);
                 }
             }
         }

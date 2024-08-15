@@ -13,6 +13,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         super(width, height);
         fill();
         setAgentPosition(findValidPositionInBounds());  // represents starting position
+        setStartPosition(getAgentPosition());
         setGoalPosition(findValidPositionInBounds());
     }
 
@@ -89,6 +90,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
     public void randomize() {
         refill();
         setAgentPosition(findValidPositionInBounds());
+        setStartPosition(getAgentPosition());
         setGoalPosition(findValidPositionInBounds());
         this.currentSteps = 0;
     }
