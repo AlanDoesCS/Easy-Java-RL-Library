@@ -97,7 +97,7 @@ public abstract class GridEnvironment extends Environment {
             return new MoveResult(getState(), -getDNFPunishment(), done);
         }
 
-        reward += done ? getCompletionReward() : -get((int)newPosition.getX(), (int)newPosition.getY());
+        reward += done ? getCompletionReward() : -(get((int)newPosition.getX(), (int)newPosition.getY()) * 0.1f);
 
         return new MoveResult(getState(), reward, done);
     }

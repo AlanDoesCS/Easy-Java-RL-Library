@@ -6,7 +6,7 @@ import Tools.math;
 import java.util.Stack;
 
 public class MazeGridEnvironment extends GridEnvironment {  // Maze generated using a modified recursive backtracking approach that uses a stack instead
-    private static final float WALL = 1;
+    private static final float WALL = 100;
     private static final float PATH = 0.1f;
 
     public MazeGridEnvironment(int width, int height) {

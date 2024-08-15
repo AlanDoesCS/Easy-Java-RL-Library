@@ -98,7 +98,7 @@ public class Trainer {
                 done = result.done;
                 totalReward += result.reward;
 
-                System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, totalReward);
+                if (verbose) System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, totalReward);
             }
 
             replay.add(currentEpisode);
