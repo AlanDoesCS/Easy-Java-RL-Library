@@ -1,15 +1,19 @@
 package Training;
 
 import Structures.Matrix;
+import Structures.Tensor;
 import Structures.Vector2D;
 import Tools.math;
 
 public abstract class GridEnvironment extends Environment {
     public int width, height;
-    private Matrix gridMatrix, stateMatrix;
+    private Matrix gridMatrix;
+    private Tensor stateTensor;
     private Vector2D startPosition;
     private Vector2D agentPosition;
     private Vector2D goalPosition;
+
+    protected int maxSteps, currentSteps;
 
     public GridEnvironment(int width, int height) {
         this.width = width;
@@ -18,7 +22,10 @@ public abstract class GridEnvironment extends Environment {
         this.startPosition = new Vector2D(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
         this.gridMatrix = new Matrix(height, width);
-        this.stateMatrix = new Matrix(getNumSquares()+width+height, 1); // width+height for one hot encoding of agent position
+        this.stateTensor = new Tensor(3, height, width); // Environment, Agent, Goal channels
+
+        this.maxSteps = width*height*2;
+        this.currentSteps = 0;
     }
 
     public int getNumSquares() {
@@ -42,6 +49,7 @@ public abstract class GridEnvironment extends Environment {
         this.agentPosition = getRandomCoordinateInBounds();
         this.startPosition = new Vector2D(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
+        this.currentSteps = 0;
     }
 
     public float get(int x, int y) {
@@ -53,31 +61,45 @@ public abstract class GridEnvironment extends Environment {
         return get(x, y);
     }
 
-    public Matrix getState() {
-        int i=0;
+    public Tensor getState() {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                stateMatrix.set(0, i++, get(x, y));
+                stateTensor.set(0, y, x, get(x, y));  // Environment
+                stateTensor.set(1, y, x, (x == agentPosition.getX() && y == agentPosition.getY()) ? 1 : 0);  // Agent
+                stateTensor.set(2, y, x, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
             }
         }
-        // position X
-        int startOffset = width*height;
-        encodeOneHot(stateMatrix, startOffset, width, (int) getAgentPosition().getX());
-
-        startOffset += width;
-
-        // position Y
-        encodeOneHot(stateMatrix, startOffset, height, (int) getAgentPosition().getY());
-        return stateMatrix;
+        return stateTensor;
     }
 
-    private void encodeOneHot(Matrix columnMatrixTarget, int startOffset, int length, int... trueBitIndices) {
-        for (int i = startOffset; i < startOffset+length; i++) {
-            columnMatrixTarget.set(0, i, 0);
+    public MoveResult step(int action) {
+        float reward = 0;
+        Vector2D currentPosition = getAgentPosition();
+        Vector2D newPosition = currentPosition.copy();
+
+        PerlinGridEnvironment.getNewPosFromAction(action, newPosition);
+
+        if (isValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY())) {
+            setAgentPosition(newPosition);
+            currentSteps++;
+        } else {
+            newPosition = currentPosition;
         }
-        for (int trueBitIndex : trueBitIndices) {
-            columnMatrixTarget.set(0, startOffset+trueBitIndex, 1);
+
+        // punish not moving
+        if (newPosition.equals(currentPosition) && !newPosition.equals(goalPosition)) reward -= 5f;
+
+        boolean done = newPosition.equals(getGoalPosition());
+        boolean maxStepsReached = currentSteps >= maxSteps;
+
+        if (maxStepsReached && !done) {
+            done = true;
+            return new MoveResult(getState(), -getDNFPunishment(), done);
         }
+
+        reward += done ? getCompletionReward() : -get((int)newPosition.getX(), (int)newPosition.getY());
+
+        return new MoveResult(getState(), reward, done);
     }
 
     public void set(int x, int y, float value) {
@@ -122,10 +144,26 @@ public abstract class GridEnvironment extends Environment {
         return x >= 0 && x < width && y >= 0 && y < height;
     }
 
+    boolean isValidPositionInBounds(int x, int y) { // by default, any position in bounds is valid
+        return isInBounds(x, y);
+    }
+
     public Vector2D getRandomCoordinateInBounds() {
         return new Vector2D(math.randomInt(0, width-1), math.randomInt(0, height-1));
     }
 
+    /**
+     * Updates the given position based on the specified action.
+     *
+     * @param action The action to be taken. The action is represented as an integer:
+     *      0 - Move up
+     *      1 - Move right
+     *      2 - Move down
+     *      3 - Move left
+     *      4 - Do nothing
+     * @param newPosition The position to be updated. This is a Vector2D object that will be modified
+     *                    based on the action.
+     */
     static void getNewPosFromAction(int action, Vector2D newPosition) {
         switch(action) {
             case 0: newPosition.addJ(-1); break; // Move up
@@ -137,7 +175,11 @@ public abstract class GridEnvironment extends Environment {
     }
 
     float getCompletionReward() {
-        return math.fastSqrt(getStateSpace()-4);
+        return math.clamp((float) getStateSpace()/3, 50, 200);
+    }
+
+    float getDNFPunishment() {
+        return math.fastSqrt((float) getStateSpace()/3);
     }
 
     public String toString() {

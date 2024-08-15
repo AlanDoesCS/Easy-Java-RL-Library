@@ -14,11 +14,7 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-        int octaves = 10;
-        float persistence = 0.8f;
-
         Environment.setDimensions(20, 20);
-        Environment.setStateSpace(Environment.getGridSquares()+4);
         Environment.setActionSpace(5);
 
         Trainer trainer;
@@ -29,28 +25,44 @@ public class Main {
             return;
         }
 
-        ActivationFunction sig = new Sigmoid();
-        ActivationFunction relu = new ReLU();
-
         List<Layer> layers = new ArrayList<>();
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 1, 3, 1, 1, 1, 1, 1));
 
-        List<MLPLayer> MLPLayers = MLPLayer.createMLPLayers(
-                layers.getFirst().getOutputSize(),  // input size
-                List.of(300, 300, 300),
-                List.of(sig, sig, sig),
-                List.of(0, 0, 0)
+
+        // More complex architecture
+        /*
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 32, 3, 64, 1, 1, 1, 1));
+        ConvLayer lastConvLayer = (ConvLayer) layers.getLast();
+        layers.add(new FlattenLayer(lastConvLayer.getOutputDepth(), lastConvLayer.getOutputHeight(), lastConvLayer.getOutputWidth()));
+        layers.add(new MLPLayer(64 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
+        layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
+        */
+
+
+        // Simple architecture
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
+        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 128, new ReLU(), 0));
+        layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0));
+
+        DQNAgent dqnAgent = new DQNAgent(
+                Environment.getActionSpace(),
+                layers,
+                1f,
+                0.9999f,
+                0.01f,
+                0.99f,
+                0.001f
         );
-        layers.addAll(MLPLayers);
 
-        DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f);
-
-        trainer.trainAgent(dqnAgent, 6000, 1000, 10, "plot", "ease", "axis_ticks");
+        trainer.trainAgent(dqnAgent, 6000, 1000, 1, "plot", "ease", "axis_ticks", "verbose", "show_path");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
         ArrayList<Vector2D> shortestPath = Pathfinder.dijkstra(start, end, environment);
         Environment_Visualiser vis = new Environment_Visualiser(environment);
-        vis.addPath(shortestPath, Color.RED);//new Color(0, 128, 128));
+        vis.addPath(shortestPath, Color.RED);
     }
 }

@@ -13,6 +13,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         super(width, height);
         fill();
         setAgentPosition(findValidPositionInBounds());  // represents starting position
+        setStartPosition(getAgentPosition());
         setGoalPosition(findValidPositionInBounds());
     }
 
@@ -69,7 +70,8 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         }
     }
 
-    boolean IsValidPositionInBounds(int x, int y) {
+    @Override
+    boolean isValidPositionInBounds(int x, int y) {
         if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) return false;
         return get(x, y) == PATH;
     }
@@ -79,7 +81,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         do {
             position = getRandomCoordinateInBounds();
             position.set((int) position.getX(), (int) position.getY());
-        } while (!IsValidPositionInBounds((int) position.getX(), (int) position.getY()));
+        } while (!isValidPositionInBounds((int) position.getX(), (int) position.getY()));
 
         return position;
     }
@@ -88,28 +90,9 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
     public void randomize() {
         refill();
         setAgentPosition(findValidPositionInBounds());
+        setStartPosition(getAgentPosition());
         setGoalPosition(findValidPositionInBounds());
-    }
-
-    @Override
-    public MoveResult step(int action) {
-        float reward = 0;
-        Vector2D currentPosition = getAgentPosition();
-        Vector2D newPosition = currentPosition.copy();
-
-        PerlinGridEnvironment.getNewPosFromAction(action, newPosition);
-
-        if (IsValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY())) {
-            setAgentPosition(newPosition);
-        } else {
-            newPosition = currentPosition;
-        }
-
-        boolean done = newPosition.equals(getGoalPosition());
-
-        reward += done ? getCompletionReward() : -1;
-
-        return new MoveResult(getState(), reward, done);
+        this.currentSteps = 0;
     }
 
     private void shuffleArray(int[][] array) {  // Fisher-Yates algorithm

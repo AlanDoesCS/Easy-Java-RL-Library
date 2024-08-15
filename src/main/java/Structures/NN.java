@@ -9,7 +9,7 @@ public abstract class NN {
     List<Layer> layers;
     float learningRate; // alpha
 
-    public abstract Matrix getOutput(Matrix input);
+    public abstract Object getOutput(Object input);
     public abstract void saveNN(String filename);
     public abstract void loadNN(String filename);
 
@@ -23,11 +23,12 @@ public abstract class NN {
         return res;
     }
 
-    protected List<Matrix> forwardPass(Matrix input) {
-        List<Matrix> layerOutputs = new ArrayList<>();
+    protected List<Object> forwardPass(Object input) {
+        List<Object> layerOutputs = new ArrayList<>();
         layerOutputs.add(input);
 
-        Matrix currentInput = input;
+        Object currentInput = input;
+        int i=0;
         for (Layer layer : layers) {
             currentInput = layer.compute(currentInput);
             layerOutputs.add(currentInput);
@@ -36,17 +37,21 @@ public abstract class NN {
         return layerOutputs;
     }
 
-    public void backpropagate(Matrix input, Matrix target, List<Matrix> layerOutputs) {
-        Matrix output = layerOutputs.getLast();
+    public void backpropagate(Object input, Matrix target, List<Object> layerOutputs) {
+        if (!(target instanceof Matrix)) {
+            throw new IllegalArgumentException("Target must be a Matrix.");
+        }
 
+        Matrix output = (Matrix) layerOutputs.getLast();
         Matrix error = Matrix.subtract(target, output);
-        Matrix gradientOutput = error; // MSE Loss
+        Object gradientOutput = error; // Assuming MSE Loss, use the error directly as the gradient.
 
         for (int i = layers.size() - 1; i >= 0; i--) {
             Layer currentLayer = layers.get(i);
-            Matrix layerInput = layerOutputs.get(i);
+            Object layerInput = layerOutputs.get(i);
 
             gradientOutput = currentLayer.backpropagate(layerInput, gradientOutput);
+
             currentLayer.updateParameters(learningRate);
         }
     }

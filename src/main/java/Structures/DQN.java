@@ -1,7 +1,5 @@
 package Structures;
 
-import Training.ActivationFunction;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,8 +18,8 @@ public class DQN extends NN {
     }
 
     @Override
-    public Matrix getOutput(Matrix input) {
-        List<Matrix> layerOutputs = forwardPass(input);
+    public Object getOutput(Object input) {
+        List<Object> layerOutputs = forwardPass(input);
         return layerOutputs.getLast();
     }
 
@@ -57,6 +55,16 @@ public class DQN extends NN {
 
     public int numLayers() {
         return layers.size();
+    }
+
+    public static void copyNetworkWeightsAndBiases(DQN sourceNetwork, DQN targetNetwork) {
+        if (sourceNetwork.numLayers() != targetNetwork.numLayers()) {
+            throw new IllegalArgumentException(String.format("Source and target networks must have the same number of layers. (%d != %d)", sourceNetwork.numLayers(), targetNetwork.numLayers()));
+        }
+
+        for (int i = 0; i < sourceNetwork.numLayers(); i++) {
+            sourceNetwork.getLayer(i).copyTo(targetNetwork.getLayer(i), false);
+        }
     }
 
     public int getInputSize() {
