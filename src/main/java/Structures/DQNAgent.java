@@ -25,7 +25,7 @@ public class DQNAgent {
         this.gamma = gamma;
         this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
-        this.targetUpdateFrequency = 100;
+        this.targetUpdateFrequency = 1000;
         this.stepCounter = 0;
 
         this.mainDQN = new DQN(stateSpace, layers, learningRate);
@@ -66,7 +66,7 @@ public class DQNAgent {
         Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
 
         Matrix target = currentQValues.copy();
-        Matrix nextQValues = (Matrix) mainDQN.getOutput(nextState);
+        Matrix nextQValues = (Matrix) targetDQN.getOutput(nextState);
 
         // get max Q value for next state
         float maxNextQ = math.max(nextQValues);

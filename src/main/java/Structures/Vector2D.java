@@ -32,7 +32,7 @@ public class Vector2D {
     }
 
     public void normalise() {
-        float magnitude = math.fastSqrt(x * x + y * y);
+        float magnitude = (float) Math.sqrt(x * x + y * y);
         x /= magnitude;
         y /= magnitude;
     }
@@ -45,7 +45,7 @@ public class Vector2D {
     }
 
     public String toString() {
-        return "(" + "x=" + x + ", y=" + y + ')';
+        return "(x=" + x + ", y=" + y + ')';
     }
 
     public void add(float I, float J) {
@@ -83,5 +83,15 @@ public class Vector2D {
 
     public boolean equals(Vector2D other) {
         return (x == other.x) && (y == other.y);
+    }
+
+    public float distanceTo(Vector2D goalPosition) {
+        float dx = x - goalPosition.x;
+        float dy = y - goalPosition.y;
+        return (float) Math.sqrt(dx*dx + dy*dy);
+    }
+
+    public float manhattanDistanceTo(Vector2D goalPosition) {
+        return Math.abs(x - goalPosition.x) + Math.abs(y - goalPosition.y);
     }
 }

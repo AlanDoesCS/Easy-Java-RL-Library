@@ -15,6 +15,10 @@ public abstract class GridEnvironment extends Environment {
 
     protected int maxSteps, currentSteps;
 
+    public int getCurrentSteps() {
+        return currentSteps;
+    }
+
     public GridEnvironment(int width, int height) {
         this.width = width;
         this.height = height;
@@ -24,8 +28,11 @@ public abstract class GridEnvironment extends Environment {
         this.gridMatrix = new Matrix(height, width);
         this.stateTensor = new Tensor(3, height, width); // Environment, Agent, Goal channels
 
-        this.maxSteps = width*height*2;
+        this.maxSteps = width*height;
         this.currentSteps = 0;
+
+        this.minReward = -1 - getDNFPunishment(); // Worst case: invalid move or bad move + DNF
+        this.maxReward = getCompletionReward() + 1; // Best case: reach goal + max step reward + 0 cost
     }
 
     public int getNumSquares() {
@@ -72,33 +79,43 @@ public abstract class GridEnvironment extends Environment {
         return stateTensor;
     }
 
+    float getStepReward(Vector2D startPosition, Vector2D oldPosition, Vector2D newPosition) {
+        float startDistance = startPosition.manhattanDistanceTo(goalPosition);
+        float oldDistance = oldPosition.manhattanDistanceTo(goalPosition);
+        float newDistance = newPosition.manhattanDistanceTo(goalPosition);
+
+        return oldDistance - newDistance / startDistance;
+    }
+
     public MoveResult step(int action) {
         float reward = 0;
-        Vector2D currentPosition = getAgentPosition();
-        Vector2D newPosition = currentPosition.copy();
+        currentSteps++;
+        Vector2D oldPosition = getAgentPosition();
+        Vector2D newPosition = oldPosition.copy();
 
-        PerlinGridEnvironment.getNewPosFromAction(action, newPosition);
+        getNewPosFromAction(action, newPosition);
 
         if (isValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY())) {
             setAgentPosition(newPosition);
-            currentSteps++;
+            reward += getStepReward(startPosition, oldPosition, newPosition);
         } else {
-            newPosition = currentPosition;
+            newPosition = oldPosition;
+            reward -= 1;
         }
-
-        // punish not moving
-        if (newPosition.equals(currentPosition) && !newPosition.equals(goalPosition)) reward -= 5f;
 
         boolean done = newPosition.equals(getGoalPosition());
         boolean maxStepsReached = currentSteps >= maxSteps;
 
         if (maxStepsReached && !done) {
             done = true;
-            return new MoveResult(getState(), -getDNFPunishment(), done);
+            reward -= getDNFPunishment();
+        } else if (done) {
+            reward += getCompletionReward();
+        } else {
+            reward -= get((int)newPosition.getX(), (int)newPosition.getY());
         }
 
-        reward += done ? getCompletionReward() : -get((int)newPosition.getX(), (int)newPosition.getY());
-
+        reward = math.clamp(math.scale(reward, minReward, maxReward, -1, 1), -1, 1);
         return new MoveResult(getState(), reward, done);
     }
 
@@ -175,11 +192,11 @@ public abstract class GridEnvironment extends Environment {
     }
 
     float getCompletionReward() {
-        return math.clamp((float) getStateSpace()/3, 50, 200);
+        return math.clamp((float) getStateSpace()/3, 100, 200);
     }
 
     float getDNFPunishment() {
-        return math.fastSqrt((float) getStateSpace()/3);
+        return (float) Math.sqrt((double) getStateSpace() /3);
     }
 
     public String toString() {

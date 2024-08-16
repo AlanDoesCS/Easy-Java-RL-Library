@@ -40,14 +40,14 @@ public class Trainer {
         GraphPlotter plotter = null;
 
         if (plot) {
-            plotter = new GraphPlotter("DQN training", GraphPlotter.Types.LINE, "Episode", "Cumulative Reward", varargs);
+            plotter = new GraphPlotter("DQN training", GraphPlotter.Types.LINE, "Episode", "Average Reward", varargs);
             plotter.setVisible(true);
             plotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         }
 
         boolean showPath = args.contains("show_path");
-        Environment_Visualiser visualiser;  // for showing the path - Dijkstra's path
-        Environment_Visualiser visualiser2; // for showing the path - DQN's path
+        Environment_Visualiser visualiser = null;  // for showing the path - Dijkstra's path
+        Environment_Visualiser visualiser2 = null; // for showing the path - DQN's path
 
         if (verbose) {
             System.out.println("Training agent with "+numEpisodes+" episodes, saving every "+savePeriod+" episodes.");
@@ -68,10 +68,6 @@ public class Trainer {
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
         EpisodeReplay replay = new EpisodeReplay(1000);
-        int batchSize = 64;
-        int updatePeriod = 4;
-        int totalSteps;
-
         for (int episode = 1; episode <= numEpisodes; episode++) {
             EpisodeReplay.Episode currentEpisode = new EpisodeReplay.Episode();
 
@@ -80,29 +76,36 @@ public class Trainer {
 
             Tensor state = environment.getState();
             boolean done = false;
-            float totalReward = 0;
+            float cumulativeReward = 0;
             ArrayList<Vector2D> dqnPath = new ArrayList<>();
 
-            totalSteps = 0;
             while (!done) {
                 int action = agent.chooseAction(state);
-                dqnPath.add(environment.getAgentPosition());
-                Environment.MoveResult result = environment.step(action);
+                if (!dqnPath.isEmpty()) {
+                    if (!dqnPath.getLast().equals(environment.getAgentPosition())) {
+                        dqnPath.add(environment.getAgentPosition()); // Add to path if agent has moved
+                    }
+                } else {
+                    dqnPath.add(environment.getAgentPosition());
+                }
 
-                totalSteps++;
+                Environment.MoveResult result = environment.step(action);
 
                 // Add experience to current episode
                 currentEpisode.addExperience(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
 
                 state = result.state;
                 done = result.done;
-                totalReward += result.reward;
+                cumulativeReward += result.reward;
 
-                System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, totalReward);
+                if (verbose) System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f, Steps: (%d)%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, cumulativeReward, environment.getCurrentSteps());
             }
+            int pathLength = environment.getCurrentSteps();
+            float meanReward = cumulativeReward / pathLength;
 
             replay.add(currentEpisode);
-            System.out.println("\nEpisode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size()+", Environment = "+environment.getClass().getSimpleName()+"\n");
+
+            System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Unique Steps=%d, Environment=%s %n", episode, cumulativeReward, meanReward, pathLength, environment.getClass().getSimpleName());
 
             if (replay.size() > 0) {
                 EpisodeReplay.Episode trainingEpisode = replay.sample();
@@ -113,21 +116,30 @@ public class Trainer {
 
             // Progress Tracking -------------------------------------------------------------
 
-            if (plot) plotter.addPoint(new Vector2D(episode, totalReward));
+            if (plot) plotter.addPoint(new Vector2D(episode, meanReward));
 
             if (episode % savePeriod == 0) {
-                System.out.println("Episode " + episode + ": Total Reward = " + totalReward +", Total Steps = "+dqnPath.size());
+                System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Environment=%s %n",
+                        episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), environment.getClass().getSimpleName());
+
                 agent.saveAgent("agent_" + episode + ".dat");
             }
 
             if (episode % visualiserUpdatePeriod == 0) {
+                if (showPath && (visualiser == null || visualiser2 == null)) {
+                    visualiser = new Environment_Visualiser(environment);
+                    visualiser2 = new Environment_Visualiser(environment);
+                }
+
                 if (plot) plotter.plot();
 
                 if (showPath) {
-                    visualiser = new Environment_Visualiser(environment);
-                    visualiser.addPath(Pathfinder.dijkstra(environment.getStartPosition(), environment.getGoalPosition(), environment), java.awt.Color.RED);
-                    visualiser2 = new Environment_Visualiser(environment);
-                    visualiser2.addPath(dqnPath, Color.GREEN);
+                    visualiser.reset(environment);
+                    visualiser2.reset(environment);
+                    visualiser.clearPaths();
+                    visualiser2.clearPaths();
+                    visualiser.addPath(Pathfinder.dijkstra(environment.getStartPosition(), environment.getGoalPosition(), environment), Color.RED);
+                    visualiser2.addPath(new ArrayList<>(dqnPath), Color.GREEN);
                 }
             }
         }

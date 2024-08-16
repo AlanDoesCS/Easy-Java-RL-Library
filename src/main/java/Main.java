@@ -3,6 +3,7 @@ import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
 import Tools.Perlin1D;
+import Tools.Presets.DQNAgents;
 import Training.*;
 
 import com.sun.jdi.InvalidTypeException;
@@ -19,28 +20,16 @@ public class Main {
 
         Trainer trainer;
         try {
-            trainer = new Trainer(Set.of(PerlinGridEnvironment.class, MazeGridEnvironment.class, RandomGridEnvironment.class));
+            trainer = new Trainer(Set.of(PerlinGridEnvironment.class, RandomGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
         }
 
+        // DQNAgent dqnAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
+
         List<Layer> layers = new ArrayList<>();
 
-
-        // More complex architecture
-        /*
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 32, 3, 64, 1, 1, 1, 1));
-        ConvLayer lastConvLayer = (ConvLayer) layers.getLast();
-        layers.add(new FlattenLayer(lastConvLayer.getOutputDepth(), lastConvLayer.getOutputHeight(), lastConvLayer.getOutputWidth()));
-        layers.add(new MLPLayer(64 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
-        layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
-        */
-
-
-        // Simple architecture
         layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
         layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
         layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
@@ -51,13 +40,13 @@ public class Main {
                 Environment.getActionSpace(),
                 layers,
                 1f,
-                0.9999f,
+                0.9995f,
                 0.01f,
-                0.99f,
-                0.001f
+                0.9999f,
+                0.0001f
         );
 
-        trainer.trainAgent(dqnAgent, 6000, 1000, 1, "plot", "ease", "axis_ticks", "verbose", "show_path");
+        trainer.trainAgent(dqnAgent, 6000, 100, 2, "plot", "ease", "axis_ticks", "show_path", "verbose");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
