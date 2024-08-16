@@ -15,20 +15,38 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-        Environment.setDimensions(20, 50);
+        Environment.setDimensions(20, 20);
         Environment.setActionSpace(5);
 
         Trainer trainer;
         try {
-            trainer = new Trainer(Set.of(PerlinGridEnvironment.class, MazeGridEnvironment.class, RandomGridEnvironment.class));
+            trainer = new Trainer(Set.of(PerlinGridEnvironment.class, RandomGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
         }
 
-        DQNAgent dqnAgent = DQNAgents.LARGE_GRID_DQN_AGENT();
+        // DQNAgent dqnAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
 
-        trainer.trainAgent(dqnAgent, 6000, 100, 10, "plot", "ease", "axis_ticks");
+        List<Layer> layers = new ArrayList<>();
+
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
+        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 128, new ReLU(), 0));
+        layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0));
+
+        DQNAgent dqnAgent = new DQNAgent(
+                Environment.getActionSpace(),
+                layers,
+                1f,
+                0.9995f,
+                0.01f,
+                0.9999f,
+                0.0001f
+        );
+
+        trainer.trainAgent(dqnAgent, 6000, 100, 2, "plot", "ease", "axis_ticks", "show_path", "verbose");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {

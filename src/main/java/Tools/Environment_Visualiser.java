@@ -9,15 +9,18 @@ import java.util.ArrayList;
 
 public class Environment_Visualiser extends Visualiser {
     static final int width = 720, height = 720, pointRadius = 5;
-    final int squareWIDTH, squareHEIGHT;
+    int squareWIDTH;
+    int squareHEIGHT;
     ArrayList<ArrayList<Vector2D>> pathsFollowed = new ArrayList<>();
     ArrayList<Color> pathColors = new ArrayList<>();
+    GridEnvironment gridEnvironment;
 
     public Environment_Visualiser(GridEnvironment environment) {
         super("Grid environment", width, height);
 
         if (environment == null) throw new NullPointerException("Cannot visualise an environment if it is null!");
 
+        this.gridEnvironment = environment;
         final int envWIDTH = environment.getWidth();
         final int envHEIGHT = environment.getHeight();
         this.squareWIDTH = Math.max(width / envWIDTH, 1);
@@ -36,7 +39,7 @@ public class Environment_Visualiser extends Visualiser {
                 // Create grid squares
                 for (int y=0; y<envHEIGHT; y++) {
                     for (int x=0; x<envWIDTH; x++) {
-                        g2.setColor(colorOf(environment.get(x, y), 0, 1));
+                        g2.setColor(colorOf(gridEnvironment.get(x, y), 0, 1));
                         g2.fillRect(x*squareWIDTH, y*squareHEIGHT, squareWIDTH, squareHEIGHT);
                     }
                 }
@@ -91,5 +94,22 @@ public class Environment_Visualiser extends Visualiser {
     public void addPath(ArrayList<Vector2D> path, Color color) {
         pathsFollowed.add(path);
         pathColors.add(color);
+    }
+
+    public void reset(GridEnvironment environment) {
+        if (environment == null) throw new NullPointerException("Cannot visualise an environment if it is null!");
+
+        this.gridEnvironment = environment;
+        final int envWIDTH = environment.getWidth();
+        final int envHEIGHT = environment.getHeight();
+        this.squareWIDTH = Math.max(width / envWIDTH, 1);
+        this.squareHEIGHT = Math.max(height / envHEIGHT, 1);
+
+        panel.repaint();
+    }
+
+    public void clearPaths() {
+        pathsFollowed.clear();
+        pathColors.clear();
     }
 }

@@ -1,9 +1,7 @@
 package Training;
 
-import Structures.Matrix;
 import Structures.Tensor;
 import com.sun.jdi.InvalidTypeException;
-import jdk.jshell.spi.ExecutionControl;
 
 public abstract class Environment {
     // defaults
@@ -11,6 +9,8 @@ public abstract class Environment {
     static int octaves = 8;
     static int stateSpace=-1, actionSpace=-1;
     static float persistence = 0.9f, step = 0.01f;
+    float minReward;
+    float maxReward;
 
     public static int getActionSpace() {
         return actionSpace;
