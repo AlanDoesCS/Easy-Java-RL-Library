@@ -76,7 +76,7 @@ public abstract class GridEnvironment extends Environment {
                 stateTensor.set(2, y, x, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
             }
         }
-        return stateTensor;
+        return stateTensor.copy();
     }
 
     float getStepReward(Vector2D oldPosition, Vector2D newPosition) {

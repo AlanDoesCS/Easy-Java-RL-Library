@@ -45,4 +45,14 @@ public class Tensor {
     public void setData(float[][][] data) {
         this.data = data;
     }
+
+    public Tensor copy() {
+        float[][][] copiedData = new float[depth][height][width];
+        for (int d = 0; d < depth; d++) {
+            for (int h = 0; h < height; h++) {
+                System.arraycopy(data[d][h], 0, copiedData[d][h], 0, width);
+            }
+        }
+        return new Tensor(copiedData);
+    }
 }
