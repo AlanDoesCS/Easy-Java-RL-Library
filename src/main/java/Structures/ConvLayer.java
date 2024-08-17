@@ -1,12 +1,12 @@
 package Structures;
 
 import Tools.math;
+import Training.ActivationFunction;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ConvLayer extends Layer {
     private static final int PARALLELISM_THRESHOLD = 128;   // threshold for parallelizing loops - increase value for weaker systems
@@ -22,6 +22,10 @@ public class ConvLayer extends Layer {
     int inputHeight;
     int inputDepth;
     private int outputWidth, outputHeight;
+
+    private ActivationFunction activationFunction;
+
+    private static final float clipValue = 5.0f;
 
     private float[][][][] gradientFilters;
     private float[] gradientBiases;
@@ -62,16 +66,18 @@ public class ConvLayer extends Layer {
         target.inputDepth = this.inputDepth;
         target.outputWidth = this.outputWidth;
         target.outputHeight = this.outputHeight;
+        target.activationFunction = this.activationFunction;
     }
 
     @Override
     public Layer copy() {
-        ConvLayer copyLayer = new ConvLayer(inputWidth, inputHeight, inputDepth, filterSize, numFilters, strideX, strideY, paddingX, paddingY, "noInit");
+        ConvLayer copyLayer = new ConvLayer(activationFunction, inputWidth, inputHeight, inputDepth, filterSize, numFilters, strideX, strideY, paddingX, paddingY, "noInit");
         copyTo(copyLayer, true);
         return copyLayer;
     }
 
-    public ConvLayer(int inputWidth, int inputHeight, int inputDepth, int filterSize, int numFilters, int strideX, int strideY, int paddingX, int paddingY, String... args) {
+    public ConvLayer(ActivationFunction activationFunction, int inputWidth, int inputHeight, int inputDepth, int filterSize, int numFilters, int strideX, int strideY, int paddingX, int paddingY, String... args) {
+        this.activationFunction = activationFunction;
         this.inputSize = inputWidth * inputHeight * inputDepth;
         this.inputWidth = inputWidth;
         this.inputHeight = inputHeight;
@@ -105,12 +111,13 @@ public class ConvLayer extends Layer {
     }
 
     private void initializeParameters() {
-        // Initialize filters with small random values
+        // He initialization (for ReLU)
+        float stdDev = (float) Math.sqrt(2.0 / (inputDepth * filterSize * filterSize));
         for (int i = 0; i < filters.length; i++) {
             for (int j = 0; j < filters[i].length; j++) {
                 for (int k = 0; k < filters[i][j].length; k++) {
                     for (int l = 0; l < filters[i][j][k].length; l++) {
-                        filters[i][j][k][l] = math.randomFloat(-0.005f, 0.005f);
+                        filters[i][j][k][l] = math.randomFloat(-stdDev, stdDev);
                     }
                 }
             }
@@ -186,7 +193,7 @@ public class ConvLayer extends Layer {
                             }
                         }
                         sum += biases[f];
-                        output[f][i][j] = sum;
+                        output[f][i][j] = activationFunction.activate(sum);
                     }
                 }
             }
@@ -248,7 +255,7 @@ public class ConvLayer extends Layer {
             for (int f = startFilter; f < endFilter; f++) {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
-                        float gradientValue = gradientOutput.get(f, i, j);
+                        float gradientValue = gradientOutput.get(f, i, j) * activationFunction.derivative(gradientOutput.get(f, i, j));
 
                         gradientBiases[f] += gradientValue;
 
@@ -277,10 +284,12 @@ public class ConvLayer extends Layer {
             for (int d = 0; d < inputDepth; d++) {
                 for (int i = 0; i < filterSize; i++) {
                     for (int j = 0; j < filterSize; j++) {
+                        gradientFilters[f][d][i][j] = math.clamp(gradientFilters[f][d][i][j], -clipValue, clipValue);
                         filters[f][d][i][j] -= learningRate * gradientFilters[f][d][i][j];
                     }
                 }
             }
+            gradientBiases[f] = math.clamp(gradientBiases[f], -clipValue, clipValue); // Clip the bias gradient
             biases[f] -= learningRate * gradientBiases[f];
         }
     }

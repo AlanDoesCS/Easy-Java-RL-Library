@@ -69,6 +69,7 @@ public class math {
      * @return the scaled value in the target range
      */
     public static float scale(float value, float min_start, float max_start, float min_end, float max_end) {
+        if (min_start == max_start) return min_end; // avoid division by zero
         value = normalise(value, min_start, max_start);
         return value * (max_end - min_end) + min_end;
     }

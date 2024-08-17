@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MLPLayer extends Layer {
+    private static final float clipValue = 10.0f;
+
     Matrix weights, biases;
     Matrix gradientWeights, gradientBiases;
     ActivationFunction phi;
@@ -95,6 +97,9 @@ public class MLPLayer extends Layer {
 
     @Override
     public void updateParameters(float learningRate) {
+        gradientWeights = gradientWeights.clip(-clipValue, clipValue);
+        gradientBiases = gradientBiases.clip(-clipValue, clipValue);
+
         weights.subtract(Matrix.multiply(gradientWeights, learningRate));
         biases.subtract(Matrix.multiply(gradientBiases, learningRate));
     }

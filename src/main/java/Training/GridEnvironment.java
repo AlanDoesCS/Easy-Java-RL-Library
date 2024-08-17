@@ -32,7 +32,7 @@ public abstract class GridEnvironment extends Environment {
         this.currentSteps = 0;
 
         this.minReward = -1 - getDNFPunishment(); // Worst case: invalid move or bad move + DNF
-        this.maxReward = getCompletionReward() + 1; // Best case: reach goal + max step reward + 0 cost
+        this.maxReward = getCompletionReward() + 1.2f; // Best case: reach goal + max step reward + 0 cost
     }
 
     public int getNumSquares() {
@@ -79,12 +79,11 @@ public abstract class GridEnvironment extends Environment {
         return stateTensor;
     }
 
-    float getStepReward(Vector2D startPosition, Vector2D oldPosition, Vector2D newPosition) {
-        float startDistance = startPosition.manhattanDistanceTo(goalPosition);
+    float getStepReward(Vector2D oldPosition, Vector2D newPosition) {
         float oldDistance = oldPosition.manhattanDistanceTo(goalPosition);
         float newDistance = newPosition.manhattanDistanceTo(goalPosition);
 
-        return oldDistance - newDistance / startDistance;
+        return oldDistance == 0 ? 0f : (oldDistance - newDistance) / oldDistance;
     }
 
     public MoveResult step(int action) {
@@ -97,10 +96,11 @@ public abstract class GridEnvironment extends Environment {
 
         if (isValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY())) {
             setAgentPosition(newPosition);
-            reward += getStepReward(startPosition, oldPosition, newPosition);
+            reward += getStepReward(oldPosition, newPosition);
+            reward += 0.2f; // encourage valid moves
         } else {
             newPosition = oldPosition;
-            reward -= 1;
+            reward -= 1; // discourage invalid moves
         }
 
         boolean done = newPosition.equals(getGoalPosition());
@@ -112,7 +112,7 @@ public abstract class GridEnvironment extends Environment {
         } else if (done) {
             reward += getCompletionReward();
         } else {
-            reward -= get((int)newPosition.getX(), (int)newPosition.getY());
+            reward -= (float) (get((int)newPosition.getX(), (int)newPosition.getY())*0.5);
         }
 
         reward = math.clamp(math.scale(reward, minReward, maxReward, -1, 1), -1, 1);
@@ -192,11 +192,11 @@ public abstract class GridEnvironment extends Environment {
     }
 
     float getCompletionReward() {
-        return math.clamp((float) getStateSpace()/3, 100, 200);
+        return 5;
     }
 
     float getDNFPunishment() {
-        return (float) Math.sqrt((double) getStateSpace() /3);
+        return 3;
     }
 
     public String toString() {

@@ -49,12 +49,18 @@ public class ExperienceReplay {
         Object nextState;
         boolean done;
 
+        int index; // Index in the priority tree - Only used in PrioritizedExperienceReplay
+
         public Experience(Object state, int action, float reward, Object nextState, boolean done) {
             this.state = state;
             this.action = action;
             this.reward = reward;
             this.nextState = nextState;
             this.done = done;
+        }
+
+        public String toString() {
+            return "Experience: " + state + ", " + action + ", " + reward + ", " + nextState + ", " + done;
         }
     }
 }

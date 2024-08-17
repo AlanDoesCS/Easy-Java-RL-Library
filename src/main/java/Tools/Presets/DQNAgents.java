@@ -23,10 +23,11 @@ public class DQNAgents {
 
     public static DQNAgent LARGE_GRID_DQN_AGENT() {
         List<Layer> layers = new ArrayList<>();
+        ReLU activation = new ReLU();
 
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 32, 3, 64, 1, 1, 1, 1));
+        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 32, 3, 64, 1, 1, 1, 1));
         layers.add(new FlattenLayer(64, Environment.getGridHeight(), Environment.getGridWidth()));
         layers.add(new MLPLayer(64 * Environment.getGridWidth() * Environment.getGridHeight(), 256, new ReLU(), 0));
         layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
@@ -36,9 +37,10 @@ public class DQNAgents {
 
     public static DQNAgent MEDIUM_GRID_DQN_AGENT() {
         List<Layer> layers = new ArrayList<>();
+        ReLU activation = new ReLU();
 
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
-        layers.add(new ConvLayer(Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
         layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
         layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 128, new ReLU(), 0));
         layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0));

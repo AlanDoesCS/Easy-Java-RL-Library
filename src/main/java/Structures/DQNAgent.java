@@ -8,14 +8,14 @@ import java.util.ArrayList;
 import Tools.math;
 
 public class DQNAgent {
-    private DQN mainDQN, targetDQN;
+    private DQN onlineDQN, targetDQN;
     private float epsilon;            // exploration rate for epsilon greedy
     private final float epsilonDecay; // rate of change of epsilon
     private final float epsilonMin;
     private final float gamma;        // discount factor - how much future rewards should be prioritised
     private final int stateSpace;     // number of variables used to describe environment state
     private final int actionSpace;    // number of actions the agent can take in the environment
-    private final int targetUpdateFrequency; // how often to update target network
+    private final int targetUpdateFrequency; // how often to update target network (tau)
     private int stepCounter;
 
     public DQNAgent(int actionSpace, List<Layer> layers, float initialEpsilon, float epsilonDecay, float epsilonMin, float gamma, float learningRate) {
@@ -28,7 +28,7 @@ public class DQNAgent {
         this.targetUpdateFrequency = 1000;
         this.stepCounter = 0;
 
-        this.mainDQN = new DQN(stateSpace, layers, learningRate);
+        this.onlineDQN = new DQN(stateSpace, layers, learningRate);
 
         // create a deep copy of mainDQN
         this.targetDQN = new DQN(stateSpace, copyLayers(layers), learningRate);
@@ -46,7 +46,7 @@ public class DQNAgent {
         if (math.random() < epsilon) {
             return (int) (Math.random() * actionSpace);
         } else {
-            Matrix qValues = (Matrix) mainDQN.getOutput(state);
+            Matrix qValues = (Matrix) onlineDQN.getOutput(state);
             int actionIndex = 0;
             float max = qValues.get(0, 0);
             for (int i = 1; i < actionSpace; i++) {
@@ -59,10 +59,10 @@ public class DQNAgent {
         }
     }
 
-    public void train(Object state, int action, float reward, Object nextState, boolean done) {
+    public float train(Object state, int action, float reward, Object nextState, boolean done) {
         stepCounter++;
 
-        List<Object> layerOutputs = mainDQN.forwardPass(state);
+        List<Object> layerOutputs = onlineDQN.forwardPass(state);
         Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
 
         Matrix target = currentQValues.copy();
@@ -73,15 +73,21 @@ public class DQNAgent {
         float targetValue = done ? reward : reward + gamma * maxNextQ;
         target.set(0, action, targetValue);
 
+        // calculate TD error
+        if (Float.isNaN(currentQValues.get(0, action))) System.err.println("action "+action+" is NaN!! : "+currentQValues.get(0, action));
+        float tdError = targetValue - currentQValues.get(0, action);
+
         // update network
-        mainDQN.backpropagate(state, target, layerOutputs);
+        onlineDQN.backpropagate(state, target, layerOutputs);
 
         decayEpsilon();
 
         if (stepCounter % targetUpdateFrequency == 0) {
-            DQN.copyNetworkWeightsAndBiases(mainDQN, targetDQN);
+            DQN.copyNetworkWeightsAndBiases(onlineDQN, targetDQN);
             stepCounter = 0;
         }
+
+        return tdError;
     }
 
     private void decayEpsilon() {
@@ -93,10 +99,10 @@ public class DQNAgent {
     }
 
     public void saveAgent(String filename) {
-        mainDQN.saveNN(filename);
+        onlineDQN.saveNN(filename);
     }
 
     public void loadAgent(String filename) {
-        mainDQN.loadNN(filename);
+        onlineDQN.loadNN(filename);
     }
 }

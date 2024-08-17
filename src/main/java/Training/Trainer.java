@@ -67,9 +67,10 @@ public class Trainer {
 
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
-        EpisodeReplay replay = new EpisodeReplay(1000);
+        PrioritizedExperienceReplay replay = new PrioritizedExperienceReplay(10000);
+        int batchSize = 32;
+
         for (int episode = 1; episode <= numEpisodes; episode++) {
-            EpisodeReplay.Episode currentEpisode = new EpisodeReplay.Episode();
 
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
@@ -91,8 +92,22 @@ public class Trainer {
 
                 Environment.MoveResult result = environment.step(action);
 
-                // Add experience to current episode
-                currentEpisode.addExperience(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
+                // Add experience to replay buffer
+                replay.add(new ExperienceReplay.Experience(state, action, result.reward, result.state, result.done));
+
+                if (replay.size() > batchSize) {
+                    List<ExperienceReplay.Experience> batch = replay.sample(batchSize);
+                    List<Integer> treeIndices = new ArrayList<>();
+                    List<Float> tdErrors = new ArrayList<>();
+
+                    for (ExperienceReplay.Experience exp : batch) {
+                        float tdError = agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
+                        treeIndices.add(exp.index);
+                        tdErrors.add(tdError);
+                    }
+
+                    replay.updatePriorities(treeIndices, tdErrors);
+                }
 
                 state = result.state;
                 done = result.done;
@@ -103,24 +118,18 @@ public class Trainer {
             int pathLength = environment.getCurrentSteps();
             float meanReward = cumulativeReward / pathLength;
 
-            replay.add(currentEpisode);
-
-            System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Unique Steps=%d, Environment=%s %n", episode, cumulativeReward, meanReward, pathLength, environment.getClass().getSimpleName());
-
-            if (replay.size() > 0) {
-                EpisodeReplay.Episode trainingEpisode = replay.sample();
-                for (ExperienceReplay.Experience exp : trainingEpisode.experiences) {
-                    agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
-                }
-            }
+            System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, Environment=%s %n",
+                    episode, cumulativeReward, meanReward, dqnPath.size(), agent.getEpsilon(), environment.getClass().getSimpleName()
+            );
 
             // Progress Tracking -------------------------------------------------------------
 
             if (plot) plotter.addPoint(new Vector2D(episode, meanReward));
 
             if (episode % savePeriod == 0) {
-                System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Environment=%s %n",
-                        episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), environment.getClass().getSimpleName());
+                System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, Environment=%s %n",
+                        episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), environment.getClass().getSimpleName()
+                );
 
                 agent.saveAgent("agent_" + episode + ".dat");
             }

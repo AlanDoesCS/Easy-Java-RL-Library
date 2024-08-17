@@ -128,6 +128,16 @@ public class Matrix implements Serializable {
         }
     }
 
+    public Matrix clip(float min, float max) {
+        Matrix result = new Matrix(this.rows, this.cols);
+        for (int r = 0; r < this.rows; r++) {
+            for (int c = 0; c < this.cols; c++) {
+                result.set(c, r, Math.max(min, Math.min(max, this.get(c, r))));
+            }
+        }
+        return result;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
