@@ -54,6 +54,8 @@ public abstract class Environment {
             return new MazeGridEnvironment(gridWidth, gridHeight);
         } else if (envClass.equals(RandomGridEnvironment.class)) {
             return new RandomGridEnvironment(gridWidth, gridHeight);
+        } else if (envClass.equals(EmptyGridEnvironment.class)) {
+            return new EmptyGridEnvironment(gridWidth, gridHeight);
         } else if (envClass.equals(PerlinGridEnvironment.class)) {
             return new PerlinGridEnvironment(gridWidth, gridHeight, octaves, persistence, step);
         } else {

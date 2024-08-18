@@ -118,19 +118,23 @@ public class Trainer {
             int pathLength = environment.getCurrentSteps();
             float meanReward = cumulativeReward / pathLength;
 
-            System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, Environment=%s %n",
-                    episode, cumulativeReward, meanReward, dqnPath.size(), agent.getEpsilon(), environment.getClass().getSimpleName()
+            System.out.printf("Episode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, LearningRate=%f, Environment=%s %n",
+                    episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()
             );
+            /*
+            for (int i = 0; i < agent.getOnlineDQN().numLayers(); i++) {
+                if (agent.getOnlineDQN().getLayer(i) instanceof Structures.MLPLayer layer) {
+                    layer.weightsAndBiasesDump();
+                }
+            }
+             */
+
 
             // Progress Tracking -------------------------------------------------------------
 
             if (plot) plotter.addPoint(new Vector2D(episode, meanReward));
 
             if (episode % savePeriod == 0) {
-                System.out.printf("\nEpisode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, Environment=%s %n",
-                        episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), environment.getClass().getSimpleName()
-                );
-
                 agent.saveAgent("agent_" + episode + ".dat");
             }
 
@@ -147,8 +151,8 @@ public class Trainer {
                     visualiser2.reset(environment);
                     visualiser.clearPaths();
                     visualiser2.clearPaths();
-                    visualiser.addPath(Pathfinder.dijkstra(environment.getStartPosition(), environment.getGoalPosition(), environment), Color.RED);
-                    visualiser2.addPath(new ArrayList<>(dqnPath), Color.GREEN);
+                    visualiser.addPath(Pathfinder.dijkstra(environment.getStartPosition(), environment.getGoalPosition(), environment), Color.ORANGE);
+                    visualiser2.addPath(new ArrayList<>(dqnPath), Color.ORANGE);
                 }
             }
         }

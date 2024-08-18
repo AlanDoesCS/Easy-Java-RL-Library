@@ -7,7 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MLPLayer extends Layer {
-    private static final float clipValue = 10.0f;
+    private static final float CLIP_THRESHOLD = 1.0f;
+    private static final float LOSS_SCALE = 128.0f;
 
     Matrix weights, biases;
     Matrix gradientWeights, gradientBiases;
@@ -17,7 +18,8 @@ public class MLPLayer extends Layer {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         weights = new Matrix(outputSize, inputSize);
-        weights.randomize();
+        float stddev = (float) Math.sqrt(2.0 / (inputSize + outputSize));
+        weights.randomize(-stddev, stddev); // Xavier initialization
         biases = new Matrix(outputSize, 1);
         biases.fill(bias);
         gradientWeights = new Matrix(outputSize, inputSize);
@@ -80,6 +82,9 @@ public class MLPLayer extends Layer {
         Matrix matrixInput = (Matrix) input;
         Matrix matrixGradientOutput = (Matrix) gradientOutput;
 
+        // Apply loss scaling
+        matrixGradientOutput = Matrix.multiply(matrixGradientOutput, LOSS_SCALE);
+
         gradientWeights = Matrix.multiply(matrixGradientOutput, matrixInput.transpose());
         gradientBiases = matrixGradientOutput;
 
@@ -97,8 +102,19 @@ public class MLPLayer extends Layer {
 
     @Override
     public void updateParameters(float learningRate) {
-        gradientWeights = gradientWeights.clip(-clipValue, clipValue);
-        gradientBiases = gradientBiases.clip(-clipValue, clipValue);
+        float gradientNorm = (float) Math.sqrt(
+                Math.pow(gradientWeights.sumOfSquares(), 2) +
+                Math.pow(gradientBiases.sumOfSquares(), 2)
+        );
+
+        if (gradientNorm > CLIP_THRESHOLD) {
+            float scale = CLIP_THRESHOLD / gradientNorm;
+            gradientWeights.multiply(scale);
+            gradientBiases.multiply(scale);
+        }
+
+        gradientWeights.divide(LOSS_SCALE);
+        gradientBiases.divide(LOSS_SCALE);
 
         weights.subtract(Matrix.multiply(gradientWeights, learningRate));
         biases.subtract(Matrix.multiply(gradientBiases, learningRate));
@@ -124,5 +140,13 @@ public class MLPLayer extends Layer {
         }
 
         return layers;
+    }
+
+    public void weightsAndBiasesDump() {
+        System.out.println("Weights: "+weights);
+        System.out.println("Biases: "+biases);
+
+        System.out.println("Gradient Weights: "+gradientWeights);
+        System.out.println("Gradient Biases: "+gradientBiases);
     }
 }

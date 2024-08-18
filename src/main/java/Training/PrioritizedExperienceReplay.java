@@ -4,6 +4,7 @@ import Tools.math;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 public class PrioritizedExperienceReplay {
@@ -32,6 +33,15 @@ public class PrioritizedExperienceReplay {
 
         public void add(float priority, ExperienceReplay.Experience experience) {
             int treeIndex = this.dataPointer + this.capacity - 1;
+            if (Objects.isNull(experience)) {
+                throw new IllegalStateException("Null experience passed into SumTree.add");
+            }
+            if (experience.state == null) {
+                throw new IllegalStateException("Experience with null state passed into SumTree.add");
+            }
+            if (experience.nextState == null) {
+                throw new IllegalStateException("Experience with null nextState passed into SumTree.add");
+            }
             if (this.data[this.dataPointer] != null) {
                 // Remove the old experience from the tree
                 this.update(treeIndex, 0);
@@ -120,6 +130,9 @@ public class PrioritizedExperienceReplay {
             throw new IllegalStateException("Attempting to add null experience to PrioritizedExperienceReplay");
         }
         float priority = Math.max(this.epsilon, this.maxPriority);
+        if (Float.isNaN(priority)) {
+            throw new IllegalStateException("NaN priority in PrioritizedExperienceReplay.add");
+        }
         this.tree.add(priority, experience);
     }
 

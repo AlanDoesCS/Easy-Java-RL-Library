@@ -1,5 +1,7 @@
 package Structures;
 
+import Tools.math;
+
 import java.io.Serializable;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.ForkJoinPool;
@@ -56,6 +58,13 @@ public class Matrix implements Serializable {
             }
         }
     }
+    public void randomize(float min, float max) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] = math.randomFloat(min, max);
+            }
+        }
+    }
 
     public void add(float n) {
         for (int i = 0; i < rows; i++) {
@@ -101,6 +110,33 @@ public class Matrix implements Serializable {
                 data[i][j] *= n;
             }
         }
+    }
+
+    public float sumOfSquares() {
+        float sum = 0;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                sum += data[i][j] * data[i][j];
+            }
+        }
+        return sum;
+    }
+
+    public void divide(float scalar) {
+        if (scalar == 0) {
+            throw new ArithmeticException("Cannot divide by zero");
+        }
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                data[i][j] /= scalar;
+            }
+        }
+    }
+
+    public static Matrix divide(Matrix matrix, float scalar) {
+        Matrix result = matrix.copy();
+        result.divide(scalar);
+        return result;
     }
 
     public Matrix transpose() {

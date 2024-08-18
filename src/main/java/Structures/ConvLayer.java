@@ -9,14 +9,14 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
 public class ConvLayer extends Layer {
-    private static final int PARALLELISM_THRESHOLD = 128;   // threshold for parallelizing loops - increase value for weaker systems
+    private static final int PARALLELISM_THRESHOLD = 32;   // threshold for parallelizing loops - increase value for weaker systems
     private static final ForkJoinPool POOL = ForkJoinPool.commonPool();
 
-    private float[][][][] filters; // [numFilters][depth][height][width]
-    private float[] biases; // [numFilters]
+    float[][][][] filters; // [numFilters][depth][height][width]
+    float[] biases; // [numFilters]
     private int strideX, strideY;
     private int paddingX, paddingY;
-    private int filterSize; // assumes square filters
+    public int filterSize; // assumes square filters
     private int numFilters;
     int inputWidth;
     int inputHeight;
@@ -229,6 +229,8 @@ public class ConvLayer extends Layer {
     private class BackpropagationTask extends RecursiveAction {
         private final Tensor input, gradientOutput, gradientInput;
         private final int startFilter, endFilter;
+        private final float[][][][] localGradientFilters;
+        private final float[] localGradientBiases;
 
         BackpropagationTask(Tensor input, Tensor gradientOutput, Tensor gradientInput, int startFilter, int endFilter) {
             this.input = input;
@@ -236,6 +238,8 @@ public class ConvLayer extends Layer {
             this.gradientInput = gradientInput;
             this.startFilter = startFilter;
             this.endFilter = endFilter;
+            this.localGradientFilters = new float[endFilter - startFilter][inputDepth][filterSize][filterSize];
+            this.localGradientBiases = new float[endFilter - startFilter];
         }
 
         @Override
@@ -244,10 +248,17 @@ public class ConvLayer extends Layer {
                 backpropagateSequential();
             } else {
                 int midFilter = (startFilter + endFilter) / 2;
+                BackpropagationTask leftTask = new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter);
+                BackpropagationTask rightTask = new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter);
                 invokeAll(
-                        new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter),
-                        new BackpropagationTask(input, gradientOutput, gradientInput, midFilter, endFilter)
+                        leftTask,
+                        rightTask
                 );
+
+                synchronized (ConvLayer.this) {
+                    addLocalGradients(leftTask.localGradientFilters, leftTask.localGradientBiases, startFilter);
+                    addLocalGradients(rightTask.localGradientFilters, rightTask.localGradientBiases, midFilter);
+                }
             }
         }
 
@@ -257,7 +268,7 @@ public class ConvLayer extends Layer {
                     for (int j = 0; j < outputWidth; j++) {
                         float gradientValue = gradientOutput.get(f, i, j) * activationFunction.derivative(gradientOutput.get(f, i, j));
 
-                        gradientBiases[f] += gradientValue;
+                        localGradientBiases[f - startFilter] += gradientValue;
 
                         for (int d = 0; d < inputDepth; d++) {
                             for (int k = 0; k < filterSize; k++) {
@@ -266,14 +277,33 @@ public class ConvLayer extends Layer {
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
                                         float inputValue = input.get(d, inputI, inputJ);
-                                        gradientFilters[f][d][k][l] += gradientValue * inputValue;
-                                        gradientInput.set(d, inputI, inputJ, gradientInput.get(d, inputI, inputJ) + gradientValue * filters[f][d][k][l]);
+                                        localGradientFilters[f - startFilter][d][k][l] += gradientValue * inputValue;
+                                        synchronized (gradientInput) {
+                                            gradientInput.set(d, inputI, inputJ, gradientInput.get(d, inputI, inputJ) + gradientValue * filters[f][d][k][l]);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+
+            }
+            synchronized (ConvLayer.this) {
+                addLocalGradients(localGradientFilters, localGradientBiases, startFilter);
+            }
+        }
+
+        private void addLocalGradients(float[][][][] localFilters, float[] localBiases, int offset) {
+            for (int f = 0; f < localFilters.length; f++) {
+                for (int d = 0; d < inputDepth; d++) {
+                    for (int i = 0; i < filterSize; i++) {
+                        for (int j = 0; j < filterSize; j++) {
+                            gradientFilters[f + offset][d][i][j] += localFilters[f][d][i][j];
+                        }
+                    }
+                }
+                gradientBiases[f + offset] += localBiases[f];
             }
         }
     }

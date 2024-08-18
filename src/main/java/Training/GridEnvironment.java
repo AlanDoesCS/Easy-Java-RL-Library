@@ -31,8 +31,8 @@ public abstract class GridEnvironment extends Environment {
         this.maxSteps = width*height;
         this.currentSteps = 0;
 
-        this.minReward = -1 - getDNFPunishment(); // Worst case: invalid move or bad move + DNF
-        this.maxReward = getCompletionReward() + 1.2f; // Best case: reach goal + max step reward + 0 cost
+        this.minReward = -getDNFPunishment(); // Worst case: DNF
+        this.maxReward = getCompletionReward() + 1 + getValidMoveReward(); // Best case: reach goal + max step reward + valid move reward
     }
 
     public int getNumSquares() {
@@ -60,7 +60,7 @@ public abstract class GridEnvironment extends Environment {
     }
 
     public float get(int x, int y) {
-        return gridMatrix.get(x, y);
+        return math.clamp(gridMatrix.get(x, y), 0, 1);
     }
     public float get(int i) { // simplifies process getting cells for Neural Net
         int x = i % width;
@@ -97,10 +97,10 @@ public abstract class GridEnvironment extends Environment {
         if (isValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY())) {
             setAgentPosition(newPosition);
             reward += getStepReward(oldPosition, newPosition);
-            reward += 0.2f; // encourage valid moves
+            reward += getValidMoveReward(); // encourage valid moves
         } else {
             newPosition = oldPosition;
-            reward -= 1; // discourage invalid moves
+            reward -= getInvalidMovePunishment(); // discourage invalid moves
         }
 
         boolean done = newPosition.equals(getGoalPosition());
@@ -195,8 +195,16 @@ public abstract class GridEnvironment extends Environment {
         return 5;
     }
 
+    float getValidMoveReward() {
+        return 0.5f;
+    }
+
     float getDNFPunishment() {
         return 3;
+    }
+
+    float getInvalidMovePunishment() {
+        return 0.5f;
     }
 
     public String toString() {

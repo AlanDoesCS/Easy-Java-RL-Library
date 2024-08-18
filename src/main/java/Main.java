@@ -1,4 +1,5 @@
 import Structures.*;
+import Tools.ConvNetVisualizer;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
@@ -20,13 +21,14 @@ public class Main {
 
         Trainer trainer;
         try {
-            trainer = new Trainer(Set.of(PerlinGridEnvironment.class, RandomGridEnvironment.class));
+            trainer = new Trainer(Set.of(EmptyGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
         }
 
         // DQNAgent dqnAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
+
 
         List<Layer> layers = new ArrayList<>();
         ReLU activation = new ReLU();
@@ -38,13 +40,16 @@ public class Main {
         layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0));
 
         DQNAgent dqnAgent = new DQNAgent(
-                Environment.getActionSpace(),
-                layers,
-                1f,
-                0.999995f,
-                0.01f,
-                0.9999f,
-                0.0001f
+                Environment.getActionSpace(),   // action space
+                layers,                         // layers
+                1f,                             // initial epsilon
+                0.9999995f,                     // epsilon decay
+                0.01f,                          // epsilon min
+                0.9999f,                        // gamma
+                0.0001f,                         // learning rate
+                0.9999995f,                     // learning rate decay
+                0.00001f,                       // learning rate minimum
+                0.0001f                         // tau
         );
 
         trainer.trainAgent(dqnAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");

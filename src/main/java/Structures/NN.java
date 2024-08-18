@@ -55,4 +55,12 @@ public abstract class NN {
             currentLayer.updateParameters(learningRate);
         }
     }
+
+    public float getLearningRate() {
+        return learningRate;
+    }
+
+    public void setLearningRate(float learningRate) {
+        this.learningRate = learningRate;
+    }
 }
