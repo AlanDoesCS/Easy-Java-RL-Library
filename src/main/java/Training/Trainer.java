@@ -37,12 +37,17 @@ public class Trainer {
         boolean verbose = args.contains("verbose");
 
         boolean plot = args.contains("plot");
-        GraphPlotter plotter = null;
+        GraphPlotter averageRewardPlotter = null;
+        GraphPlotter averageLossPlotter = null;
 
         if (plot) {
-            plotter = new GraphPlotter("DQN training", GraphPlotter.Types.LINE, "Episode", "Average Reward", varargs);
-            plotter.setVisible(true);
-            plotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            averageRewardPlotter = new GraphPlotter("Average Reward vs Episodes", GraphPlotter.Types.LINE, "Episode", "Average Reward", varargs);
+            averageRewardPlotter.setVisible(true);
+            averageRewardPlotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
+            averageLossPlotter = new GraphPlotter("Average Loss vs Episodes", GraphPlotter.Types.LINE, "Episode", "Average Loss", varargs);
+            averageLossPlotter.setVisible(true);
+            averageLossPlotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         }
 
         boolean showPath = args.contains("show_path");
@@ -71,6 +76,7 @@ public class Trainer {
         int batchSize = 32;
 
         for (int episode = 1; episode <= numEpisodes; episode++) {
+            float totalSquaredTDError = 0; int tdErrorCounter = 0;
 
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
@@ -104,6 +110,9 @@ public class Trainer {
                         float tdError = agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
                         treeIndices.add(exp.index);
                         tdErrors.add(tdError);
+
+                        totalSquaredTDError += tdError*tdError;
+                        tdErrorCounter++;
                     }
 
                     replay.updatePriorities(treeIndices, tdErrors);
@@ -126,7 +135,10 @@ public class Trainer {
 
             // Progress Tracking -------------------------------------------------------------
 
-            if (plot) plotter.addPoint(new Vector2D(episode, meanReward));
+            if (plot) {
+                averageRewardPlotter.addPoint(new Vector2D(episode, meanReward));
+                averageLossPlotter.addPoint(new Vector2D(episode, totalSquaredTDError / tdErrorCounter));
+            }
 
             if (episode % savePeriod == 0) {
                 agent.saveAgent("agent_" + episode + ".dat");
@@ -138,7 +150,10 @@ public class Trainer {
                     visualiser2 = new Environment_Visualiser(environment);
                 }
 
-                if (plot) plotter.plot();
+                if (plot) {
+                    averageRewardPlotter.plot();
+                    averageLossPlotter.plot();
+                }
 
                 if (showPath) {
                     visualiser.reset(environment);
