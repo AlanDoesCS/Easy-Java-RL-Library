@@ -2,22 +2,19 @@ package Training;
 
 import Tools.math;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public class PrioritizedExperienceReplay {
     private SumTree tree;
     private int capacity;
-    private float epsilon = 0.01f;
-    private float alpha = 0.6f;
-    private float beta = 0.4f;
-    private float betaIncrement = 0.001f;
-    private float maxPriority = 1.0f;
+    private double epsilon = 0.01f;
+    private double alpha = 0.6f;
+    private double beta = 0.4f;
+    private double betaIncrement = 0.001f;
+    private double maxPriority = 1.0f;
 
     private static class SumTree {
-        private float[] tree;
+        private double[] tree;
         private ExperienceReplay.Experience[] data;
         private int capacity;
         private int count;
@@ -25,14 +22,15 @@ public class PrioritizedExperienceReplay {
 
         public SumTree(int capacity) {
             this.capacity = capacity;
-            this.tree = new float[2 * capacity - 1];
+            this.tree = new double[2 * capacity - 1];
             this.data = new ExperienceReplay.Experience[capacity];
             this.count = 0;
             this.dataPointer = 0;
         }
 
-        public void add(float priority, ExperienceReplay.Experience experience) {
+        public void add(double priority, ExperienceReplay.Experience experience) {
             int treeIndex = this.dataPointer + this.capacity - 1;
+
             if (Objects.isNull(experience)) {
                 throw new IllegalStateException("Null experience passed into SumTree.add");
             }
@@ -42,6 +40,7 @@ public class PrioritizedExperienceReplay {
             if (experience.nextState == null) {
                 throw new IllegalStateException("Experience with null nextState passed into SumTree.add");
             }
+
             if (this.data[this.dataPointer] != null) {
                 // Remove the old experience from the tree
                 this.update(treeIndex, 0);
@@ -54,8 +53,8 @@ public class PrioritizedExperienceReplay {
             if (this.count < this.capacity) this.count++;
         }
 
-        public void update(int treeIndex, float priority) {
-            float change = priority - this.tree[treeIndex];
+        public void update(int treeIndex, double priority) {
+            double change = priority - this.tree[treeIndex];
             this.tree[treeIndex] = priority;
             while (treeIndex != 0) {
                 treeIndex = (treeIndex - 1) / 2;
@@ -63,10 +62,9 @@ public class PrioritizedExperienceReplay {
             }
         }
 
-        public Sample get(float s) {
+        public Sample get(double s) {
             if (this.count == 0) {
-                System.err.println("Attempting to sample from an empty SumTree");
-                return null;
+                throw new IllegalStateException("Attempting to get from empty SumTree");
             }
 
             int parentIndex = 0;
@@ -93,13 +91,13 @@ public class PrioritizedExperienceReplay {
             }
 
             if (this.data[dataIndex] == null) {
-                throw new IllegalStateException("Null experience at valid index in SumTree.get: " + dataIndex);
+                throw new IllegalStateException("Null experience at valid index in SumTree.get: " + dataIndex + "\n"+Arrays.toString(this.data) + "\n" + Arrays.toString(this.tree));
             }
 
             return new Sample(parentIndex, this.tree[parentIndex], this.data[dataIndex]);
         }
 
-        public float total() {
+        public double total() {
             return this.tree[0];
         }
     }
@@ -110,10 +108,10 @@ public class PrioritizedExperienceReplay {
 
     private static class Sample {
         int treeIndex;
-        float priority;
+        double priority;
         ExperienceReplay.Experience experience;
 
-        public Sample(int treeIndex, float priority, ExperienceReplay.Experience experience) {
+        public Sample(int treeIndex, double priority, ExperienceReplay.Experience experience) {
             this.treeIndex = treeIndex;
             this.priority = priority;
             this.experience = experience;
@@ -129,8 +127,8 @@ public class PrioritizedExperienceReplay {
         if (experience == null) {
             throw new IllegalStateException("Attempting to add null experience to PrioritizedExperienceReplay");
         }
-        float priority = Math.max(this.epsilon, this.maxPriority);
-        if (Float.isNaN(priority)) {
+        double priority = Math.max(this.epsilon, this.maxPriority);
+        if (Double.isNaN(priority)) {
             throw new IllegalStateException("NaN priority in PrioritizedExperienceReplay.add");
         }
         this.tree.add(priority, experience);
@@ -143,15 +141,15 @@ public class PrioritizedExperienceReplay {
 
         List<ExperienceReplay.Experience> batch = new ArrayList<>();
         List<Integer> treeIndices = new ArrayList<>();
-        List<Float> priorities = new ArrayList<>();
+        List<Double> priorities = new ArrayList<>();
 
-        float segment = this.tree.total() / batchSize;
+        double segment = this.tree.total() / batchSize;
         this.beta = Math.min(1.0f, this.beta + this.betaIncrement);
 
         for (int i = 0; i < batchSize; i++) {
-            float a = segment * i;
-            float b = segment * (i + 1);
-            float s = (float) Math.random() * (b - a) + a;
+            double a = segment * i;
+            double b = segment * (i + 1);
+            double s = Math.random() * (b - a) + a;
             Sample sample = this.tree.get(s);
 
             if (sample.experience == null) {
@@ -164,9 +162,9 @@ public class PrioritizedExperienceReplay {
             priorities.add(sample.priority);
         }
 
-        float maxWeight = (float) Math.pow(this.tree.total() / this.maxPriority, -this.beta);
+        double maxWeight = Math.pow(this.tree.total() / this.maxPriority, -this.beta);
         for (int i = 0; i < batchSize; i++) {
-            float weight = (float) Math.pow(priorities.get(i) / this.tree.total(), -this.beta);
+            double weight = Math.pow(priorities.get(i) / this.tree.total(), -this.beta);
             weight = weight / maxWeight;
             priorities.set(i, weight);
         }
@@ -176,8 +174,8 @@ public class PrioritizedExperienceReplay {
 
     public void updatePriorities(List<Integer> treeIndices, List<Float> tdErrors) {
         for (int i = 0; i < treeIndices.size(); i++) {
-            float priority = (float) Math.pow(Math.abs(tdErrors.get(i)) + this.epsilon, this.alpha);
-            if (Float.isNaN(priority)) {
+            double priority = Math.pow(Math.abs(tdErrors.get(i)) + this.epsilon, this.alpha);
+            if (Double.isNaN(priority)) {
                 throw new IllegalStateException("NaN priority in PrioritizedExperienceReplay.updatePriorities");
             }
             this.tree.update(treeIndices.get(i), priority);

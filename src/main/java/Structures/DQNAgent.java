@@ -21,6 +21,9 @@ public class DQNAgent {
     private final int targetUpdateFrequency; // how often to update target network
     private int stepCounter;
 
+    private int dumpCounter = 0;
+    private final int dumpFrequency = 20;
+
     public DQNAgent(int actionSpace, List<Layer> layers, float initialEpsilon, float epsilonDecay, float epsilonMin, float gamma, float learningRate, float learningRateDecay, float learningRateMin, float tau) {
         this.epsilon = initialEpsilon;
         this.epsilonDecay = epsilonDecay;
@@ -48,12 +51,30 @@ public class DQNAgent {
         return copiedLayers;
     }
 
+    @Deprecated
+    public void dumpDQNInfo() {  // TODO: remove this debug code - it's disgusting
+        ConvLayer convLayer1 = (ConvLayer) onlineDQN.getLayer(0);
+        ConvLayer convLayer2 = (ConvLayer) onlineDQN.getLayer(2);
+        MLPLayer mlpLayer1 = (MLPLayer) onlineDQN.getLayer(5);
+        MLPLayer mlpLayer2 = (MLPLayer) onlineDQN.getLayer(6);
+        System.out.println("Conv layer 1 filter average: " + convLayer1.getAverageFilterValue()+", range: "+convLayer1.getFilterMin()+", "+convLayer1.getFilterMax());
+        System.out.println("Conv layer 2 filter average: " + convLayer2.getAverageFilterValue()+", range: "+convLayer2.getFilterMin()+", "+convLayer2.getFilterMax());
+        System.out.println("MLP layer 1 weight average: " + mlpLayer1.getWeights().getMeanAverage()+", range: "+math.min(mlpLayer1.getWeights())+", "+math.max(mlpLayer1.getWeights()));
+        System.out.println("MLP layer 1 biases: " + mlpLayer1.getBiases().toRowMatrix());
+        System.out.println("MLP layer 2 weight average: " + mlpLayer2.getWeights().getMeanAverage()+", range: "+math.min(mlpLayer2.getWeights())+", "+math.max(mlpLayer2.getWeights()));
+        System.out.println("MLP layer 2 biases: " + mlpLayer2.getBiases().toRowMatrix());
+    }
+
     public int chooseAction(Tensor state) {
         if (math.random() < epsilon) {
             return (int) (Math.random() * actionSpace);
         } else {
             Matrix qValues = (Matrix) onlineDQN.getOutput(state);
-            System.out.println("qValues: "+qValues); // debug ----------------------------------------------------------
+            if (dumpCounter % dumpFrequency == 0) {
+                System.out.println("Q Values: "+qValues.toRowMatrix());
+            }
+            dumpCounter++;
+
             int actionIndex = 0;
             float max = qValues.get(0, 0);
             for (int i = 1; i < actionSpace; i++) {

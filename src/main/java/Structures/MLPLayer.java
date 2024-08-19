@@ -4,6 +4,7 @@ import Training.ActivationFunction;
 import Training.Environment;
 
 import java.util.ArrayList;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 
 public class MLPLayer extends Layer {
@@ -102,6 +103,8 @@ public class MLPLayer extends Layer {
 
     @Override
     public void updateParameters(float learningRate) {
+        // clip and normalise gradients
+
         float gradientNorm = (float) Math.sqrt(
                 Math.pow(gradientWeights.sumOfSquares(), 2) +
                 Math.pow(gradientBiases.sumOfSquares(), 2)
@@ -146,7 +149,15 @@ public class MLPLayer extends Layer {
         System.out.println("Weights: "+weights);
         System.out.println("Biases: "+biases);
 
-        System.out.println("Gradient Weights: "+gradientWeights);
-        System.out.println("Gradient Biases: "+gradientBiases);
+        //System.out.println("Gradient Weights: "+gradientWeights);
+        //System.out.println("Gradient Biases: "+gradientBiases);
+    }
+
+    public Matrix getWeights() {
+        return weights;
+    }
+
+    public Matrix getBiases() {
+        return biases;
     }
 }

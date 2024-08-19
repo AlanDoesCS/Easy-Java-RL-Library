@@ -21,7 +21,7 @@ public class Main {
 
         Trainer trainer;
         try {
-            trainer = new Trainer(Set.of(EmptyGridEnvironment.class));
+            trainer = new Trainer(Set.of(PerlinGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
@@ -29,28 +29,31 @@ public class Main {
 
         // DQNAgent dqnAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
 
-
         List<Layer> layers = new ArrayList<>();
-        ReLU activation = new ReLU();
+        LeakyReLU leakyRelu = new LeakyReLU(0.1f);
 
-        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
-        layers.add(new ConvLayer(activation, Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new ConvLayer(leakyRelu, Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
+        layers.add(new BatchNormLayer(16, Environment.getGridWidth(), Environment.getGridHeight()));
+        layers.add(new ConvLayer(leakyRelu, Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
+        layers.add(new BatchNormLayer(32, Environment.getGridWidth(), Environment.getGridHeight()));
         layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
-        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 128, new ReLU(), 0));
-        layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0));
+        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 256, leakyRelu, 0));
+        layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
 
         DQNAgent dqnAgent = new DQNAgent(
                 Environment.getActionSpace(),   // action space
                 layers,                         // layers
                 1f,                             // initial epsilon
-                0.9999995f,                     // epsilon decay
+                0.999995f,                       // epsilon decay
                 0.01f,                          // epsilon min
                 0.9999f,                        // gamma
-                0.0001f,                         // learning rate
-                0.9999995f,                     // learning rate decay
+                0.0001f,                        // learning rate
+                0.999995f,                      // learning rate decay
                 0.00001f,                       // learning rate minimum
-                0.0001f                         // tau
+                0.001f                          // tau
         );
+
+        dqnAgent.dumpDQNInfo();
 
         trainer.trainAgent(dqnAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");
     }

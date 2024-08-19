@@ -121,13 +121,7 @@ public class Trainer {
             System.out.printf("Episode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, LearningRate=%f, Environment=%s %n",
                     episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()
             );
-            /*
-            for (int i = 0; i < agent.getOnlineDQN().numLayers(); i++) {
-                if (agent.getOnlineDQN().getLayer(i) instanceof Structures.MLPLayer layer) {
-                    layer.weightsAndBiasesDump();
-                }
-            }
-             */
+            agent.dumpDQNInfo();
 
 
             // Progress Tracking -------------------------------------------------------------

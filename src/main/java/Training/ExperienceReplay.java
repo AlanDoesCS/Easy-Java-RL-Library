@@ -60,7 +60,7 @@ public class ExperienceReplay {
         }
 
         public String toString() {
-            return "Experience: " + state + ", " + action + ", " + reward + ", " + nextState + ", " + done;
+            return "Exp(" + state + ", " + action + ", " + reward + ", " + nextState + ", " + done+", "+index+")";
         }
     }
 }

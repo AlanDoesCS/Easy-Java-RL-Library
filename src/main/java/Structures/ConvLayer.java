@@ -151,6 +151,66 @@ public class ConvLayer extends Layer {
         return outputWidth;
     }
 
+    public void dumpFilters() {
+        for (int f = 0; f < numFilters; f++) {
+            System.out.println("Filter " + f + ":");
+            for (int d = 0; d < inputDepth; d++) {
+                for (int h = 0; h < filterSize; h++) {
+                    for (int w = 0; w < filterSize; w++) {
+                        System.out.print(filters[f][d][h][w] + " ");
+                    }
+                    System.out.println();
+                }
+                System.out.println();
+            }
+            System.out.println("Bias: " + biases[f]);
+        }
+    }
+
+    public float getFilterMin() {
+        float min = Float.MAX_VALUE;
+        for (int f = 0; f < numFilters; f++) {
+            for (int d = 0; d < inputDepth; d++) {
+                for (int h = 0; h < filterSize; h++) {
+                    for (int w = 0; w < filterSize; w++) {
+                        if (filters[f][d][h][w] < min) {
+                            min = filters[f][d][h][w];
+                        }
+                    }
+                }
+            }
+        }
+        return min;
+    }
+    public float getFilterMax() {
+        float max = Float.MIN_VALUE;
+        for (int f = 0; f < numFilters; f++) {
+            for (int d = 0; d < inputDepth; d++) {
+                for (int h = 0; h < filterSize; h++) {
+                    for (int w = 0; w < filterSize; w++) {
+                        if (filters[f][d][h][w] > max) {
+                            max = filters[f][d][h][w];
+                        }
+                    }
+                }
+            }
+        }
+        return max;
+    }
+    public float getAverageFilterValue() {
+        double sum = 0;
+        for (int f = 0; f < numFilters; f++) {
+            for (int d = 0; d < inputDepth; d++) {
+                for (int h = 0; h < filterSize; h++) {
+                    for (int w = 0; w < filterSize; w++) {
+                        sum += filters[f][d][h][w];
+                    }
+                }
+            }
+        }
+        return (float) (sum / (numFilters * inputDepth * filterSize * filterSize));
+    }
+
     private class ComputeTask extends RecursiveAction {
         private final Tensor input;
         private final float[][][] output;

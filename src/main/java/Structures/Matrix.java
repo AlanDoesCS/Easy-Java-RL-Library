@@ -343,6 +343,30 @@ public class Matrix implements Serializable {
         return cols;
     }
 
+    public Matrix toRowMatrix() {
+        Matrix result = new Matrix(1, rows*cols);
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                result.set(r*cols+c, 0, get(c, r));
+            }
+        }
+        return result;
+    }
+
+    public float getSum() {
+        float sum = 0;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                sum += data[i][j];
+            }
+        }
+        return sum;
+    }
+
+    public float getMeanAverage() {
+        return getSum() / (rows * cols);
+    }
+
     private static class MultiplyTask extends RecursiveAction {
         private final Matrix A, BT;
         private final AtomicReference<float[][]> C;

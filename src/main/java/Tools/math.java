@@ -86,4 +86,17 @@ public class math {
         }
         return maxValue;
     }
+
+    public static float min(Matrix matrix) {
+        float minValue = matrix.get(0, 0);
+        for (int y = 0; y < matrix.getHeight(); y++) {
+            for (int x = 0; x < matrix.getWidth(); x++) {
+                if (matrix.get(x, y) < minValue) {
+                    minValue = matrix.get(x, y);
+                }
+            }
+
+        }
+        return minValue;
+    }
 }
