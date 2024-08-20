@@ -1,10 +1,6 @@
 import Structures.*;
-import Tools.ConvNetVisualizer;
 import Tools.Environment_Visualiser;
-import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
-import Tools.Perlin1D;
-import Tools.Presets.DQNAgents;
 import Training.*;
 
 import com.sun.jdi.InvalidTypeException;
@@ -27,7 +23,7 @@ public class Main {
             return;
         }
 
-        // DQNAgent dqnAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
+        // DDQNAgent DDQNAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
 
         List<Layer> layers = new ArrayList<>();
         LeakyReLU leakyRelu = new LeakyReLU(0.1f);
@@ -40,7 +36,7 @@ public class Main {
         layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 256, leakyRelu, 0));
         layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
 
-        DQNAgent dqnAgent = new DQNAgent(
+        DDQNAgent DDQNAgent = new DDQNAgent(
                 Environment.getActionSpace(),   // action space
                 layers,                         // layers
                 1f,                             // initial epsilon
@@ -53,9 +49,9 @@ public class Main {
                 0.001f                          // tau
         );
 
-        dqnAgent.dumpDQNInfo();
+        DDQNAgent.dumpDQNInfo();
 
-        trainer.trainAgent(dqnAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");
+        trainer.trainAgent(DDQNAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {

@@ -12,8 +12,8 @@ public class ConvLayer extends Layer {
     private static final int PARALLELISM_THRESHOLD = 32;   // threshold for parallelizing loops - increase value for weaker systems
     private static final ForkJoinPool POOL = ForkJoinPool.commonPool();
 
-    float[][][][] filters; // [numFilters][depth][height][width]
-    float[] biases; // [numFilters]
+    public float[][][][] filters; // [numFilters][depth][height][width]
+    public float[] biases; // [numFilters]
     private int strideX, strideY;
     private int paddingX, paddingY;
     public int filterSize; // assumes square filters
@@ -22,6 +22,11 @@ public class ConvLayer extends Layer {
     int inputHeight;
     int inputDepth;
     private int outputWidth, outputHeight;
+
+    public float[][][][] m;
+    public float[][][][] v;
+    public float[] mBias;
+    public float[] vBias;
 
     private ActivationFunction activationFunction;
 
@@ -108,6 +113,12 @@ public class ConvLayer extends Layer {
         }
 
         initializeParameters();
+
+        // Initialize Adam parameters
+        m = new float[numFilters][inputDepth][filterSize][filterSize];
+        v = new float[numFilters][inputDepth][filterSize][filterSize];
+        mBias = new float[numFilters];
+        vBias = new float[numFilters];
     }
 
     private void initializeParameters() {
@@ -141,6 +152,7 @@ public class ConvLayer extends Layer {
         return new Tensor(outputData);
     }
 
+    public int getNumFilters() { return numFilters; }
     public int getOutputDepth() {
         return numFilters;
     }
@@ -209,6 +221,22 @@ public class ConvLayer extends Layer {
             }
         }
         return (float) (sum / (numFilters * inputDepth * filterSize * filterSize));
+    }
+
+    public int getInputDepth() {
+        return inputDepth;
+    }
+
+    public int getFilterSize() {
+        return filterSize;
+    }
+
+    public float[][][][] getGradientFilters() {
+        return gradientFilters;
+    }
+
+    public float[] getGradientBiases() {
+        return gradientBiases;
     }
 
     private class ComputeTask extends RecursiveAction {

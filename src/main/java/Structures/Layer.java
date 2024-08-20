@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 public abstract class Layer implements Serializable {
+    public int t=0;
     protected int inputSize;
     protected int outputSize;
 

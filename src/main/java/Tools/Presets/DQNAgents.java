@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DQNAgents {
-    private static DQNAgent GRID_DQN_FROM_LAYERS(List<Layer> layers) {
-        return new DQNAgent(
+    private static DDQNAgent GRID_DQN_FROM_LAYERS(List<Layer> layers) {
+        return new DDQNAgent(
                 Environment.getActionSpace(),   // action space
                 layers,                         // layers
                 1f,                             // initial epsilon
@@ -25,7 +25,7 @@ public class DQNAgents {
         );
     }
 
-    public static DQNAgent LARGE_GRID_DQN_AGENT() {
+    public static DDQNAgent LARGE_GRID_DQN_AGENT() {
         List<Layer> layers = new ArrayList<>();
         ReLU activation = new ReLU();
 
@@ -39,7 +39,7 @@ public class DQNAgents {
         return GRID_DQN_FROM_LAYERS(layers);
     }
 
-    public static DQNAgent MEDIUM_GRID_DQN_AGENT() {
+    public static DDQNAgent MEDIUM_GRID_DQN_AGENT() {
         List<Layer> layers = new ArrayList<>();
         ReLU activation = new ReLU();
 
@@ -52,7 +52,7 @@ public class DQNAgents {
         return GRID_DQN_FROM_LAYERS(layers);
     }
 
-    public static DQNAgent MLP_ONLY_GRID_DQN_AGENT() {
+    public static DDQNAgent MLP_ONLY_GRID_DQN_AGENT() {
         List<Layer> layers = new ArrayList<>();
         LeakyReLU activation = new LeakyReLU(0.1f);
 

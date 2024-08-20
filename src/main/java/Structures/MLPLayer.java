@@ -15,6 +15,11 @@ public class MLPLayer extends Layer {
     Matrix gradientWeights, gradientBiases;
     ActivationFunction phi;
 
+    public Matrix m;
+    public Matrix v;
+    public Matrix mBias;
+    public Matrix vBias;
+
     public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, float bias) {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
@@ -26,6 +31,12 @@ public class MLPLayer extends Layer {
         gradientWeights = new Matrix(outputSize, inputSize);
         gradientBiases = new Matrix(outputSize, 1);
         phi = activation;
+
+        // Initialize Adam optimiser parameters
+        m = new Matrix(outputSize, inputSize);
+        v = new Matrix(outputSize, inputSize);
+        mBias = new Matrix(outputSize, 1);
+        vBias = new Matrix(outputSize, 1);
     }
 
     @Override
@@ -145,19 +156,33 @@ public class MLPLayer extends Layer {
         return layers;
     }
 
-    public void weightsAndBiasesDump() {
-        System.out.println("Weights: "+weights);
-        System.out.println("Biases: "+biases);
-
-        //System.out.println("Gradient Weights: "+gradientWeights);
-        //System.out.println("Gradient Biases: "+gradientBiases);
-    }
-
     public Matrix getWeights() {
         return weights;
     }
 
+    public Matrix getGradientWeights() {
+        return gradientWeights;
+    }
+
     public Matrix getBiases() {
         return biases;
+    }
+
+    public Matrix getGradientBiases() {
+        return gradientBiases;
+    }
+
+    public void setWeights(Matrix newWeights) {
+        if (newWeights.rows != weights.rows || newWeights.cols != weights.cols) {
+            throw new IllegalArgumentException("New weights must have the same dimensions as the current weights.");
+        }
+        weights = newWeights;
+    }
+
+    public void setBiases(Matrix newBiases) {
+        if (newBiases.rows != biases.rows || newBiases.cols != biases.cols) {
+            throw new IllegalArgumentException("New biases must have the same dimensions as the current biases.");
+        }
+        biases = newBiases;
     }
 }

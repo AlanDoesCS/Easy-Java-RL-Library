@@ -43,6 +43,45 @@ public class Matrix implements Serializable {
         }
     }
 
+    public static Matrix elementwiseSquare(Matrix matrix) {
+        Matrix result = new Matrix(matrix.rows, matrix.cols);
+        for (int i = 0; i < matrix.rows; i++) {
+            for (int j = 0; j < matrix.cols; j++) {
+                result.data[i][j] = matrix.data[i][j] * matrix.data[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static Matrix elementwiseSquareRoot(Matrix matrix) {
+        Matrix result = new Matrix(matrix.rows, matrix.cols);
+        for (int i = 0; i < matrix.rows; i++) {
+            for (int j = 0; j < matrix.cols; j++) {
+                result.data[i][j] = (float) Math.sqrt(matrix.data[i][j]);
+            }
+        }
+        return result;
+    }
+
+    public static Matrix elementWiseDivide(Matrix matrix, Matrix divisor) {
+        if (matrix.rows != divisor.rows || matrix.cols != divisor.cols) {
+            throw new IllegalArgumentException("Matrices must have the same dimensions for element-wise division.");
+        }
+
+        Matrix result = new Matrix(matrix.rows, matrix.cols);
+        for (int i = 0; i < matrix.rows; i++) {
+            for (int j = 0; j < matrix.cols; j++) {
+                if (divisor.data[i][j] == 0) {
+                    throw new IllegalArgumentException("Division by zero encountered in matrix.");
+                }
+                result.data[i][j] = matrix.data[i][j] / divisor.data[i][j];
+            }
+        }
+
+        return result;
+
+    }
+
     public void fill(float value) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -72,6 +111,16 @@ public class Matrix implements Serializable {
                 data[i][j] += n;
             }
         }
+    }
+
+    public static Matrix add(Matrix matrix, float v) {
+        Matrix result = new Matrix(matrix.getRows(), matrix.getCols());
+        for (int r = 0; r < matrix.getRows(); r++) {
+            for (int c = 0; c < matrix.getCols(); c++) {
+                result.set(c, r, matrix.get(c, r) + v);
+            }
+        }
+        return result;
     }
 
     public void add(int row, int column, float value) {
@@ -338,8 +387,14 @@ public class Matrix implements Serializable {
     public int getHeight() {
         return rows;
     }
+    public int getRows() {
+        return rows;
+    }
 
     public int getWidth() {
+        return cols;
+    }
+    public int getCols() {
         return cols;
     }
 

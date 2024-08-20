@@ -1,6 +1,6 @@
 package Training;
 
-import Structures.DQNAgent;
+import Structures.DDQNAgent;
 import Structures.Tensor;
 import Structures.Vector2D;
 import Tools.Environment_Visualiser;
@@ -32,7 +32,7 @@ public class Trainer {
      * @param visualiserUpdatePeriod the period (in episodes) at which the visualiser is updated
      * @param varargs                additional arguments for training options (e.g., "verbose", "plot", "show_path")
      */
-    public void trainAgent(DQNAgent agent, int numEpisodes, int savePeriod, int visualiserUpdatePeriod, String... varargs) {
+    public void trainAgent(DDQNAgent agent, int numEpisodes, int savePeriod, int visualiserUpdatePeriod, String... varargs) {
         List<String> args = Arrays.asList(varargs);
         boolean verbose = args.contains("verbose");
 

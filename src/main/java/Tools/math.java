@@ -1,6 +1,8 @@
 package Tools;
 
 import Structures.Matrix;
+import Structures.Vector2D;
+
 import java.util.Random;
 
 public class math {
@@ -85,6 +87,20 @@ public class math {
 
         }
         return maxValue;
+    }
+
+    public static Vector2D maxIndex(Matrix matrix) {
+        Vector2D index = new Vector2D(0, 0);
+        float max = matrix.get(0, 0);
+        for (int r = 0; r < matrix.getHeight(); r++) {
+            for (int c = 0; c < matrix.getWidth(); c++) {
+                if (matrix.get(c, r) > max) {
+                    max = matrix.get(c, r);
+                    index.set(c, r);
+                }
+            }
+        }
+        return index;
     }
 
     public static float min(Matrix matrix) {

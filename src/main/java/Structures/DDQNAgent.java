@@ -1,13 +1,13 @@
 package Structures;
 
-import Training.ActivationFunction;
-
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.ArrayList;
 import Tools.math;
+import Training.Optimizers.Adam;
+import Training.Optimizers.Optimizer;
 
-public class DQNAgent {
+public class DDQNAgent {
+    private Optimizer optimizer;
     private DQN onlineDQN, targetDQN;
     private float epsilon;            // exploration rate for epsilon greedy
     private final float epsilonDecay; // rate of change of epsilon
@@ -24,7 +24,8 @@ public class DQNAgent {
     private int dumpCounter = 0;
     private final int dumpFrequency = 20;
 
-    public DQNAgent(int actionSpace, List<Layer> layers, float initialEpsilon, float epsilonDecay, float epsilonMin, float gamma, float learningRate, float learningRateDecay, float learningRateMin, float tau) {
+    public DDQNAgent(int actionSpace, List<Layer> layers, float initialEpsilon, float epsilonDecay, float epsilonMin, float gamma, float learningRate, float learningRateDecay, float learningRateMin, float tau) {
+        this.optimizer = new Adam();
         this.epsilon = initialEpsilon;
         this.epsilonDecay = epsilonDecay;
         this.epsilonMin = epsilonMin;
@@ -71,19 +72,11 @@ public class DQNAgent {
         } else {
             Matrix qValues = (Matrix) onlineDQN.getOutput(state);
             if (dumpCounter % dumpFrequency == 0) {
-                System.out.println("Q Values: "+qValues.toRowMatrix());
+                System.out.println("Q Values: "+qValues.toRowMatrix() + ", maxIndex = "+math.maxIndex(qValues).y);
             }
             dumpCounter++;
 
-            int actionIndex = 0;
-            float max = qValues.get(0, 0);
-            for (int i = 1; i < actionSpace; i++) {
-                if (qValues.get(0, i) > max) {
-                    max = qValues.get(0, i);
-                    actionIndex = i;
-                }
-            }
-            return actionIndex;
+            return (int) math.maxIndex(qValues).y;
         }
     }
 
@@ -144,19 +137,32 @@ public class DQNAgent {
         Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
 
         Matrix target = currentQValues.copy();
-        Matrix nextQValues = (Matrix) targetDQN.getOutput(nextState);
 
-        // get max Q value for next state
-        float maxNextQ = math.max(nextQValues);
-        float targetValue = done ? reward : reward + gamma * maxNextQ;
-        target.set(0, action, targetValue);
+        if (!done) {
+            // use online to select best action
+            Matrix nextQValuesOnline = (Matrix) onlineDQN.getOutput(nextState);
+            int bestAction = (int) math.maxIndex(nextQValuesOnline).y;
 
-        // calculate TD error
-        if (Float.isNaN(currentQValues.get(0, action))) System.err.println("action "+action+" is NaN!! : "+currentQValues.get(0, action));
-        float tdError = targetValue - currentQValues.get(0, action);
+            // use target to evaluate Q val of best action
+            Matrix nextQValuesTarget = (Matrix) targetDQN.getOutput(nextState);
+            float targetQ = nextQValuesTarget.get(0, bestAction);
 
-        // update network
+            // calculate target value
+            float targetValue = reward + gamma * targetQ;
+            target.set(0, action, targetValue);
+        } else {
+            target.set(0, action, reward);
+        }
+
+        // Calculate TD error
+        float tdError = target.get(0, action) - currentQValues.get(0, action);
+        if (Float.isNaN(currentQValues.get(0, action))) {
+            System.err.println("action " + action + " is NaN!! : " + currentQValues.get(0, action));
+        }
+
         onlineDQN.backpropagate(state, target, layerOutputs);
+
+        // TODO: implement Adam optimizer
 
         decayEpsilon();
         decayLearningRate();

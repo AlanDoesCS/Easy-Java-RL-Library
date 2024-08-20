@@ -11,6 +11,7 @@ A simple neural network library for training networks in different environments.
 ---
 
 ## Example usage:
+
 ```java
 import Structures.*;
 import Tools.Environment_Visualiser;
@@ -27,7 +28,7 @@ import java.util.Set;
 public class Main {
     public static void main(String[] args) {
         Environment.setDimensions(10, 10);
-        Environment.setStateSpace(Environment.getGridSquares()+4);
+        Environment.setStateSpace(Environment.getGridSquares() + 4);
         Environment.setActionSpace(4);
 
         Trainer trainer;
@@ -47,9 +48,9 @@ public class Main {
                 List.of(0, 0, 0)
         );
 
-        DQNAgent dqnAgent = new DQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f, relu, 0);
+        DDQNAgent DDQNAgent = new DDQNAgent(Environment.getActionSpace(), layers, 0.1f, 0.99f, 0.001f, relu, 0);
 
-        trainer.trainAgent(dqnAgent, 6000, 1000);
+        trainer.trainAgent(DDQNAgent, 6000, 1000);
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
