@@ -1,14 +1,23 @@
 package Structures;
 
+import java.util.Arrays;
+
 public class BatchNormLayer extends Layer {
     private int depth, height, width;
     private float epsilon = 1e-5f;
     private float momentum = 0.99f;
 
-    private float[] gamma;
-    private float[] beta;
+    public float[] gamma;
+    public float[] beta;
     private float[] runningMean;
     private float[] runningVar;
+
+    private float[] dGamma;
+    private float[] dBeta;
+
+    // [2][depth]
+    public float[][] m; // First moment estimates for gamma and beta
+    public float[][] v; // Second moment estimates for gamma and beta
 
     public BatchNormLayer(int depth, int height, int width) {
         this.depth = depth;
@@ -21,11 +30,16 @@ public class BatchNormLayer extends Layer {
         beta = new float[depth];
         runningMean = new float[depth];
         runningVar = new float[depth];
+        dGamma = new float[depth];
+        dBeta = new float[depth];
 
         for (int i = 0; i < depth; i++) {
             gamma[i] = 1.0f;
             beta[i] = 0.0f;
         }
+
+        m = new float[2][depth];
+        v = new float[2][depth];
     }
 
     @Override
@@ -72,8 +86,44 @@ public class BatchNormLayer extends Layer {
 
     @Override
     public Object backpropagate(Object input, Object gradientOutput) {
-        // TODO: Implement backpropagation
-        return gradientOutput;
+        if (!(input instanceof Tensor inputTensor) || !(gradientOutput instanceof Tensor gradOutputTensor)) {
+            throw new IllegalArgumentException("Expected input and gradOutputTensor to be a Tensors.");
+        }
+
+        int N = inputTensor.getHeight() * inputTensor.getWidth(); // Number of elements per feature map
+        Tensor gradInputTensor = new Tensor(depth, height, width);
+
+        Arrays.fill(dGamma, 0);
+        Arrays.fill(dBeta, 0);
+
+        for (int d = 0; d < depth; d++) {
+            // calc gradients with respect to gamma and beta
+            dGamma[d] = 0;
+            dBeta[d] = 0;
+            for (int h = 0; h < height; h++) {
+                for (int w = 0; w < width; w++) {
+                    dGamma[d] += (float) (gradOutputTensor.get(d, h, w) * (inputTensor.get(d, h, w) - runningMean[d]) / Math.sqrt(runningVar[d] + epsilon));
+                    dBeta[d] += gradOutputTensor.get(d, h, w);
+                }
+            }
+
+            // calc gradients with respect to the input
+            float invStdDev = 1 / (float) Math.sqrt(runningVar[d] + epsilon);
+            float gammaOverStdDev = gamma[d] * invStdDev;
+
+            for (int h = 0; h < height; h++) {
+                for (int w = 0; w < width; w++) {
+                    float normalized = (inputTensor.get(d, h, w) - runningMean[d]) * invStdDev;
+                    float gradOut = gradOutputTensor.get(d, h, w);
+
+                    // Gradient with respect to input
+                    float gradInput = gammaOverStdDev * (gradOut - (dBeta[d] / N) - normalized * (dGamma[d] / N));
+                    gradInputTensor.set(d, h, w, gradInput);
+                }
+            }
+        }
+
+        return gradInputTensor;
     }
 
     @Override
@@ -90,6 +140,8 @@ public class BatchNormLayer extends Layer {
         System.arraycopy(this.beta, 0, target.beta, 0, this.beta.length);
         System.arraycopy(this.runningMean, 0, target.runningMean, 0, this.runningMean.length);
         System.arraycopy(this.runningVar, 0, target.runningVar, 0, this.runningVar.length);
+        System.arraycopy(this.dGamma, 0, target.dGamma, 0, this.dGamma.length);
+        System.arraycopy(this.dBeta, 0, target.dBeta, 0, this.dBeta.length);
 
         if (!ignorePrimitives) {
             target.depth = this.depth;
@@ -99,6 +151,7 @@ public class BatchNormLayer extends Layer {
             target.outputSize = this.outputSize;
             target.epsilon = this.epsilon;
             target.momentum = this.momentum;
+
         }
     }
 
@@ -112,5 +165,17 @@ public class BatchNormLayer extends Layer {
     @Override
     public String toString() {
         return "BatchNormLayer: in:" + inputSize + " out:" + outputSize;
+    }
+
+    public int getDepth() {
+        return depth;
+    }
+
+    public float[] getGradientGamma() {
+        return dGamma;
+    }
+
+    public float[] getGradientBeta() {
+        return dBeta;
     }
 }
