@@ -6,7 +6,7 @@ A simple neural network library for training networks in different environments.
 ## Environments
 - 2D perlin noise
 - Maze (generated using recursive backtracking)
-- Psudorandom noise
+- Pseudorandom noise
 
 ---
 
@@ -18,6 +18,9 @@ import Tools.Environment_Visualiser;
 import Tools.Pathfinding.Pathfinder;
 import Training.*;
 
+import Training.ActivationFunctions.ActivationFunction;
+import Training.ActivationFunctions.ReLU;
+import Training.ActivationFunctions.Sigmoid;
 import com.sun.jdi.InvalidTypeException;
 
 import java.awt.*;

@@ -49,7 +49,7 @@ public class FlattenLayer extends Layer {
             );
         }
 
-        Matrix output = new Matrix(outputSize, 1);
+        MatrixDouble output = new MatrixDouble(outputSize, 1);
         int index = 0;
         for (int d = 0; d < inputDepth; d++) {
             for (int h = 0; h < inputHeight; h++) {
@@ -66,8 +66,8 @@ public class FlattenLayer extends Layer {
         if (!(input instanceof Tensor tensorInput)) {
             throw new IllegalArgumentException("Expected input to be a Tensor.");
         }
-        if (!(gradientOutput instanceof Matrix matrixGradientOutput)) {
-            throw new IllegalArgumentException("Expected gradientOutput to be a Matrix.");
+        if (!(gradientOutput instanceof MatrixDouble matrixGradientOutput)) {
+            throw new IllegalArgumentException("Expected gradientOutput to be a MatrixDouble.");
         }
 
         Tensor gradientInput = new Tensor(inputDepth, inputHeight, inputWidth);
@@ -83,7 +83,7 @@ public class FlattenLayer extends Layer {
     }
 
     @Override
-    public void updateParameters(float learningRate) {
+    public void updateParameters(double learningRate) {
         // No parameters to update
     }
 

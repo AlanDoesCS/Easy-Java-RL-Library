@@ -1,4 +1,4 @@
-package Training;
+package Training.ActivationFunctions;
 
 import java.io.Serializable;
 
@@ -9,7 +9,7 @@ public abstract class ActivationFunction implements Serializable {
      * @param x the input value to be activated
      * @return the activated value
      */
-    abstract public float activate(float x);
+    abstract public double activate(double x);
 
     /**
      * Abstract method to compute the derivative of the activation function for a given input.
@@ -17,5 +17,5 @@ public abstract class ActivationFunction implements Serializable {
      * @param x the input value for which the derivative is to be computed
      * @return the derivative of the activation function at the given input
      */
-    abstract public float derivative(float x);
+    abstract public double derivative(double x);
 }

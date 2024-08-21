@@ -1,14 +1,13 @@
 package Training;
 
-import Structures.Matrix;
-import Structures.Vector2D;
+import Structures.MatrixDouble;
 import Tools.Perlin2D;
 
 public class PerlinGridEnvironment extends GridEnvironment {
     float step, persistence;
     int octaves;
     Perlin2D perlin;
-    Matrix gridAsMatrix;
+    MatrixDouble gridAsMatrix;
 
     public PerlinGridEnvironment(int width, int height, int octaves, float persistence, float step) {
         super(width, height);
@@ -23,11 +22,11 @@ public class PerlinGridEnvironment extends GridEnvironment {
 
     @Override
     void fill() {
-        gridAsMatrix = fill(new Matrix(height, width));
+        gridAsMatrix = fill(new MatrixDouble(height, width));
     }
 
-    Matrix fill(Matrix destination) {
-        if (destination == null) throw new NullPointerException("Matrix destination is null!");
+    MatrixDouble fill(MatrixDouble destination) {
+        if (destination == null) throw new NullPointerException("MatrixDouble destination is null!");
 
         for (int y=0; y<height; y++) {
             for (int x=0; x<width; x++) {

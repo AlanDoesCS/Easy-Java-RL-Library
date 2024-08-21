@@ -5,9 +5,9 @@ import Tools.math;
 import java.util.Random;
 
 public class Vector2D {
-    float x, y;
+    double x, y;
 
-    public Vector2D(float x, float y) {
+    public Vector2D(double x, double y) {
         this.x = x;
         this.y = y;
     }
@@ -17,7 +17,7 @@ public class Vector2D {
         this.y = agentPosition.y;
     }
 
-    public static float dot(Vector2D a, Vector2D b) {
+    public static double dot(Vector2D a, Vector2D b) {
         return a.x *b.x + a.y *b.y;
     }
 
@@ -26,31 +26,31 @@ public class Vector2D {
     }
 
     public static Vector2D randomUnitVect(Random random) {
-        Vector2D res = new Vector2D(math.randomFloat(-1, 1, random), math.randomFloat(-1, 1, random));
+        Vector2D res = new Vector2D(math.randomDouble(-1, 1, random), math.randomDouble(-1, 1, random));
         res.normalise();
         return res;
     }
 
     public void normalise() {
-        float magnitude = (float) Math.sqrt(x * x + y * y);
+        double magnitude = Math.sqrt(x * x + y * y);
         x /= magnitude;
         y /= magnitude;
     }
     public static Vector2D normalise(Vector2D vector) {
-        float magnitude = (float) Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+        double magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
         return new Vector2D(vector.x / magnitude, vector.y / magnitude);
     }
-    public static Vector2D normalise(Vector2D vector, float max_x, float max_y) {
+    public static Vector2D normalise(Vector2D vector, double max_x, double max_y) {
         return new Vector2D(
                 math.normalise(vector.x, 0, max_x),
                 math.normalise(vector.y, 0, max_y)
         );
     }
 
-    public float getX() {
+    public double getX() {
         return x;
     }
-    public float getY() {
+    public double getY() {
         return y;
     }
 
@@ -58,15 +58,15 @@ public class Vector2D {
         return "(x=" + x + ", y=" + y + ')';
     }
 
-    public void add(float I, float J) {
+    public void add(double I, double J) {
         x += I;
         y += J;
     }
 
-    public void multiplyX(float multiplier) {
+    public void multiplyX(double multiplier) {
         this.x *= multiplier;
     }
-    public void multiplyY(float multiplier) {
+    public void multiplyY(double multiplier) {
         this.y *= multiplier;
     }
 
@@ -75,15 +75,15 @@ public class Vector2D {
         this.y = y;
     }
 
-    public void set(float x, float y) {
+    public void set(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
-    public void addX(float amount) {
+    public void addX(double amount) {
         this.x += amount;
     }
-    public void addY(float amount) {
+    public void addY(double amount) {
         this.y += amount;
     }
 
@@ -95,13 +95,13 @@ public class Vector2D {
         return (x == other.x) && (y == other.y);
     }
 
-    public float distanceTo(Vector2D goalPosition) {
-        float dx = x - goalPosition.x;
-        float dy = y - goalPosition.y;
-        return (float) Math.sqrt(dx*dx + dy*dy);
+    public double distanceTo(Vector2D goalPosition) {
+        double dx = x - goalPosition.x;
+        double dy = y - goalPosition.y;
+        return Math.sqrt(dx*dx + dy*dy);
     }
 
-    public float manhattanDistanceTo(Vector2D goalPosition) {
+    public double manhattanDistanceTo(Vector2D goalPosition) {
         return Math.abs(x - goalPosition.x) + Math.abs(y - goalPosition.y);
     }
 }

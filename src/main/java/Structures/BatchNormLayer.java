@@ -4,20 +4,20 @@ import java.util.Arrays;
 
 public class BatchNormLayer extends Layer {
     private int depth, height, width;
-    private float epsilon = 1e-5f;
-    private float momentum = 0.99f;
+    private double epsilon = 1e-5f;
+    private double momentum = 0.99f;
 
-    public float[] gamma;
-    public float[] beta;
-    private float[] runningMean;
-    private float[] runningVar;
+    public double[] gamma;
+    public double[] beta;
+    private double[] runningMean;
+    private double[] runningVar;
 
-    private float[] dGamma;
-    private float[] dBeta;
+    private double[] dGamma;
+    private double[] dBeta;
 
     // [2][depth]
-    public float[][] m; // First moment estimates for gamma and beta
-    public float[][] v; // Second moment estimates for gamma and beta
+    public double[][] m; // First moment estimates for gamma and beta
+    public double[][] v; // Second moment estimates for gamma and beta
 
     public BatchNormLayer(int depth, int height, int width) {
         this.depth = depth;
@@ -26,31 +26,38 @@ public class BatchNormLayer extends Layer {
         this.inputSize = depth * height * width;
         this.outputSize = inputSize;
 
-        gamma = new float[depth];
-        beta = new float[depth];
-        runningMean = new float[depth];
-        runningVar = new float[depth];
-        dGamma = new float[depth];
-        dBeta = new float[depth];
+        gamma = new double[depth];
+        beta = new double[depth];
+        runningMean = new double[depth];
+        runningVar = new double[depth];
+        dGamma = new double[depth];
+        dBeta = new double[depth];
 
         for (int i = 0; i < depth; i++) {
             gamma[i] = 1.0f;
             beta[i] = 0.0f;
         }
 
-        m = new float[2][depth];
-        v = new float[2][depth];
+        m = new double[2][depth];
+        v = new double[2][depth];
     }
 
     @Override
     public Object compute(Object input) {
-        if (!(input instanceof Tensor inputTensor)) {
-            throw new IllegalArgumentException("Expected input to be a Tensor.");
+        if (input instanceof Tensor inputTensor) {
+            return computeTensor(inputTensor);
+        } else if (input instanceof MatrixDouble inputMatrix) {
+            return computeMatrix(inputMatrix);
+        } else {
+            throw new IllegalArgumentException("Expected input to be a Tensor or MatrixDouble.");
         }
+    }
+
+    private Tensor computeTensor(Tensor inputTensor) {
         Tensor outputTensor = new Tensor(depth, height, width);
 
         for (int d = 0; d < depth; d++) {
-            float mean = 0, variance = 0;
+            double mean = 0, variance = 0;
             int count = height * width;
 
             for (int h = 0; h < height; h++) {
@@ -62,7 +69,7 @@ public class BatchNormLayer extends Layer {
 
             for (int h = 0; h < height; h++) {
                 for (int w = 0; w < width; w++) {
-                    float diff = inputTensor.get(d, h, w) - mean;
+                    double diff = inputTensor.get(d, h, w) - mean;
                     variance += diff * diff;
                 }
             }
@@ -72,10 +79,10 @@ public class BatchNormLayer extends Layer {
             runningVar[d] = momentum * runningVar[d] + (1 - momentum) * variance;
 
             // Normalize and scale
-            float stdDev = (float) Math.sqrt(variance + epsilon);
+            double stdDev = Math.sqrt(variance + epsilon);
             for (int h = 0; h < height; h++) {
                 for (int w = 0; w < width; w++) {
-                    float normalized = (inputTensor.get(d, h, w) - mean) / stdDev;
+                    double normalized = (inputTensor.get(d, h, w) - mean) / stdDev;
                     outputTensor.set(d, h, w, gamma[d] * normalized + beta[d]);
                 }
             }
@@ -84,50 +91,106 @@ public class BatchNormLayer extends Layer {
         return outputTensor;
     }
 
-    @Override
-    public Object backpropagate(Object input, Object gradientOutput) {
-        if (!(input instanceof Tensor inputTensor) || !(gradientOutput instanceof Tensor gradOutputTensor)) {
-            throw new IllegalArgumentException("Expected input and gradOutputTensor to be a Tensors.");
+    private MatrixDouble computeMatrix(MatrixDouble inputMatrix) {
+        int rows = inputMatrix.getRows();
+        int cols = inputMatrix.getCols();
+
+        MatrixDouble outputMatrix = new MatrixDouble(rows, cols);
+        double mean = inputMatrix.getMeanAverage();
+        double variance = inputMatrix.getVariance(mean);
+
+        double stdDev = Math.sqrt(variance + epsilon);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                double normalized = (inputMatrix.get(j, i) - mean) / stdDev;
+                outputMatrix.set(j, i, gamma[0] * normalized + beta[0]);
+            }
         }
 
-        int N = inputTensor.getHeight() * inputTensor.getWidth(); // Number of elements per feature map
+        return outputMatrix;
+    }
+
+    @Override
+    public Object backpropagate(Object input, Object gradientOutput) {
+        if (input instanceof Tensor inputTensor && gradientOutput instanceof Tensor gradOutputTensor) {
+            return backpropagateTensor(inputTensor, gradOutputTensor);
+        } else if (input instanceof MatrixDouble inputMatrix && gradientOutput instanceof MatrixDouble gradOutputMatrix) {
+            return backpropagateMatrix(inputMatrix, gradOutputMatrix);
+        } else {
+            throw new IllegalArgumentException("Expected input and gradientOutput to be a Tensor or MatrixDouble.");
+        }
+    }
+
+    private Tensor backpropagateTensor(Tensor inputTensor, Tensor gradOutputTensor) {
+        int N = inputTensor.getHeight() * inputTensor.getWidth();
         Tensor gradInputTensor = new Tensor(depth, height, width);
 
-        Arrays.fill(dGamma, 0);
-        Arrays.fill(dBeta, 0);
-
         for (int d = 0; d < depth; d++) {
-            // calc gradients with respect to gamma and beta
-            dGamma[d] = 0;
-            dBeta[d] = 0;
-            for (int h = 0; h < height; h++) {
-                for (int w = 0; w < width; w++) {
-                    dGamma[d] += (float) (gradOutputTensor.get(d, h, w) * (inputTensor.get(d, h, w) - runningMean[d]) / Math.sqrt(runningVar[d] + epsilon));
-                    dBeta[d] += gradOutputTensor.get(d, h, w);
-                }
-            }
+            double mean = runningMean[d];
+            double variance = runningVar[d];
+            double stdDev = Math.sqrt(variance + epsilon);
 
-            // calc gradients with respect to the input
-            float invStdDev = 1 / (float) Math.sqrt(runningVar[d] + epsilon);
-            float gammaOverStdDev = gamma[d] * invStdDev;
+            double dMean = 0, dVar = 0;
 
             for (int h = 0; h < height; h++) {
                 for (int w = 0; w < width; w++) {
-                    float normalized = (inputTensor.get(d, h, w) - runningMean[d]) * invStdDev;
-                    float gradOut = gradOutputTensor.get(d, h, w);
-
-                    // Gradient with respect to input
-                    float gradInput = gammaOverStdDev * (gradOut - (dBeta[d] / N) - normalized * (dGamma[d] / N));
-                    gradInputTensor.set(d, h, w, gradInput);
+                    dMean += gradOutputTensor.get(d, h, w);
+                    dVar += (inputTensor.get(d, h, w) - mean) * gradOutputTensor.get(d, h, w);
                 }
             }
+
+            dMean /= N;
+            dVar *= -0.5 / (variance + epsilon);
+
+            for (int h = 0; h < height; h++) {
+                for (int w = 0; w < width; w++) {
+                    double input = inputTensor.get(d, h, w);
+                    double grad = gradOutputTensor.get(d, h, w);
+                    double dInput = grad / stdDev + dVar * 2 * (input - mean) / N + dMean;
+                    gradInputTensor.set(d, h, w, dInput);
+                }
+            }
+
+            dGamma[d] += gradOutputTensor.getSum() / stdDev;
+            dBeta[d] += gradOutputTensor.getSum();
         }
 
         return gradInputTensor;
     }
 
+    private MatrixDouble backpropagateMatrix(MatrixDouble inputMatrix, MatrixDouble gradOutputMatrix) {
+        int rows = inputMatrix.getRows();
+        int cols = inputMatrix.getCols();
+
+        MatrixDouble gradInputMatrix = new MatrixDouble(rows, cols);
+        double mean = inputMatrix.getMeanAverage();
+        double variance = inputMatrix.getVariance(mean);
+        double stdDev = Math.sqrt(variance + epsilon);
+
+        MatrixDouble inputMinusMean = MatrixDouble.subtract(inputMatrix, mean);
+        MatrixDouble multipliedMatrix = MatrixDouble.multiply(gradOutputMatrix, inputMinusMean.transpose());
+        double dVar = -0.5 / (variance + epsilon) * multipliedMatrix.getSum();
+
+        double dMean = gradOutputMatrix.getSum() / (rows * cols);
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                double input = inputMatrix.get(j, i);
+                double grad = gradOutputMatrix.get(j, i);
+                double dInput = grad / stdDev + dVar * 2 * (input - mean) / (rows * cols) + dMean;
+                gradInputMatrix.set(j, i, dInput);
+            }
+        }
+
+        // Update dGamma and dBeta with the sum of gradients
+        dGamma[0] += gradOutputMatrix.getSum() / stdDev;
+        dBeta[0] += gradOutputMatrix.getSum();
+
+        return gradInputMatrix;
+    }
+
     @Override
-    public void updateParameters(float learningRate) {
+    public void updateParameters(double learningRate) {
     }
 
     @Override
@@ -171,11 +234,11 @@ public class BatchNormLayer extends Layer {
         return depth;
     }
 
-    public float[] getGradientGamma() {
+    public double[] getGradientGamma() {
         return dGamma;
     }
 
-    public float[] getGradientBeta() {
+    public double[] getGradientBeta() {
         return dBeta;
     }
 

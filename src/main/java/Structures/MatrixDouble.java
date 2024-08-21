@@ -8,34 +8,35 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
-public class Matrix implements Serializable {
+public class MatrixDouble implements Serializable {
     private static final int TILE_SIZE = 32;
     private static final int UNROLL_FACTOR = 4;
     private static final int PARALLELISM_THRESHOLD = 1024;
     private static final ForkJoinPool POOL = ForkJoinPool.commonPool();
 
-    private float[][] data;
+    private double[][] data;
     int rows, cols;
 
-    public Matrix(int rows, int cols) {
+    public MatrixDouble(int rows, int cols) {
         this.rows = rows;
         this.cols = cols;
-        data = new float[rows][cols];
+
+        data = new double[rows][cols];
     }
 
-    public Matrix(float[][] data) {
+    public MatrixDouble(double[][] data) {
         this.data = data;
         this.rows = data.length;
         this.cols = data[0].length;
     }
 
-    public Matrix(float[] data, int rows, int cols) {
+    public MatrixDouble(double[] data, int rows, int cols) {
         if (data.length != rows * cols) {
             throw new IllegalArgumentException("Data length does not match the specified dimensions");
         }
         this.rows = rows;
         this.cols = cols;
-        this.data = new float[rows][cols];
+        this.data = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 this.data[i][j] = data[i * cols + j];
@@ -43,8 +44,9 @@ public class Matrix implements Serializable {
         }
     }
 
-    public static Matrix elementwiseSquare(Matrix matrix) {
-        Matrix result = new Matrix(matrix.rows, matrix.cols);
+
+    public static MatrixDouble elementwiseSquare(MatrixDouble matrix) {
+        MatrixDouble result = new MatrixDouble(matrix.rows, matrix.cols);
         for (int i = 0; i < matrix.rows; i++) {
             for (int j = 0; j < matrix.cols; j++) {
                 result.data[i][j] = matrix.data[i][j] * matrix.data[i][j];
@@ -53,22 +55,22 @@ public class Matrix implements Serializable {
         return result;
     }
 
-    public static Matrix elementwiseSquareRoot(Matrix matrix) {
-        Matrix result = new Matrix(matrix.rows, matrix.cols);
+    public static MatrixDouble elementwiseSquareRoot(MatrixDouble matrix) {
+        MatrixDouble result = new MatrixDouble(matrix.rows, matrix.cols);
         for (int i = 0; i < matrix.rows; i++) {
             for (int j = 0; j < matrix.cols; j++) {
-                result.data[i][j] = (float) Math.sqrt(matrix.data[i][j]);
+                result.data[i][j] = Math.sqrt(matrix.data[i][j]);
             }
         }
         return result;
     }
 
-    public static Matrix elementWiseDivide(Matrix matrix, Matrix divisor) {
+    public static MatrixDouble elementWiseDivide(MatrixDouble matrix, MatrixDouble divisor) {
         if (matrix.rows != divisor.rows || matrix.cols != divisor.cols) {
             throw new IllegalArgumentException("Matrices must have the same dimensions for element-wise division.");
         }
 
-        Matrix result = new Matrix(matrix.rows, matrix.cols);
+        MatrixDouble result = new MatrixDouble(matrix.rows, matrix.cols);
         for (int i = 0; i < matrix.rows; i++) {
             for (int j = 0; j < matrix.cols; j++) {
                 if (divisor.data[i][j] == 0) {
@@ -82,7 +84,17 @@ public class Matrix implements Serializable {
 
     }
 
-    public void fill(float value) {
+    public static MatrixDouble subtract(MatrixDouble inputMatrix, double mean) {
+        MatrixDouble result = new MatrixDouble(inputMatrix.rows, inputMatrix.cols);
+        for (int i = 0; i < inputMatrix.rows; i++) {
+            for (int j = 0; j < inputMatrix.cols; j++) {
+                result.data[i][j] = inputMatrix.data[i][j] - mean;
+            }
+        }
+        return inputMatrix;
+    }
+
+    public void fill(double value) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 data[i][j] = value;
@@ -93,19 +105,19 @@ public class Matrix implements Serializable {
     public void randomize() {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                data[i][j] = (float) (Math.random() * 2 - 1);
+                data[i][j] = Math.random() * 2 - 1;
             }
         }
     }
-    public void randomize(float min, float max) {
+    public void randomize(double min, double max) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                data[i][j] = math.randomFloat(min, max);
+                data[i][j] = math.randomDouble(min, max);
             }
         }
     }
 
-    public void add(float n) {
+    public void add(double n) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 data[i][j] += n;
@@ -113,8 +125,8 @@ public class Matrix implements Serializable {
         }
     }
 
-    public static Matrix add(Matrix matrix, float v) {
-        Matrix result = new Matrix(matrix.getRows(), matrix.getCols());
+    public static MatrixDouble add(MatrixDouble matrix, double v) {
+        MatrixDouble result = new MatrixDouble(matrix.getRows(), matrix.getCols());
         for (int r = 0; r < matrix.getRows(); r++) {
             for (int c = 0; c < matrix.getCols(); c++) {
                 result.set(c, r, matrix.get(c, r) + v);
@@ -123,11 +135,11 @@ public class Matrix implements Serializable {
         return result;
     }
 
-    public void add(int row, int column, float value) {
+    public void add(int row, int column, double value) {
         data[row][column] += value;
     }
 
-    public void add(Matrix m) {
+    public void add(MatrixDouble m) {
         if (rows != m.rows || cols != m.cols) {
             throw new IllegalArgumentException("The matrices must have the same dimensions.");
         }
@@ -138,11 +150,11 @@ public class Matrix implements Serializable {
         }
     }
 
-    public void subtract(float n) {
+    public void subtract(double n) {
         add(-n);
     }
 
-    public void subtract(Matrix m) {
+    public void subtract(MatrixDouble m) {
         if (rows != m.rows || cols != m.cols) {
             throw new IllegalArgumentException("The matrices must have the same dimensions.");
         }
@@ -153,7 +165,7 @@ public class Matrix implements Serializable {
         }
     }
 
-    public void multiply(float n) {
+    public void multiply(double n) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 data[i][j] *= n;
@@ -161,8 +173,8 @@ public class Matrix implements Serializable {
         }
     }
 
-    public float sumOfSquares() {
-        float sum = 0;
+    public double sumOfSquares() {
+        double sum = 0;
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 sum += data[i][j] * data[i][j];
@@ -171,7 +183,7 @@ public class Matrix implements Serializable {
         return sum;
     }
 
-    public void divide(float scalar) {
+    public void divide(double scalar) {
         if (scalar == 0) {
             throw new ArithmeticException("Cannot divide by zero");
         }
@@ -182,13 +194,13 @@ public class Matrix implements Serializable {
         }
     }
 
-    public static Matrix divide(Matrix matrix, float scalar) {
-        Matrix result = matrix.copy();
+    public static MatrixDouble divide(MatrixDouble matrix, double scalar) {
+        MatrixDouble result = matrix.copy();
         result.divide(scalar);
         return result;
     }
 
-    public Matrix transpose() {
+    public MatrixDouble transpose() {
         return transpose(this.copy());
     }
 
@@ -196,15 +208,15 @@ public class Matrix implements Serializable {
         return "[r:"+rows+", c:"+cols+"]";
     }
 
-    public Matrix copy() {
-        float[][] newData = new float[rows][cols];
+    public MatrixDouble copy() {
+        double[][] newData = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
             System.arraycopy(data[i], 0, newData[i], 0, cols);
         }
-        return new Matrix(newData);
+        return new MatrixDouble(newData);
     }
 
-    public static void copy(Matrix source, Matrix target) {
+    public static void copy(MatrixDouble source, MatrixDouble target) {
         if (source.rows != target.rows || source.cols != target.cols) {
             throw new IllegalArgumentException("Source and target matrices must have the same dimensions.");
         }
@@ -213,8 +225,8 @@ public class Matrix implements Serializable {
         }
     }
 
-    public Matrix clip(float min, float max) {
-        Matrix result = new Matrix(this.rows, this.cols);
+    public MatrixDouble clip(double min, double max) {
+        MatrixDouble result = new MatrixDouble(this.rows, this.cols);
         for (int r = 0; r < this.rows; r++) {
             for (int c = 0; c < this.cols; c++) {
                 result.set(c, r, Math.max(min, Math.min(max, this.get(c, r))));
@@ -232,7 +244,7 @@ public class Matrix implements Serializable {
         for (int i = 0; i < rows; i++) {
             sb.append("\n[");
             for (int j = 0; j < cols; j++) {
-                float roundedVal = (float) Math.round(data[i][j]*multiplier)/multiplier;
+                double roundedVal = (double) Math.round(data[i][j] * multiplier) /multiplier;
                 sb.append(roundedVal);
                 if (j < cols - 1) {
                     sb.append(",\t");
@@ -247,11 +259,11 @@ public class Matrix implements Serializable {
         return sb.toString();
     }
 
-    public float get(int x, int y) {
+    public double get(int x, int y) {
         return data[y][x];
     }
 
-    public void set(int x, int y, float value) {
+    public void set(int x, int y, double value) {
         data[y][x] = value;
     }
 
@@ -263,8 +275,8 @@ public class Matrix implements Serializable {
     -----------------------------------------------------------------------------
      */
 
-    public static Matrix add(Matrix a, Matrix b) {
-        Matrix res = a.copy();
+    public static MatrixDouble add(MatrixDouble a, MatrixDouble b) {
+        MatrixDouble res = a.copy();
         if (a.rows != b.rows || a.cols != b.cols) {
             throw new IllegalArgumentException("The matrices must have the same dimensions.");
         }
@@ -278,8 +290,8 @@ public class Matrix implements Serializable {
         return res;
     }
 
-    public static Matrix subtract(Matrix a, Matrix b) {
-        Matrix res = a.copy();
+    public static MatrixDouble subtract(MatrixDouble a, MatrixDouble b) {
+        MatrixDouble res = a.copy();
         if (a.rows != b.rows || a.cols != b.cols) {
             throw new IllegalArgumentException("The matrices must have the same dimensions.");
         }
@@ -293,16 +305,16 @@ public class Matrix implements Serializable {
         return res;
     }
 
-    public static Matrix multiply(Matrix matrix, float value) {
-        Matrix res = matrix.copy();
+    public static MatrixDouble multiply(MatrixDouble matrix, double value) {
+        MatrixDouble res = matrix.copy();
         res.multiply(value);
         return res;
     }
 
-    public static Matrix transpose(Matrix matrix) {
+    public static MatrixDouble transpose(MatrixDouble matrix) {
         int rows = matrix.data.length;
         int cols = matrix.data[0].length;
-        Matrix transposed = new Matrix(cols, rows);
+        MatrixDouble transposed = new MatrixDouble(cols, rows);
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -313,21 +325,21 @@ public class Matrix implements Serializable {
         return transposed;
     }
 
-    public static Matrix getIdentityMatrix(int width) {
-        float[][] data = new float[width][width];
+    public static MatrixDouble getIdentityMatrix(int width) {
+        double[][] data = new double[width][width];
         for (int i = 0; i < width; i++) {
             data[i][i] = 1;
         }
-        return new Matrix(data);
+        return new MatrixDouble(data);
     }
-    public static Matrix getIdentityMatrix(Matrix m) {
+    public static MatrixDouble getIdentityMatrix(MatrixDouble m) {
         assert (m.rows == m.cols); // Make sure matrix m is a square matrix
         return getIdentityMatrix(m.cols);
     }
 
     //                                          1           2
-    public static Matrix getNumberedMatrix(int width, int height) {
-        Matrix m = new Matrix(height, width);
+    public static MatrixDouble getNumberedMatrix(int width, int height) {
+        MatrixDouble m = new MatrixDouble(height, width);
         //                      1       2
 
         for (int i = 0; i < width; i++) {
@@ -347,12 +359,12 @@ public class Matrix implements Serializable {
     -----------------------------------------------------------------------------
     */
 
-    public static Matrix elementWiseMultiply(Matrix A, Matrix B) {
+    public static MatrixDouble elementWiseMultiply(MatrixDouble A, MatrixDouble B) {
         if (A.rows != B.rows || A.cols != B.cols) {
             throw new IllegalArgumentException("Matrices must have the same dimensions for element-wise multiplication. (A:"+A.dims()+" != B:"+B.dims()+")");
         }
 
-        Matrix result = new Matrix(A.rows, A.cols);
+        MatrixDouble result = new MatrixDouble(A.rows, A.cols);
 
         IntStream.range(0, A.rows).parallel().forEach(i -> {
             for (int j = 0; j < A.cols; j++) {
@@ -363,22 +375,22 @@ public class Matrix implements Serializable {
         return result;
     }
 
-    public static Matrix multiply(Matrix A, Matrix B) {
+    public static MatrixDouble multiply(MatrixDouble A, MatrixDouble B) {
         if (A.cols != B.rows) {
             System.out.println(B);
             throw new IllegalArgumentException("A's columns must match B's rows ("+A.cols+"!="+B.rows+") - A.dims="+A.dims()+", B.dims="+B.dims());
         }
 
-        AtomicReference<float[][]> C = new AtomicReference<>(new float[A.rows][B.cols]);
-        Matrix BT = transpose(B);
+        AtomicReference<double[][]> C = new AtomicReference<>(new double[A.rows][B.cols]);
+        MatrixDouble BT = transpose(B);
 
         POOL.invoke(new MultiplyTask(A, BT, C, 0, A.rows, 0, B.cols, 0, A.cols));
 
-        return new Matrix(C.get());
+        return new MatrixDouble(C.get());
     }
 
-    public void multiply(Matrix B) {
-        Matrix res = multiply(this, B);
+    public void multiply(MatrixDouble B) {
+        MatrixDouble res = multiply(this, B);
         this.rows = res.rows;
         this.cols = res.cols;
         this.data = res.data;
@@ -398,8 +410,8 @@ public class Matrix implements Serializable {
         return cols;
     }
 
-    public Matrix toRowMatrix() {
-        Matrix result = new Matrix(1, rows*cols);
+    public MatrixDouble toRowMatrix() {
+        MatrixDouble result = new MatrixDouble(1, rows*cols);
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 result.set(r*cols+c, 0, get(c, r));
@@ -408,8 +420,8 @@ public class Matrix implements Serializable {
         return result;
     }
 
-    public float getSum() {
-        float sum = 0;
+    public double getSum() {
+        double sum = 0;
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 sum += data[i][j];
@@ -418,16 +430,27 @@ public class Matrix implements Serializable {
         return sum;
     }
 
-    public float getMeanAverage() {
+    public double getMeanAverage() {
         return getSum() / (rows * cols);
     }
 
+    public double getVariance(double mean) {
+        double sum = 0;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                double diff = data[i][j] - mean;
+                sum += diff * diff;
+            }
+        }
+        return sum / (rows * cols);
+    }
+
     private static class MultiplyTask extends RecursiveAction {
-        private final Matrix A, BT;
-        private final AtomicReference<float[][]> C;
+        private final MatrixDouble A, BT;
+        private final AtomicReference<double[][]> C;
         private final int rowStart, rowEnd, colStart, colEnd, depthStart, depthEnd;
 
-        MultiplyTask(Matrix A, Matrix BT, AtomicReference<float[][]> C,
+        MultiplyTask(MatrixDouble A, MatrixDouble BT, AtomicReference<double[][]> C,
                      int rowStart, int rowEnd,
                      int colStart, int colEnd,
                      int depthStart, int depthEnd) {
@@ -475,7 +498,7 @@ public class Matrix implements Serializable {
         }
 
         private void multiplySequential() {
-            float[][] localC = new float[rowEnd - rowStart][colEnd - colStart];
+            double[][] localC = new double[rowEnd - rowStart][colEnd - colStart];
             for (int i0 = rowStart; i0 < rowEnd; i0 += TILE_SIZE) {
                 for (int j0 = colStart; j0 < colEnd; j0 += TILE_SIZE) {
                     for (int k0 = depthStart; k0 < depthEnd; k0 += TILE_SIZE) {
@@ -486,37 +509,23 @@ public class Matrix implements Serializable {
             mergeResult(localC);
         }
 
-        private void multiplyTile(int i0, int j0, int k0, float[][] localC) {
+        private void multiplyTile(int i0, int j0, int k0, double[][] localC) {
             int iMax = Math.min(i0 + TILE_SIZE, rowEnd);
             int jMax = Math.min(j0 + TILE_SIZE, colEnd);
             int kMax = Math.min(k0 + TILE_SIZE, depthEnd);
 
             for (int i = i0; i < iMax; i++) {
                 for (int j = j0; j < jMax; j += UNROLL_FACTOR) {
-                    float sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
+                    double sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
 
                     for (int k = k0; k < kMax; k++) {
-                        float aik = A.data[i][k];
-                        float product = aik * BT.data[j][k];
+                        double aik = A.data[i][k];
+                        double product = aik * BT.data[j][k];
                         sum0 += product;
-
-                        if (product > Float.MAX_VALUE) {
-                            throw new ArithmeticException("Overflow during matrix multiplication at (" + i + ", " + j + ", " + k + ")");
-                        }
-                        if (product < Float.MIN_VALUE) {
-                            throw new ArithmeticException("Underflow during matrix multiplication at (" + i + ", " + j + ", " + k + ")");
-                        }
 
                         if (j + 1 < jMax) sum1 += aik * BT.data[j + 1][k];
                         if (j + 2 < jMax) sum2 += aik * BT.data[j + 2][k];
                         if (j + 3 < jMax) sum3 += aik * BT.data[j + 3][k];
-                    }
-
-                    if (sum0 > Float.MAX_VALUE || sum1 > Float.MAX_VALUE || sum2 > Float.MAX_VALUE || sum3 > Float.MAX_VALUE) {
-                        throw new ArithmeticException("Overflow during matrix multiplication at (" + i + ", " + j + ")");
-                    }
-                    if (sum0 < Float.MIN_VALUE || sum1 < Float.MIN_VALUE || sum2 < Float.MIN_VALUE || sum3 < Float.MIN_VALUE) {
-                        throw new ArithmeticException("Underflow during matrix multiplication at (" + i + ", " + j + ")");
                     }
 
                     localC[i - rowStart][j - colStart] += sum0;
@@ -527,8 +536,8 @@ public class Matrix implements Serializable {
             }
         }
 
-        private void mergeResult(float[][] localC) {
-            float[][] globalC = C.get();
+        private void mergeResult(double[][] localC) {
+            double[][] globalC = C.get();
             synchronized (C) {
                 for (int i = 0; i < localC.length; i++) {
                     for (int j = 0; j < localC[0].length; j++) {

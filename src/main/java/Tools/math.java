@@ -1,6 +1,6 @@
 package Tools;
 
-import Structures.Matrix;
+import Structures.MatrixDouble;
 import Structures.Vector2D;
 
 import java.util.Random;
@@ -10,6 +10,9 @@ public class math {
 
     public static float randomFloat(float min, float max, Random random) {
         return random.nextFloat() * (max - min) + min;
+    }
+    public static double randomDouble(double min, double max, Random random) {
+        return random.nextDouble() * (max - min) + min;
     }
     /**
      * Generates a random float within the specified range [min, max].
@@ -21,6 +24,7 @@ public class math {
     public static float randomFloat(float min, float max) {
         return random.nextFloat() * (max - min) + min;
     }
+    public static double randomDouble(double min, double max) { return random.nextDouble() * (max - min) + min;}
 
     /**
      * Generates a random integer within the specified range [min, max].
@@ -43,6 +47,10 @@ public class math {
         if (value < min) return min;
         return Math.min(value, max);
     }
+    public static double clamp(double value, double min, double max) {
+        if (value < min) return min;
+        return Math.min(value, max);
+    }
     public static float lerp(float t, float a, float b) { // t is between 0 and 1
         return a + t * ( b - a );
     }
@@ -56,6 +64,10 @@ public class math {
      * @return the normalised value in the range [0, 1]
      */
     public static float normalise(float value, float from_min, float from_max) {
+        if (from_min == from_max) return 0; // avoid division by zero
+        return (value - from_min)/(from_max - from_min);
+    }
+    public static double normalise(double value, int from_min, double from_max) {
         if (from_min == from_max) return 0; // avoid division by zero
         return (value - from_min)/(from_max - from_min);
     }
@@ -76,8 +88,8 @@ public class math {
         return value * (max_end - min_end) + min_end;
     }
 
-    public static float max(Matrix matrix) {
-        float maxValue = matrix.get(0, 0);
+    public static double max(MatrixDouble matrix) {
+        double maxValue = matrix.get(0, 0);
         for (int y = 0; y < matrix.getHeight(); y++) {
             for (int x = 0; x < matrix.getWidth(); x++) {
                 if (matrix.get(x, y) > maxValue) {
@@ -89,9 +101,9 @@ public class math {
         return maxValue;
     }
 
-    public static Vector2D maxIndex(Matrix matrix) {
+    public static Vector2D maxIndex(MatrixDouble matrix) {
         Vector2D index = new Vector2D(0, 0);
-        float max = matrix.get(0, 0);
+        double max = matrix.get(0, 0);
         for (int r = 0; r < matrix.getHeight(); r++) {
             for (int c = 0; c < matrix.getWidth(); c++) {
                 if (matrix.get(c, r) > max) {
@@ -103,8 +115,8 @@ public class math {
         return index;
     }
 
-    public static float min(Matrix matrix) {
-        float minValue = matrix.get(0, 0);
+    public static double min(MatrixDouble matrix) {
+        double minValue = matrix.get(0, 0);
         for (int y = 0; y < matrix.getHeight(); y++) {
             for (int x = 0; x < matrix.getWidth(); x++) {
                 if (matrix.get(x, y) < minValue) {

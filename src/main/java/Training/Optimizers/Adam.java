@@ -39,32 +39,32 @@ public class Adam extends Optimizer {
 
     private void optimizeMLP(MLPLayer layer) {
         layer.t++;
-        float alpha = layer.getAlpha();
+        double alpha = layer.getAlpha();
 
         // update biased first moment estimate
-        layer.m = Matrix.add(Matrix.multiply(layer.m, beta1), Matrix.multiply(layer.getGradientWeights(), 1 - beta1));
-        layer.mBias = Matrix.add(Matrix.multiply(layer.mBias, beta1), Matrix.multiply(layer.getGradientBiases(), 1 - beta1));
+        layer.m = MatrixDouble.add(MatrixDouble.multiply(layer.m, beta1), MatrixDouble.multiply(layer.getGradientWeights(), 1 - beta1));
+        layer.mBias = MatrixDouble.add(MatrixDouble.multiply(layer.mBias, beta1), MatrixDouble.multiply(layer.getGradientBiases(), 1 - beta1));
 
         // update biased second raw moment estimate
-        layer.v = Matrix.add(Matrix.multiply(layer.v, beta2), Matrix.multiply(Matrix.elementwiseSquare(layer.getGradientWeights()), 1 - beta2));
-        layer.vBias = Matrix.add(Matrix.multiply(layer.vBias, beta2), Matrix.multiply(Matrix.elementwiseSquare(layer.getGradientBiases()), 1 - beta2));
+        layer.v = MatrixDouble.add(MatrixDouble.multiply(layer.v, beta2), MatrixDouble.multiply(MatrixDouble.elementwiseSquare(layer.getGradientWeights()), 1 - beta2));
+        layer.vBias = MatrixDouble.add(MatrixDouble.multiply(layer.vBias, beta2), MatrixDouble.multiply(MatrixDouble.elementwiseSquare(layer.getGradientBiases()), 1 - beta2));
 
         // compute bias corrected first moment estimate
-        Matrix mHat = Matrix.divide(layer.m, (float) (1 - Math.pow(beta1, layer.t)));
-        Matrix mHatBias = Matrix.divide(layer.mBias, (float) (1 - Math.pow(beta1, layer.t)));
+        MatrixDouble mHat = MatrixDouble.divide(layer.m, (float) (1 - Math.pow(beta1, layer.t)));
+        MatrixDouble mHatBias = MatrixDouble.divide(layer.mBias, (float) (1 - Math.pow(beta1, layer.t)));
 
         // compute bias corrected second raw moment estimate
-        Matrix vHat = Matrix.divide(layer.v, (float) (1 - Math.pow(beta2, layer.t)));
-        Matrix vHatBias = Matrix.divide(layer.vBias, (float) (1 - Math.pow(beta2, layer.t)));
+        MatrixDouble vHat = MatrixDouble.divide(layer.v, (float) (1 - Math.pow(beta2, layer.t)));
+        MatrixDouble vHatBias = MatrixDouble.divide(layer.vBias, (float) (1 - Math.pow(beta2, layer.t)));
 
         // update parameters
-        layer.setWeights(Matrix.subtract(layer.getWeights(), Matrix.elementWiseDivide(Matrix.multiply(mHat, alpha), Matrix.add(Matrix.elementwiseSquareRoot(vHat), epsilon))));
-        layer.setBiases(Matrix.subtract(layer.getBiases(), Matrix.elementWiseDivide(Matrix.multiply(mHatBias, alpha), Matrix.add(Matrix.elementwiseSquareRoot(vHatBias), epsilon))));
+        layer.setWeights(MatrixDouble.subtract(layer.getWeights(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHat, alpha), MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHat), epsilon))));
+        layer.setBiases(MatrixDouble.subtract(layer.getBiases(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHatBias, alpha), MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHatBias), epsilon))));
     }
 
     private void optimizeConv(ConvLayer layer) {
         layer.t++;
-        float alpha = layer.getAlpha();
+        double alpha = layer.getAlpha();
 
         for (int f = 0; f < layer.getNumFilters(); f++) {
             for (int d = 0; d < layer.getInputDepth(); d++) {
@@ -100,7 +100,7 @@ public class Adam extends Optimizer {
 
     private void optimizeBatchNorm(BatchNormLayer layer) {
         layer.t++;
-        float alpha = layer.getAlpha();
+        double alpha = layer.getAlpha();
 
         for (int d = 0; d < layer.getDepth(); d++) {
             // update biased first moment estimate
@@ -112,16 +112,16 @@ public class Adam extends Optimizer {
             layer.v[1][d] = Adam.default_beta2 * layer.v[1][d] + (1 - Adam.default_beta2) * layer.getGradientBeta()[d] * layer.getGradientBeta()[d];
 
             // compute bias corrected first moment estimate
-            float mHat0 = layer.m[0][d] / (1 - (float)Math.pow(Adam.default_beta1, layer.t));
-            float mHat1 = layer.m[1][d] / (1 - (float)Math.pow(Adam.default_beta1, layer.t));
+            double mHat0 = layer.m[0][d] / (1 - Math.pow(Adam.default_beta1, layer.t));
+            double mHat1 = layer.m[1][d] / (1 - Math.pow(Adam.default_beta1, layer.t));
 
             // compute bias corrected second raw moment estimate
-            float vHat0 = layer.v[0][d] / (1 - (float)Math.pow(Adam.default_beta2, layer.t));
-            float vHat1 = layer.v[1][d] / (1 - (float)Math.pow(Adam.default_beta2, layer.t));
+            double vHat0 = layer.v[0][d] / (1 - Math.pow(Adam.default_beta2, layer.t));
+            double vHat1 = layer.v[1][d] / (1 - Math.pow(Adam.default_beta2, layer.t));
 
             // update parameters
-            layer.gamma[d] -= alpha * mHat0 / (float)Math.sqrt(vHat0 + Adam.default_epsilon);
-            layer.beta[d] -= alpha * mHat1 / (float)Math.sqrt(vHat1 + Adam.default_epsilon);
+            layer.gamma[d] -= alpha * mHat0 / Math.sqrt(vHat0 + Adam.default_epsilon);
+            layer.beta[d] -= alpha * mHat1 / Math.sqrt(vHat1 + Adam.default_epsilon);
         }
     }
 }

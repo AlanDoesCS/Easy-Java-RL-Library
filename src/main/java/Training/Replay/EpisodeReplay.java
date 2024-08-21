@@ -1,6 +1,4 @@
-package Training;
-
-import Tools.math;
+package Training.Replay;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +37,7 @@ public class EpisodeReplay {
 
     public static class Episode {
         public List<ExperienceReplay.Experience> experiences;
-        public float totalReward;
+        public double totalReward;
 
         public Episode() {
             experiences = new ArrayList<>();

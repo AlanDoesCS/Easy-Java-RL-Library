@@ -5,7 +5,7 @@ import java.util.List;
 
 public abstract class Layer implements Serializable {
     public int t=0;
-    protected float alpha=0.001f; // LR for optimizers
+    protected double alpha=0.001f; // LR for optimizers
     protected int inputSize;
     protected int outputSize;
 
@@ -32,11 +32,11 @@ public abstract class Layer implements Serializable {
         return inputSize;
     }
 
-    public float getAlpha() {
+    public double getAlpha() {
         return alpha;
     }
 
-    public void setAlpha(float alpha) {
+    public void setAlpha(double alpha) {
         this.alpha = alpha;
     }
 
@@ -53,11 +53,11 @@ public abstract class Layer implements Serializable {
      *
      * @param input the input to the layer.
      * @param gradientOutput the gradient of the loss with respect to the output of the layer.
-     *                       - Can be either Matrix or Tensor
+     *                       - Can be either MatrixDouble or Tensor
      * @return the gradient of the loss with respect to the input of the layer.
      */
     public abstract Object backpropagate(Object input, Object gradientOutput);
-    public abstract void updateParameters(float learningRate);
+    public abstract void updateParameters(double learningRate);
 
     public void dumpInfo() {}
 }

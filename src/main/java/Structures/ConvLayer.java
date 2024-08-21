@@ -1,7 +1,7 @@
 package Structures;
 
 import Tools.math;
-import Training.ActivationFunction;
+import Training.ActivationFunctions.ActivationFunction;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,8 +12,8 @@ public class ConvLayer extends Layer {
     private static final int PARALLELISM_THRESHOLD = 32;   // threshold for parallelizing loops - increase value for weaker systems
     private static final ForkJoinPool POOL = ForkJoinPool.commonPool();
 
-    public float[][][][] filters; // [numFilters][depth][height][width]
-    public float[] biases; // [numFilters]
+    public double[][][][] filters; // [numFilters][depth][height][width]
+    public double[] biases; // [numFilters]
     private int strideX, strideY;
     private int paddingX, paddingY;
     public int filterSize; // assumes square filters
@@ -23,17 +23,17 @@ public class ConvLayer extends Layer {
     int inputDepth;
     private int outputWidth, outputHeight;
 
-    public float[][][][] m;
-    public float[][][][] v;
-    public float[] mBias;
-    public float[] vBias;
+    public double[][][][] m;
+    public double[][][][] v;
+    public double[] mBias;
+    public double[] vBias;
 
     private ActivationFunction activationFunction;
 
-    private static final float clipValue = 5.0f;
+    private static final double clipValue = 5.0f;
 
-    private float[][][][] gradientFilters;
-    private float[] gradientBiases;
+    private double[][][][] gradientFilters;
+    private double[] gradientBiases;
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
@@ -99,10 +99,10 @@ public class ConvLayer extends Layer {
         this.outputSize = outputWidth * outputHeight * numFilters;
 
         // Initialize filters and biases
-        filters = new float[numFilters][inputDepth][filterSize][filterSize];
-        biases = new float[numFilters];
-        gradientFilters = new float[numFilters][inputDepth][filterSize][filterSize];
-        gradientBiases = new float[numFilters];
+        filters = new double[numFilters][inputDepth][filterSize][filterSize];
+        biases = new double[numFilters];
+        gradientFilters = new double[numFilters][inputDepth][filterSize][filterSize];
+        gradientBiases = new double[numFilters];
 
         if (args.length > 0) {
             List<String> argList = List.of(args);
@@ -115,20 +115,20 @@ public class ConvLayer extends Layer {
         initializeParameters();
 
         // Initialize Adam parameters
-        m = new float[numFilters][inputDepth][filterSize][filterSize];
-        v = new float[numFilters][inputDepth][filterSize][filterSize];
-        mBias = new float[numFilters];
-        vBias = new float[numFilters];
+        m = new double[numFilters][inputDepth][filterSize][filterSize];
+        v = new double[numFilters][inputDepth][filterSize][filterSize];
+        mBias = new double[numFilters];
+        vBias = new double[numFilters];
     }
 
     private void initializeParameters() {
         // He initialization (for ReLU)
-        float stdDev = (float) Math.sqrt(2.0 / (inputDepth * filterSize * filterSize));
+        double stdDev = (double) Math.sqrt(2.0 / (inputDepth * filterSize * filterSize));
         for (int i = 0; i < filters.length; i++) {
             for (int j = 0; j < filters[i].length; j++) {
                 for (int k = 0; k < filters[i][j].length; k++) {
                     for (int l = 0; l < filters[i][j][k].length; l++) {
-                        filters[i][j][k][l] = math.randomFloat(-stdDev, stdDev);
+                        filters[i][j][k][l] = math.randomDouble(-stdDev, stdDev);
                     }
                 }
             }
@@ -147,7 +147,7 @@ public class ConvLayer extends Layer {
             throw new IllegalArgumentException("Input dimensions do not match expected dimensions: Expected: (" + inputDepth + ", " + inputHeight + ", " + inputWidth + "), Got: (" + tensorInput.getDepth() + ", " + tensorInput.getHeight() + ", " + tensorInput.getWidth() + ")");
         }
 
-        float[][][] outputData = new float[numFilters][outputHeight][outputWidth];
+        double[][][] outputData = new double[numFilters][outputHeight][outputWidth];
         POOL.invoke(new ComputeTask(tensorInput, outputData, 0, numFilters));
         return new Tensor(outputData);
     }
@@ -179,8 +179,8 @@ public class ConvLayer extends Layer {
         }
     }
 
-    public float getFilterMin() {
-        float min = Float.MAX_VALUE;
+    public double getFilterMin() {
+        double min = Float.MAX_VALUE;
         for (int f = 0; f < numFilters; f++) {
             for (int d = 0; d < inputDepth; d++) {
                 for (int h = 0; h < filterSize; h++) {
@@ -194,8 +194,8 @@ public class ConvLayer extends Layer {
         }
         return min;
     }
-    public float getFilterMax() {
-        float max = Float.MIN_VALUE;
+    public double getFilterMax() {
+        double max = Double.MIN_VALUE;
         for (int f = 0; f < numFilters; f++) {
             for (int d = 0; d < inputDepth; d++) {
                 for (int h = 0; h < filterSize; h++) {
@@ -209,7 +209,7 @@ public class ConvLayer extends Layer {
         }
         return max;
     }
-    public float getAverageFilterValue() {
+    public Double getAverageFilterValue() {
         double sum = 0;
         for (int f = 0; f < numFilters; f++) {
             for (int d = 0; d < inputDepth; d++) {
@@ -220,7 +220,7 @@ public class ConvLayer extends Layer {
                 }
             }
         }
-        return (float) (sum / (numFilters * inputDepth * filterSize * filterSize));
+        return sum / (numFilters * inputDepth * filterSize * filterSize);
     }
 
     public int getInputDepth() {
@@ -231,20 +231,20 @@ public class ConvLayer extends Layer {
         return filterSize;
     }
 
-    public float[][][][] getGradientFilters() {
+    public double[][][][] getGradientFilters() {
         return gradientFilters;
     }
 
-    public float[] getGradientBiases() {
+    public double[] getGradientBiases() {
         return gradientBiases;
     }
 
     private class ComputeTask extends RecursiveAction {
         private final Tensor input;
-        private final float[][][] output;
+        private final double[][][] output;
         private final int startFilter, endFilter;
 
-        ComputeTask(Tensor input, float[][][] output, int startFilter, int endFilter) {
+        ComputeTask(Tensor input, double[][][] output, int startFilter, int endFilter) {
             this.input = input;
             this.output = output;
             this.startFilter = startFilter;
@@ -268,7 +268,7 @@ public class ConvLayer extends Layer {
             for (int f = startFilter; f < endFilter; f++) {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
-                        float sum = 0;
+                        double sum = 0;
                         for (int d = 0; d < inputDepth; d++) {
                             for (int k = 0; k < filterSize; k++) {
                                 for (int l = 0; l < filterSize; l++) {
@@ -317,8 +317,8 @@ public class ConvLayer extends Layer {
     private class BackpropagationTask extends RecursiveAction {
         private final Tensor input, gradientOutput, gradientInput;
         private final int startFilter, endFilter;
-        private final float[][][][] localGradientFilters;
-        private final float[] localGradientBiases;
+        private final double[][][][] localGradientFilters;
+        private final double[] localGradientBiases;
 
         BackpropagationTask(Tensor input, Tensor gradientOutput, Tensor gradientInput, int startFilter, int endFilter) {
             this.input = input;
@@ -326,8 +326,8 @@ public class ConvLayer extends Layer {
             this.gradientInput = gradientInput;
             this.startFilter = startFilter;
             this.endFilter = endFilter;
-            this.localGradientFilters = new float[endFilter - startFilter][inputDepth][filterSize][filterSize];
-            this.localGradientBiases = new float[endFilter - startFilter];
+            this.localGradientFilters = new double[endFilter - startFilter][inputDepth][filterSize][filterSize];
+            this.localGradientBiases = new double[endFilter - startFilter];
         }
 
         @Override
@@ -354,7 +354,7 @@ public class ConvLayer extends Layer {
             for (int f = startFilter; f < endFilter; f++) {
                 for (int i = 0; i < outputHeight; i++) {
                     for (int j = 0; j < outputWidth; j++) {
-                        float gradientValue = gradientOutput.get(f, i, j) * activationFunction.derivative(gradientOutput.get(f, i, j));
+                        double gradientValue = gradientOutput.get(f, i, j) * activationFunction.derivative(gradientOutput.get(f, i, j));
 
                         localGradientBiases[f - startFilter] += gradientValue;
 
@@ -364,7 +364,7 @@ public class ConvLayer extends Layer {
                                     int inputI = i * strideY - paddingY + k;
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
-                                        float inputValue = input.get(d, inputI, inputJ);
+                                        double inputValue = input.get(d, inputI, inputJ);
                                         localGradientFilters[f - startFilter][d][k][l] += gradientValue * inputValue;
                                         synchronized (gradientInput) {
                                             gradientInput.set(d, inputI, inputJ, gradientInput.get(d, inputI, inputJ) + gradientValue * filters[f][d][k][l]);
@@ -382,7 +382,7 @@ public class ConvLayer extends Layer {
             }
         }
 
-        private void addLocalGradients(float[][][][] localFilters, float[] localBiases, int offset) {
+        private void addLocalGradients(double[][][][] localFilters, double[] localBiases, int offset) {
             for (int f = 0; f < localFilters.length; f++) {
                 for (int d = 0; d < inputDepth; d++) {
                     for (int i = 0; i < filterSize; i++) {
@@ -397,7 +397,7 @@ public class ConvLayer extends Layer {
     }
 
     @Override
-    public void updateParameters(float learningRate) {
+    public void updateParameters(double learningRate) {
         for (int f = 0; f < numFilters; f++) {
             for (int d = 0; d < inputDepth; d++) {
                 for (int i = 0; i < filterSize; i++) {

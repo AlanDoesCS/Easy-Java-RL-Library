@@ -4,7 +4,7 @@ import javax.swing.*;
 
 import java.awt.*;
 
-import Structures.Matrix;
+import Structures.MatrixDouble;
 
 public class PerlinNoise_Visualiser extends Visualiser {
 
@@ -44,7 +44,7 @@ public class PerlinNoise_Visualiser extends Visualiser {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(width, height);
 
-        Matrix pxs = perlin.toMatrix(width, height, step);
+        MatrixDouble pxs = perlin.toMatrix(width, height, step);
 
         JPanel pn = new JPanel() {
             @Override
@@ -55,7 +55,7 @@ public class PerlinNoise_Visualiser extends Visualiser {
 
                 for (int y=0; y<height; y++) {
                     for (int x=0; x<width; x++) {
-                        float noise = pxs.get(x, y);
+                        float noise = (float) pxs.get(x, y);
                         g2.setColor(colorOf(noise, -1, 1));
                         g2.drawRect(x, y, 1, 1);
                     }

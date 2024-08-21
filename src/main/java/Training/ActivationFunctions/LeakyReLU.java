@@ -1,4 +1,4 @@
-package Training;
+package Training.ActivationFunctions;
 
 public class LeakyReLU extends ActivationFunction {
     float gradient;
@@ -7,12 +7,12 @@ public class LeakyReLU extends ActivationFunction {
     }
 
     @Override
-    public float activate(float x) {
+    public double activate(double x) {
         return x > 0 ? x : gradient * x;
     }
 
     @Override
-    public float derivative(float x) {
+    public double derivative(double x) {
         return x > 0 ? 1 : gradient;
     }
 }

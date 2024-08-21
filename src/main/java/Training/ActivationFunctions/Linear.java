@@ -1,13 +1,13 @@
-package Training;
+package Training.ActivationFunctions;
 
 public class Linear extends ActivationFunction {
     @Override
-    public float activate(float x) {
+    public double activate(double x) {
         return x;
     }
 
     @Override
-    public float derivative(float x) {
+    public double derivative(double x) {
         return 1;
     }
 }

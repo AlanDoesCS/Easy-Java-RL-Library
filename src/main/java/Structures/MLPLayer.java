@@ -1,40 +1,40 @@
 package Structures;
 
 import Tools.math;
-import Training.ActivationFunction;
+import Training.ActivationFunctions.ActivationFunction;
 
 public class MLPLayer extends Layer {
-    private static final float CLIP_THRESHOLD = 1.0f;
-    private static final float LOSS_SCALE = 128.0f;
+    private static final double CLIP_THRESHOLD = 1.0f;
+    private static final double LOSS_SCALE = 128.0f;
 
-    Matrix weights, biases;
-    Matrix gradientWeights, gradientBiases;
+    MatrixDouble weights, biases;
+    MatrixDouble gradientWeights, gradientBiases;
     ActivationFunction phi;
-    float lambda;
+    double lambda;
 
-    public Matrix m;
-    public Matrix v;
-    public Matrix mBias;
-    public Matrix vBias;
+    public MatrixDouble m;
+    public MatrixDouble v;
+    public MatrixDouble mBias;
+    public MatrixDouble vBias;
 
-    public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, float bias, float lambda) {
+    public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, double bias, double lambda) {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
-        weights = new Matrix(outputSize, inputSize);
-        float stddev = (float) Math.sqrt(2.0 / (inputSize + outputSize));
+        weights = new MatrixDouble(outputSize, inputSize);
+        double stddev = Math.sqrt(2.0 / (inputSize + outputSize));
         weights.randomize(-stddev, stddev); // Xavier initialization
-        biases = new Matrix(outputSize, 1);
+        biases = new MatrixDouble(outputSize, 1);
         biases.fill(bias);
-        gradientWeights = new Matrix(outputSize, inputSize);
-        gradientBiases = new Matrix(outputSize, 1);
+        gradientWeights = new MatrixDouble(outputSize, inputSize);
+        gradientBiases = new MatrixDouble(outputSize, 1);
         phi = activation;
         this.lambda = lambda;
 
         // Initialize Adam optimiser parameters
-        m = new Matrix(outputSize, inputSize);
-        v = new Matrix(outputSize, inputSize);
-        mBias = new Matrix(outputSize, 1);
-        vBias = new Matrix(outputSize, 1);
+        m = new MatrixDouble(outputSize, inputSize);
+        v = new MatrixDouble(outputSize, inputSize);
+        mBias = new MatrixDouble(outputSize, 1);
+        vBias = new MatrixDouble(outputSize, 1);
     }
 
     @Override
@@ -43,10 +43,10 @@ public class MLPLayer extends Layer {
             throw new IllegalArgumentException(String.format("Target layer must be a MLPLayer (got: %s)", targetLayer.getClass().getSimpleName()));
         }
 
-        Matrix.copy(this.weights, target.weights);
-        Matrix.copy(this.biases, target.biases);
-        Matrix.copy(this.gradientWeights, target.gradientWeights);
-        Matrix.copy(this.gradientBiases, target.gradientBiases);
+        MatrixDouble.copy(this.weights, target.weights);
+        MatrixDouble.copy(this.biases, target.biases);
+        MatrixDouble.copy(this.gradientWeights, target.gradientWeights);
+        MatrixDouble.copy(this.gradientBiases, target.gradientBiases);
         target.phi = this.phi;
 
         if (ignorePrimitives) return;
@@ -65,14 +65,14 @@ public class MLPLayer extends Layer {
 
     @Override
     public Object compute(Object input) {
-        if (!(input instanceof Matrix matrixInput)) {
-            throw new IllegalArgumentException("Expected input to be a Matrix.");
+        if (!(input instanceof MatrixDouble matrixInput)) {
+            throw new IllegalArgumentException("Expected input to be a MatrixDouble.");
         }
 
         System.out.println("MLP Layer");
-        System.out.println("input: "+((Matrix) input).toRowMatrix());
+        System.out.println("input: "+((MatrixDouble) input).toRowMatrix());
 
-        Matrix result = Matrix.multiply(weights, matrixInput);
+        MatrixDouble result = MatrixDouble.multiply(weights, matrixInput);
         result.add(biases);
 
         // Apply activation function
@@ -87,24 +87,24 @@ public class MLPLayer extends Layer {
     }
 
     @Override
-    public Matrix backpropagate(Object input, Object gradientOutput) {
-        if (!(input instanceof Matrix)) {
-            throw new IllegalArgumentException("Expected input to be a Matrix.");
+    public MatrixDouble backpropagate(Object input, Object gradientOutput) {
+        if (!(input instanceof MatrixDouble)) {
+            throw new IllegalArgumentException("Expected input to be a MatrixDouble.");
         }
-        if (!(gradientOutput instanceof Matrix)) {
-            throw new IllegalArgumentException("Expected gradientOutput to be a Matrix.");
+        if (!(gradientOutput instanceof MatrixDouble)) {
+            throw new IllegalArgumentException("Expected gradientOutput to be a MatrixDouble.");
         }
 
-        Matrix matrixInput = (Matrix) input;
-        Matrix matrixGradientOutput = (Matrix) gradientOutput;
+        MatrixDouble matrixInput = (MatrixDouble) input;
+        MatrixDouble matrixGradientOutput = (MatrixDouble) gradientOutput;
 
         // Apply loss scaling
-        matrixGradientOutput = Matrix.multiply(matrixGradientOutput, LOSS_SCALE);
+        matrixGradientOutput = MatrixDouble.multiply(matrixGradientOutput, LOSS_SCALE);
 
-        gradientWeights = Matrix.multiply(matrixGradientOutput, matrixInput.transpose());
+        gradientWeights = MatrixDouble.multiply(matrixGradientOutput, matrixInput.transpose());
         gradientBiases = matrixGradientOutput;
 
-        Matrix gradientInput = Matrix.multiply(weights.transpose(), matrixGradientOutput);
+        MatrixDouble gradientInput = MatrixDouble.multiply(weights.transpose(), matrixGradientOutput);
 
         // Apply activation function derivative
         for (int r = 0; r < gradientInput.rows; r++) {
@@ -117,15 +117,15 @@ public class MLPLayer extends Layer {
     }
 
     @Override
-    public void updateParameters(float learningRate) {
+    public void updateParameters(double learningRate) {
         // clip and normalise gradients
-        float gradientNorm = (float) Math.sqrt(
+        double gradientNorm = Math.sqrt(
                 Math.pow(gradientWeights.sumOfSquares(), 2) +
                 Math.pow(gradientBiases.sumOfSquares(), 2)
         );
 
         if (gradientNorm > CLIP_THRESHOLD) {
-            float scale = CLIP_THRESHOLD / gradientNorm;
+            double scale = CLIP_THRESHOLD / gradientNorm;
             gradientWeights.multiply(scale);
             gradientBiases.multiply(scale);
         }
@@ -137,8 +137,8 @@ public class MLPLayer extends Layer {
         weights.multiply(1.0f - learningRate * lambda);
         biases.multiply(1.0f - learningRate * lambda);
 
-        weights.subtract(Matrix.multiply(gradientWeights, learningRate));
-        biases.subtract(Matrix.multiply(gradientBiases, learningRate));
+        weights.subtract(MatrixDouble.multiply(gradientWeights, learningRate));
+        biases.subtract(MatrixDouble.multiply(gradientBiases, learningRate));
     }
 
     @Override
@@ -146,30 +146,30 @@ public class MLPLayer extends Layer {
         return "MLPLayer: in:" + inputSize + "\tout:" + outputSize + "\tactivation:" + phi;
     }
 
-    public Matrix getWeights() {
+    public MatrixDouble getWeights() {
         return weights;
     }
 
-    public Matrix getGradientWeights() {
+    public MatrixDouble getGradientWeights() {
         return gradientWeights;
     }
 
-    public Matrix getBiases() {
+    public MatrixDouble getBiases() {
         return biases;
     }
 
-    public Matrix getGradientBiases() {
+    public MatrixDouble getGradientBiases() {
         return gradientBiases;
     }
 
-    public void setWeights(Matrix newWeights) {
+    public void setWeights(MatrixDouble newWeights) {
         if (newWeights.rows != weights.rows || newWeights.cols != weights.cols) {
             throw new IllegalArgumentException("New weights must have the same dimensions as the current weights.");
         }
         weights = newWeights;
     }
 
-    public void setBiases(Matrix newBiases) {
+    public void setBiases(MatrixDouble newBiases) {
         if (newBiases.rows != biases.rows || newBiases.cols != biases.cols) {
             throw new IllegalArgumentException("New biases must have the same dimensions as the current biases.");
         }

@@ -13,7 +13,7 @@ public class DQN extends NN {
     private final int inputSize, outputSize;
     private Optimizer optimizer;
 
-    public DQN(int inputSize, List<Layer> layers, float learningRate) {
+    public DQN(int inputSize, List<Layer> layers, double learningRate) {
         this.layers = layers;
         this.learningRate = learningRate;
         this.inputSize = inputSize;
@@ -57,9 +57,9 @@ public class DQN extends NN {
     }
 
     @Override
-    public void backpropagate(Object input, Matrix target, List<Object> layerOutputs) {
-        Matrix output = (Matrix) layerOutputs.getLast();
-        Object gradientOutput = Matrix.subtract(target, output);
+    public void backpropagate(Object input, MatrixDouble target, List<Object> layerOutputs) {
+        MatrixDouble output = (MatrixDouble) layerOutputs.getLast();
+        Object gradientOutput = MatrixDouble.subtract(target, output);
 
         for (int i = layers.size() - 1; i >= 0; i--) {
             Layer currentLayer = layers.get(i);

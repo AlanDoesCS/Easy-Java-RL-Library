@@ -1,12 +1,14 @@
 package Training;
 
 import Structures.DDQNAgent;
-import Structures.Matrix;
+import Structures.MatrixDouble;
 import Structures.Vector2D;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
 import Tools.math;
+import Training.Replay.ExperienceReplay;
+import Training.Replay.PrioritizedExperienceReplay;
 import com.sun.jdi.InvalidTypeException;
 
 import javax.swing.*;
@@ -81,7 +83,7 @@ public class DDQNAgentTrainer {
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
 
-            Matrix state = environment.getStateAsColumnMatrix();
+            MatrixDouble state = environment.getStateAsColumnMatrix();
             boolean done = false;
             float cumulativeReward = 0;
             ArrayList<Vector2D> dqnPath = new ArrayList<>();
@@ -104,10 +106,10 @@ public class DDQNAgentTrainer {
                 if (replay.size() > batchSize) {
                     List<ExperienceReplay.Experience> batch = replay.sample(batchSize);
                     List<Integer> treeIndices = new ArrayList<>();
-                    List<Float> tdErrors = new ArrayList<>();
+                    List<Double> tdErrors = new ArrayList<>();
 
                     for (ExperienceReplay.Experience exp : batch) {
-                        float tdError = agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
+                        double tdError = agent.train(exp.state, exp.action, exp.reward, exp.nextState, exp.done);
                         treeIndices.add(exp.index);
                         tdErrors.add(tdError);
 
@@ -118,7 +120,7 @@ public class DDQNAgentTrainer {
                     replay.updatePriorities(treeIndices, tdErrors);
                 }
 
-                state = (Matrix) result.state;
+                state = (MatrixDouble) result.state;
                 done = result.done;
                 cumulativeReward += result.reward;
 

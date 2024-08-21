@@ -1,6 +1,5 @@
-package Training;
+package Training.Replay;
 
-import Structures.Matrix;
 import Tools.math;
 
 import java.util.ArrayList;
@@ -43,15 +42,15 @@ public class ExperienceReplay {
     }
 
     public static class Experience {
-        Object state;
-        int action;
-        float reward;
-        Object nextState;
-        boolean done;
+        public Object state;
+        public int action;
+        public double reward;
+        public Object nextState;
+        public boolean done;
 
-        int index; // Index in the priority tree - Only used in PrioritizedExperienceReplay
+        public int index; // Index in the priority tree - Only used in PrioritizedExperienceReplay
 
-        public Experience(Object state, int action, float reward, Object nextState, boolean done) {
+        public Experience(Object state, int action, double reward, Object nextState, boolean done) {
             this.state = state;
             this.action = action;
             this.reward = reward;

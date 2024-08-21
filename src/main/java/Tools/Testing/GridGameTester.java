@@ -2,9 +2,6 @@ package Tools.Testing;
 
 import Structures.DDQNAgent;
 import Structures.Layer;
-import Structures.Matrix;
-import Structures.Tensor;
-import Tools.math;
 
 import java.util.List;
 import java.util.Scanner;
@@ -26,17 +23,17 @@ public class GridGameTester extends DDQNAgent {
     }
 
     @Override
-    public float train(Object state, int action, float reward, Object nextState, boolean done) {
+    public double train(Object state, int action, double reward, Object nextState, boolean done) {
         return 0;
     }
 
     @Override
-    public float getEpsilon() {
+    public double getEpsilon() {
         return 0;
     }
 
     @Override
-    public float getLearningRate() {
+    public double getLearningRate() {
         return 0;
     }
 

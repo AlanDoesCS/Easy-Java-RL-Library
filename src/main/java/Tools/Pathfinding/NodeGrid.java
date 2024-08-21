@@ -16,7 +16,7 @@ public class NodeGrid {
     private void initializeNodes(GridEnvironment environment) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                nodes[x][y] = new GraphNode(x, y, environment.get(x, y));
+                nodes[x][y] = new GraphNode(x, y, (float) environment.get(x, y));
             }
         }
     }

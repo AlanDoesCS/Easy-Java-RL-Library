@@ -28,7 +28,10 @@ public class GraphPlotter extends JFrame {
     private GraphPanel graphPanel;
 
     //For calculating getting grid bounds:
-    private float minX=Float.MAX_VALUE, maxX=Float.MIN_VALUE, minY=Float.MAX_VALUE, maxY=Float.MIN_VALUE;
+    private double minX=Float.MAX_VALUE;
+    private double maxX=Float.MIN_VALUE;
+    private double minY=Float.MAX_VALUE;
+    private double maxY=Float.MIN_VALUE;
 
     //Styling:
     private int padding = 50;
@@ -180,8 +183,8 @@ public class GraphPlotter extends JFrame {
         points.add(point);
 
         // update graph bounds:
-        final float x = point.getX();
-        final float y = point.getY();
+        final double x = point.getX();
+        final double y = point.getY();
 
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
@@ -192,10 +195,10 @@ public class GraphPlotter extends JFrame {
     public void reset() {
         //reset data
         points.clear();
-        minX = Float.MAX_VALUE;
-        maxX = Float.MIN_VALUE;
-        minY = Float.MAX_VALUE;
-        maxY = Float.MIN_VALUE;
+        minX = Double.MAX_VALUE;
+        maxX = Double.MIN_VALUE;
+        minY = Double.MAX_VALUE;
+        maxY = Double.MIN_VALUE;
         repaint();
     }
 

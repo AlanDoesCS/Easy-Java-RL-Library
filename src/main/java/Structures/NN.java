@@ -1,20 +1,20 @@
 package Structures;
 
-import Training.ActivationFunction;
+import Training.ActivationFunctions.ActivationFunction;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class NN {
     List<Layer> layers;
-    float learningRate; // alpha
+    double learningRate; // alpha
 
     public abstract Object getOutput(Object input);
     public abstract void saveNN(String filename);
     public abstract void loadNN(String filename);
 
-    private Matrix applyDerivative(Matrix input, ActivationFunction activationFunction) {
-        Matrix res = new Matrix(input.rows, input.cols);
+    private MatrixDouble applyDerivative(MatrixDouble input, ActivationFunction activationFunction) {
+        MatrixDouble res = new MatrixDouble(input.rows, input.cols);
         for (int i = 0; i < input.rows; i++) {
             for (int j = 0; j < input.cols; j++) {
                 res.set(j, i, activationFunction.derivative(input.get(j, i)));
@@ -40,13 +40,13 @@ public abstract class NN {
         return layerOutputs;
     }
 
-    public void backpropagate(Object input, Matrix target, List<Object> layerOutputs) {
-        if (!(target instanceof Matrix)) {
-            throw new IllegalArgumentException("Target must be a Matrix.");
+    public void backpropagate(Object input, MatrixDouble target, List<Object> layerOutputs) {
+        if (!(target instanceof MatrixDouble)) {
+            throw new IllegalArgumentException("Target must be a MatrixDouble.");
         }
 
-        Matrix output = (Matrix) layerOutputs.getLast();
-        Matrix error = Matrix.subtract(target, output);
+        MatrixDouble output = (MatrixDouble) layerOutputs.getLast();
+        MatrixDouble error = MatrixDouble.subtract(target, output);
         Object gradientOutput = error; // Assuming MSE Loss, use the error directly as the gradient.
 
         for (int i = layers.size() - 1; i >= 0; i--) {
@@ -59,11 +59,11 @@ public abstract class NN {
         }
     }
 
-    public float getLearningRate() {
+    public double getLearningRate() {
         return learningRate;
     }
 
-    public void setLearningRate(float learningRate) {
+    public void setLearningRate(double learningRate) {
         this.learningRate = learningRate;
     }
 

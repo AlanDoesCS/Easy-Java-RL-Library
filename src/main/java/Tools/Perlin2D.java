@@ -1,6 +1,6 @@
 package Tools;
 
-import Structures.Matrix;
+import Structures.MatrixDouble;
 import Structures.Vector2D;
 
 import java.util.HashMap;
@@ -38,8 +38,8 @@ public class Perlin2D extends PerlinNoise {
         for (int i=0; i<octaves; i++) {
             float frequency = frequencies[i];
             float amplitude = amplitudes[i];
-            float xPos = (x+randomOffset.getX()) * frequency;
-            float yPos = (y+randomOffset.getY()) * frequency;
+            float xPos = (float) ((x+randomOffset.getX()) * frequency);
+            float yPos = (float) ((y+randomOffset.getY()) * frequency);
 
             Vector2D position = new Vector2D(xPos, yPos);
 
@@ -56,10 +56,10 @@ public class Perlin2D extends PerlinNoise {
             Vector2D v3 = Vector2D.subtract(position, new Vector2D(x1, y1));
 
             // Vertical displacement (delta)
-            float d0 = Vector2D.dot(v0, getGradient(x0, y0));
-            float d1 = Vector2D.dot(v1, getGradient(x1, y0));
-            float d2 = Vector2D.dot(v2, getGradient(x0, y1));
-            float d3 = Vector2D.dot(v3, getGradient(x1, y1));
+            float d0 = (float) Vector2D.dot(v0, getGradient(x0, y0));
+            float d1 = (float) Vector2D.dot(v1, getGradient(x1, y0));
+            float d2 = (float) Vector2D.dot(v2, getGradient(x0, y1));
+            float d3 = (float) Vector2D.dot(v3, getGradient(x1, y1));
 
             float xf = xPos -x0;
             float yf = yPos -y0;
@@ -78,8 +78,8 @@ public class Perlin2D extends PerlinNoise {
         return math.scale(noise(x, y), -1, 1, range_min, range_max);
     }
 
-    public Matrix toMatrix(int xPixels, int yPixels, float step) {
-        Matrix M = new Matrix(yPixels, xPixels);
+    public MatrixDouble toMatrix(int xPixels, int yPixels, float step) {
+        MatrixDouble M = new MatrixDouble(yPixels, xPixels);
 
         float yOffset = 0;
         for (int y=0; y<yPixels; y++) {

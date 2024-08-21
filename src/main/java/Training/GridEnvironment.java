@@ -1,13 +1,13 @@
 package Training;
 
-import Structures.Matrix;
+import Structures.MatrixDouble;
 import Structures.Tensor;
 import Structures.Vector2D;
 import Tools.math;
 
 public abstract class GridEnvironment extends Environment {
     public int width, height;
-    private Matrix gridMatrix;
+    private MatrixDouble gridMatrix;
     private Tensor stateTensor;
     private Vector2D startPosition;
     private Vector2D agentPosition;
@@ -25,7 +25,7 @@ public abstract class GridEnvironment extends Environment {
         this.agentPosition = getRandomCoordinateInBounds();
         this.startPosition = new Vector2D(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
-        this.gridMatrix = new Matrix(height, width);
+        this.gridMatrix = new MatrixDouble(height, width);
         this.stateTensor = new Tensor(3, height, width); // Environment, Agent, Goal channels
 
         this.maxSteps = width*height;
@@ -41,7 +41,7 @@ public abstract class GridEnvironment extends Environment {
     public int getWidth() { return width; }
     public int getHeight() { return height; }
 
-    public Matrix getGridMatrix() {
+    public MatrixDouble getGridMatrix() {
         return gridMatrix;
     }
 
@@ -59,10 +59,10 @@ public abstract class GridEnvironment extends Environment {
         this.currentSteps = 0;
     }
 
-    public float get(int x, int y) {
+    public double get(int x, int y) {
         return math.clamp(gridMatrix.get(x, y), 0, 1);
     }
-    public float get(int i) { // simplifies process getting cells for Neural Net
+    public double get(int i) { // simplifies process getting cells for Neural Net
         int x = i % width;
         int y = i / width;
         return get(x, y);
@@ -83,10 +83,10 @@ public abstract class GridEnvironment extends Environment {
      * Converts the current state of the grid environment into a column matrix.
      * The matrix includes the grid values, agent position, and goal position.
      * <p>- This is useful for training MLP layers in a neural network.
-     * @return A Column Matrix object representing the state of the grid environment as well as the agent and goal positions.
+     * @return A Column MatrixDouble object representing the state of the grid environment as well as the agent and goal positions.
      */
-    public Matrix getStateAsColumnMatrix() {
-        Matrix state = new Matrix(getGridWidth()*getGridHeight()+4, 1); // +4 for agent position and goal position
+    public MatrixDouble getStateAsColumnMatrix() {
+        MatrixDouble state = new MatrixDouble(getGridWidth()*getGridHeight()+4, 1); // +4 for agent position and goal position
         int i = 0;
         for (int y = 0; y < getGridHeight(); y++) {
             for (int x = 0; x < getGridWidth(); x++) {
@@ -103,9 +103,9 @@ public abstract class GridEnvironment extends Environment {
         return state;
     }
 
-    float getStepReward(Vector2D oldPosition, Vector2D newPosition) {
-        float oldDistance = oldPosition.manhattanDistanceTo(goalPosition);
-        float newDistance = newPosition.manhattanDistanceTo(goalPosition);
+    double getStepReward(Vector2D oldPosition, Vector2D newPosition) {
+        double oldDistance = oldPosition.manhattanDistanceTo(goalPosition);
+        double newDistance = newPosition.manhattanDistanceTo(goalPosition);
 
         return oldDistance == 0 ? 0f : (oldDistance - newDistance) / oldDistance;
     }

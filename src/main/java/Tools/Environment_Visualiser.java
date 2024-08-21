@@ -39,7 +39,7 @@ public class Environment_Visualiser extends Visualiser {
                 // Create grid squares
                 for (int y=0; y<envHEIGHT; y++) {
                     for (int x=0; x<envWIDTH; x++) {
-                        g2.setColor(colorOf(gridEnvironment.get(x, y), 0, 1));
+                        g2.setColor(colorOf((float) gridEnvironment.get(x, y), 0, 1));
                         g2.fillRect(x*squareWIDTH, y*squareHEIGHT, squareWIDTH, squareHEIGHT);
                     }
                 }

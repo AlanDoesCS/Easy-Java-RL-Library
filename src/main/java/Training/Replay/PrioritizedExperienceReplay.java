@@ -1,6 +1,4 @@
-package Training;
-
-import Tools.math;
+package Training.Replay;
 
 import java.util.*;
 
@@ -172,7 +170,7 @@ public class PrioritizedExperienceReplay {
         return batch;
     }
 
-    public void updatePriorities(List<Integer> treeIndices, List<Float> tdErrors) {
+    public void updatePriorities(List<Integer> treeIndices, List<Double> tdErrors) {
         for (int i = 0; i < treeIndices.size(); i++) {
             double priority = Math.pow(Math.abs(tdErrors.get(i)) + this.epsilon, this.alpha);
             if (Double.isNaN(priority)) {

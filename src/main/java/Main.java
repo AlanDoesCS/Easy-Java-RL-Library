@@ -3,6 +3,8 @@ import Tools.Environment_Visualiser;
 import Tools.Pathfinding.Pathfinder;
 import Training.*;
 
+import Training.ActivationFunctions.LeakyReLU;
+import Training.ActivationFunctions.Linear;
 import com.sun.jdi.InvalidTypeException;
 
 import java.awt.*;
