@@ -1,7 +1,7 @@
 package Training;
 
 import Structures.DDQNAgent;
-import Structures.Tensor;
+import Structures.Matrix;
 import Structures.Vector2D;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
@@ -16,10 +16,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public class Trainer {
+public class DDQNAgentTrainer {
     Set<Class<? extends GridEnvironment>> environmentClasses;
 
-    public Trainer(Set<Class<? extends GridEnvironment>> environments) throws InvalidTypeException {
+    public DDQNAgentTrainer(Set<Class<? extends GridEnvironment>> environments) throws InvalidTypeException {
         this.environmentClasses = environments;
     }
 
@@ -81,7 +81,7 @@ public class Trainer {
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
 
-            Tensor state = environment.getState();
+            Matrix state = environment.getStateAsColumnMatrix();
             boolean done = false;
             float cumulativeReward = 0;
             ArrayList<Vector2D> dqnPath = new ArrayList<>();
@@ -118,12 +118,14 @@ public class Trainer {
                     replay.updatePriorities(treeIndices, tdErrors);
                 }
 
-                state = result.state;
+                state = (Matrix) result.state;
                 done = result.done;
                 cumulativeReward += result.reward;
 
                 if (verbose) System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f, Steps: (%d)%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, cumulativeReward, environment.getCurrentSteps());
             }
+            dqnPath.add(environment.getAgentPosition());
+
             int pathLength = environment.getCurrentSteps();
             float meanReward = cumulativeReward / pathLength;
 
@@ -137,7 +139,7 @@ public class Trainer {
 
             if (plot) {
                 averageRewardPlotter.addPoint(new Vector2D(episode, meanReward));
-                averageLossPlotter.addPoint(new Vector2D(episode, totalSquaredTDError / tdErrorCounter));
+                if (tdErrorCounter!=0) averageLossPlotter.addPoint(new Vector2D(episode, totalSquaredTDError / tdErrorCounter));
             }
 
             if (episode % savePeriod == 0) {

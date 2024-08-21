@@ -17,7 +17,7 @@ public class DDQNAgent {
     private final float gamma;        // discount factor - how much future rewards should be prioritised
     private final float tau;          // soft update parameter
     private final int stateSpace;     // number of variables used to describe environment state
-    private final int actionSpace;    // number of actions the agent can take in the environment
+    protected final int actionSpace;    // number of actions the agent can take in the environment
     private final int targetUpdateFrequency; // how often to update target network
     private int stepCounter;
 
@@ -39,9 +39,9 @@ public class DDQNAgent {
         this.stepCounter = 0;
 
         this.onlineDQN = new DQN(stateSpace, layers, learningRate);
-
-        // create a deep copy of mainDQN
         this.targetDQN = new DQN(stateSpace, copyLayers(layers), learningRate);
+        onlineDQN.setOptimizer(optimizer);
+        targetDQN.setOptimizer(optimizer);
     }
 
     private List<Layer> copyLayers(List<Layer> layers) {
@@ -53,20 +53,13 @@ public class DDQNAgent {
     }
 
     @Deprecated
-    public void dumpDQNInfo() {  // TODO: remove this debug code - it's disgusting
-        ConvLayer convLayer1 = (ConvLayer) onlineDQN.getLayer(0);
-        ConvLayer convLayer2 = (ConvLayer) onlineDQN.getLayer(2);
-        MLPLayer mlpLayer1 = (MLPLayer) onlineDQN.getLayer(5);
-        MLPLayer mlpLayer2 = (MLPLayer) onlineDQN.getLayer(6);
-        System.out.println("Conv layer 1 filter average: " + convLayer1.getAverageFilterValue()+", range: "+convLayer1.getFilterMin()+", "+convLayer1.getFilterMax());
-        System.out.println("Conv layer 2 filter average: " + convLayer2.getAverageFilterValue()+", range: "+convLayer2.getFilterMin()+", "+convLayer2.getFilterMax());
-        System.out.println("MLP layer 1 weight average: " + mlpLayer1.getWeights().getMeanAverage()+", range: "+math.min(mlpLayer1.getWeights())+", "+math.max(mlpLayer1.getWeights()));
-        System.out.println("MLP layer 1 biases: " + mlpLayer1.getBiases().toRowMatrix());
-        System.out.println("MLP layer 2 weight average: " + mlpLayer2.getWeights().getMeanAverage()+", range: "+math.min(mlpLayer2.getWeights())+", "+math.max(mlpLayer2.getWeights()));
-        System.out.println("MLP layer 2 biases: " + mlpLayer2.getBiases().toRowMatrix());
+    public void dumpDQNInfo() {
+        for (Layer layer : onlineDQN.getLayers()) {
+            layer.dumpInfo();
+        }
     }
 
-    public int chooseAction(Tensor state) {
+    public int chooseAction(Object state) {
         if (math.random() < epsilon) {
             return (int) (Math.random() * actionSpace);
         } else {
@@ -135,7 +128,6 @@ public class DDQNAgent {
 
         List<Object> layerOutputs = onlineDQN.forwardPass(state);
         Matrix currentQValues = (Matrix) layerOutputs.getLast(); // get predicted q values
-
         Matrix target = currentQValues.copy();
 
         if (!done) {
@@ -160,9 +152,15 @@ public class DDQNAgent {
             System.err.println("action " + action + " is NaN!! : " + currentQValues.get(0, action));
         }
 
-        onlineDQN.backpropagate(state, target, layerOutputs);
+        Object gradientOutput = Matrix.subtract(target, currentQValues);
 
-        // TODO: implement Adam optimizer
+        for (int i = onlineDQN.numLayers() - 1; i >= 0; i--) {
+            Layer layer = onlineDQN.getLayer(i);
+            Object layerInput = layerOutputs.get(i);
+
+            gradientOutput = layer.backpropagate(layerInput, gradientOutput);
+            optimizer.optimize(layer);
+        }
 
         decayEpsilon();
         decayLearningRate();

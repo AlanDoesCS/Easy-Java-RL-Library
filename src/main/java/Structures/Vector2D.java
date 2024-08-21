@@ -36,6 +36,16 @@ public class Vector2D {
         x /= magnitude;
         y /= magnitude;
     }
+    public static Vector2D normalise(Vector2D vector) {
+        float magnitude = (float) Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+        return new Vector2D(vector.x / magnitude, vector.y / magnitude);
+    }
+    public static Vector2D normalise(Vector2D vector, float max_x, float max_y) {
+        return new Vector2D(
+                math.normalise(vector.x, 0, max_x),
+                math.normalise(vector.y, 0, max_y)
+        );
+    }
 
     public float getX() {
         return x;
@@ -70,10 +80,10 @@ public class Vector2D {
         this.y = y;
     }
 
-    public void addI(float amount) {
+    public void addX(float amount) {
         this.x += amount;
     }
-    public void addJ(float amount) {
+    public void addY(float amount) {
         this.y += amount;
     }
 

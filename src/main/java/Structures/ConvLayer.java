@@ -416,4 +416,9 @@ public class ConvLayer extends Layer {
     public String toString() {
         return "ConvLayer: in:" + inputSize + "\tout:" + outputSize + "\tfilters:" + numFilters + "x" + filterSize + "x" + filterSize;
     }
+
+    @Override
+    public void dumpInfo() {
+        System.out.println("Conv layer | filter average: " + getAverageFilterValue()+", range: "+getFilterMin()+", "+getFilterMax());
+    }
 }

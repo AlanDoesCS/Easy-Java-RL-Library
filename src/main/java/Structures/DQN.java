@@ -1,5 +1,7 @@
 package Structures;
 
+import Training.Optimizers.Optimizer;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,6 +11,7 @@ import java.util.List;
 
 public class DQN extends NN {
     private final int inputSize, outputSize;
+    private Optimizer optimizer;
 
     public DQN(int inputSize, List<Layer> layers, float learningRate) {
         this.layers = layers;
@@ -53,6 +56,21 @@ public class DQN extends NN {
         }
     }
 
+    @Override
+    public void backpropagate(Object input, Matrix target, List<Object> layerOutputs) {
+        Matrix output = (Matrix) layerOutputs.getLast();
+        Object gradientOutput = Matrix.subtract(target, output);
+
+        for (int i = layers.size() - 1; i >= 0; i--) {
+            Layer currentLayer = layers.get(i);
+            Object layerInput = layerOutputs.get(i);
+
+            gradientOutput = currentLayer.backpropagate(layerInput, gradientOutput);
+
+            optimizer.optimize(currentLayer);
+        }
+    }
+
     public int numLayers() {
         return layers.size();
     }
@@ -66,6 +84,8 @@ public class DQN extends NN {
             sourceNetwork.getLayer(i).copyTo(targetNetwork.getLayer(i), false);
         }
     }
+
+
 
     public int getInputSize() {
         return inputSize;
@@ -81,5 +101,9 @@ public class DQN extends NN {
 
     public Layer getOutputLayer() {
         return layers.getLast();
+    }
+
+    public void setOptimizer(Optimizer optimizer) {
+        this.optimizer = optimizer;
     }
 }

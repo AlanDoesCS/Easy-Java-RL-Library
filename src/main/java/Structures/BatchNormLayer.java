@@ -178,4 +178,7 @@ public class BatchNormLayer extends Layer {
     public float[] getGradientBeta() {
         return dBeta;
     }
+
+    @Override
+    public void dumpInfo() {}
 }

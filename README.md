@@ -31,9 +31,9 @@ public class Main {
         Environment.setStateSpace(Environment.getGridSquares() + 4);
         Environment.setActionSpace(4);
 
-        Trainer trainer;
+        DDQNAgentTrainer trainer;
         try {
-            trainer = new Trainer(Set.of(PerlinGridEnvironment.class, MazeGridEnvironment.class, RandomGridEnvironment.class));
+            trainer = new DDQNAgentTrainer(Set.of(PerlinGridEnvironment.class, MazeGridEnvironment.class, RandomGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;

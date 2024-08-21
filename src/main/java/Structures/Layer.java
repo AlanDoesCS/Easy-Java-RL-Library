@@ -5,6 +5,7 @@ import java.util.List;
 
 public abstract class Layer implements Serializable {
     public int t=0;
+    protected float alpha=0.001f; // LR for optimizers
     protected int inputSize;
     protected int outputSize;
 
@@ -31,6 +32,14 @@ public abstract class Layer implements Serializable {
         return inputSize;
     }
 
+    public float getAlpha() {
+        return alpha;
+    }
+
+    public void setAlpha(float alpha) {
+        this.alpha = alpha;
+    }
+
     public static String toString(List<Layer> layers) {
         StringBuilder sb = new StringBuilder();
         for (Layer layer : layers) {
@@ -49,4 +58,6 @@ public abstract class Layer implements Serializable {
      */
     public abstract Object backpropagate(Object input, Object gradientOutput);
     public abstract void updateParameters(float learningRate);
+
+    public void dumpInfo() {}
 }

@@ -3,6 +3,12 @@ package Training;
 import Structures.Tensor;
 import com.sun.jdi.InvalidTypeException;
 
+/**
+ * Environment
+ * <p>
+ * Abstract class for defining the environment in which the agent will operate.
+ * Only allows for one state and action space to be defined.
+ */
 public abstract class Environment {
     // defaults
     static int gridWidth = 30, gridHeight = 30;
@@ -18,6 +24,7 @@ public abstract class Environment {
     public static int getStateSpace() {
         return stateSpace;
     }
+
     public static void setActionSpace(int actionSpace) {
         if (actionSpace < 1) throw new IllegalArgumentException("actionSpace must be greater than 1, not "+actionSpace);
         Environment.actionSpace = actionSpace;
@@ -45,7 +52,6 @@ public abstract class Environment {
         - MUST ALSO RANDOMIZE START AND TARGET POSITIONS
     */
     public abstract void randomize();
-    public abstract Tensor getState();
 
     // Environment instantiation table
     // Todo: should probably make a bit more expandable
@@ -83,7 +89,7 @@ public abstract class Environment {
         gridWidth = width;
         gridHeight = height;
 
-        setStateSpace(width*height*3);
+        setStateSpace(width * height+4);
     }
 
     public static void setOctaves(int octaves) {
@@ -105,11 +111,11 @@ public abstract class Environment {
     }
 
     public static class MoveResult {
-        public Tensor state;
+        public Object state;
         public float reward;
         public boolean done;
 
-        public MoveResult(Tensor state, float reward, boolean done) {
+        public MoveResult(Object state, float reward, boolean done) {
             this.state = state;
             this.reward = reward;
             this.done = done;

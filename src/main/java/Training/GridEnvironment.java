@@ -32,7 +32,7 @@ public abstract class GridEnvironment extends Environment {
         this.currentSteps = 0;
 
         this.minReward = -1; // Worst case: DNF
-        this.maxReward = getCompletionReward() + 1 + getValidMoveReward(); // Best case: reach goal + max step reward + valid move reward
+        this.maxReward = 1; // Best case: reach goal
     }
 
     public int getNumSquares() {
@@ -68,7 +68,7 @@ public abstract class GridEnvironment extends Environment {
         return get(x, y);
     }
 
-    public Tensor getState() {
+    public Tensor getStateTensor() {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 stateTensor.set(0, y, x, get(x, y));  // Environment
@@ -77,6 +77,30 @@ public abstract class GridEnvironment extends Environment {
             }
         }
         return stateTensor.copy();
+    }
+
+    /**
+     * Converts the current state of the grid environment into a column matrix.
+     * The matrix includes the grid values, agent position, and goal position.
+     * <p>- This is useful for training MLP layers in a neural network.
+     * @return A Column Matrix object representing the state of the grid environment as well as the agent and goal positions.
+     */
+    public Matrix getStateAsColumnMatrix() {
+        Matrix state = new Matrix(getGridWidth()*getGridHeight()+4, 1); // +4 for agent position and goal position
+        int i = 0;
+        for (int y = 0; y < getGridHeight(); y++) {
+            for (int x = 0; x < getGridWidth(); x++) {
+                state.set(0, i++, get(x, y));
+            }
+        }
+        Vector2D agentPos = Vector2D.normalise(getAgentPosition(), getGridWidth()-1, getGridHeight()-1);
+        Vector2D goalPos = Vector2D.normalise(getGoalPosition(), getGridWidth()-1, getGridHeight()-1);
+        state.set(0, i++, agentPos.getX());
+        state.set(0, i++, agentPos.getY());
+        state.set(0, i++, goalPos.getX());
+        state.set(0, i, goalPos.getY());
+
+        return state;
     }
 
     float getStepReward(Vector2D oldPosition, Vector2D newPosition) {
@@ -105,9 +129,9 @@ public abstract class GridEnvironment extends Environment {
             done = newPosition.equals(getGoalPosition());
 
             if (done) {
-                reward += getCompletionReward();
+                reward = 1;
             } else if (!maxStepsReached) {
-                reward -= (float) (get((int)newPosition.getX(), (int)newPosition.getY())*0.5);
+                reward -= (get((int)newPosition.getX(), (int)newPosition.getY()) * 0.6f);
             }
         } else {
             reward -= getInvalidMovePunishment(); // discourage invalid moves
@@ -119,7 +143,7 @@ public abstract class GridEnvironment extends Environment {
         }
 
         reward = math.clamp(math.scale(reward, minReward, maxReward, -1, 1), -1, 1);
-        return new MoveResult(getState(), reward, done);
+        return new MoveResult(getStateAsColumnMatrix(), reward, done);
     }
 
     public void set(int x, int y, float value) {
@@ -153,6 +177,7 @@ public abstract class GridEnvironment extends Environment {
     public Vector2D getAgentPosition() {
         return agentPosition;
     }
+
     public Vector2D getGoalPosition() {
         return goalPosition;
     }
@@ -186,28 +211,20 @@ public abstract class GridEnvironment extends Environment {
      */
     static void getNewPosFromAction(int action, Vector2D newPosition) {
         switch(action) {
-            case 0: newPosition.addJ(-1); break; // Move up
-            case 1: newPosition.addI(1); break;  // Move right
-            case 2: newPosition.addJ(1); break;  // Move down
-            case 3: newPosition.addI(-1); break; // Move left
+            case 0: newPosition.addY(-1); break; // Move up    (decrease y)
+            case 1: newPosition.addX(1); break;  // Move right (increase x)
+            case 2: newPosition.addY(1); break;  // Move down  (increase y)
+            case 3: newPosition.addX(-1); break; // Move left  (decrease x)
             case 4: break; // Do nothing
         }
     }
 
-    float getCompletionReward() {
-        return 5;
-    }
-
     float getValidMoveReward() {
-        return 0.8f;
-    }
-
-    float getDNFPunishment() {
-        return 3;
+        return 0.5f;
     }
 
     float getInvalidMovePunishment() {
-        return 0.5f;
+        return -1f;
     }
 
     public String toString() {

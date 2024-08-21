@@ -15,32 +15,30 @@ public class Main {
         Environment.setDimensions(10, 10);
         Environment.setActionSpace(5);
 
-        Trainer trainer;
+        DDQNAgentTrainer trainer;
         try {
-            trainer = new Trainer(Set.of(PerlinGridEnvironment.class));
+            trainer = new DDQNAgentTrainer(Set.of(PerlinGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
         }
 
-        // DDQNAgent DDQNAgent = DQNAgents.MEDIUM_GRID_DQN_AGENT();
-
         List<Layer> layers = new ArrayList<>();
         LeakyReLU leakyRelu = new LeakyReLU(0.1f);
+        float lambda = 0.001f;
 
-        layers.add(new ConvLayer(leakyRelu, Environment.getGridWidth(), Environment.getGridHeight(), 3, 3, 16, 1, 1, 1, 1));
-        layers.add(new BatchNormLayer(16, Environment.getGridWidth(), Environment.getGridHeight()));
-        layers.add(new ConvLayer(leakyRelu, Environment.getGridWidth(), Environment.getGridHeight(), 16, 3, 32, 1, 1, 1, 1));
-        layers.add(new BatchNormLayer(32, Environment.getGridWidth(), Environment.getGridHeight()));
-        layers.add(new FlattenLayer(32, Environment.getGridHeight(), Environment.getGridWidth()));
-        layers.add(new MLPLayer(32 * Environment.getGridWidth() * Environment.getGridHeight(), 256, leakyRelu, 0));
-        layers.add(new MLPLayer(256, Environment.getActionSpace(), new Linear(), 0));
+        // StateSpace is 104, ActionSpace is 5
+        layers.add(new MLPLayer(Environment.getStateSpace(), 64, leakyRelu, 0, lambda));
+        layers.add(new BatchNormLayer(64, 1, 1));
+        layers.add(new MLPLayer(64, 128, leakyRelu, 0, lambda));
+        layers.add(new BatchNormLayer(128, 1, 1));
+        layers.add(new MLPLayer(128, Environment.getActionSpace(), new Linear(), 0, lambda));
 
-        DDQNAgent DDQNAgent = new DDQNAgent(
+        DDQNAgent ddqnAgent = new DDQNAgent(
                 Environment.getActionSpace(),   // action space
                 layers,                         // layers
                 1f,                             // initial epsilon
-                0.999995f,                       // epsilon decay
+                0.999995f,                      // epsilon decay
                 0.01f,                          // epsilon min
                 0.9999f,                        // gamma
                 0.0001f,                        // learning rate
@@ -49,9 +47,8 @@ public class Main {
                 0.001f                          // tau
         );
 
-        DDQNAgent.dumpDQNInfo();
-
-        trainer.trainAgent(DDQNAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");
+        ddqnAgent.dumpDQNInfo();
+        trainer.trainAgent(ddqnAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");
     }
 
     public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {

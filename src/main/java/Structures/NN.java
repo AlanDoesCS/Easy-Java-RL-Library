@@ -30,8 +30,11 @@ public abstract class NN {
         Object currentInput = input;
         int i=0;
         for (Layer layer : layers) {
+            System.out.println("Layer "+i);
+
             currentInput = layer.compute(currentInput);
             layerOutputs.add(currentInput);
+            i++;
         }
 
         return layerOutputs;
@@ -62,5 +65,9 @@ public abstract class NN {
 
     public void setLearningRate(float learningRate) {
         this.learningRate = learningRate;
+    }
+
+    public List<Layer> getLayers() {
+        return layers;
     }
 }

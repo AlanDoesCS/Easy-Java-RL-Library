@@ -497,10 +497,26 @@ public class Matrix implements Serializable {
 
                     for (int k = k0; k < kMax; k++) {
                         float aik = A.data[i][k];
-                        sum0 += aik * BT.data[j][k];
+                        float product = aik * BT.data[j][k];
+                        sum0 += product;
+
+                        if (product > Float.MAX_VALUE) {
+                            throw new ArithmeticException("Overflow during matrix multiplication at (" + i + ", " + j + ", " + k + ")");
+                        }
+                        if (product < Float.MIN_VALUE) {
+                            throw new ArithmeticException("Underflow during matrix multiplication at (" + i + ", " + j + ", " + k + ")");
+                        }
+
                         if (j + 1 < jMax) sum1 += aik * BT.data[j + 1][k];
                         if (j + 2 < jMax) sum2 += aik * BT.data[j + 2][k];
                         if (j + 3 < jMax) sum3 += aik * BT.data[j + 3][k];
+                    }
+
+                    if (sum0 > Float.MAX_VALUE || sum1 > Float.MAX_VALUE || sum2 > Float.MAX_VALUE || sum3 > Float.MAX_VALUE) {
+                        throw new ArithmeticException("Overflow during matrix multiplication at (" + i + ", " + j + ")");
+                    }
+                    if (sum0 < Float.MIN_VALUE || sum1 < Float.MIN_VALUE || sum2 < Float.MIN_VALUE || sum3 < Float.MIN_VALUE) {
+                        throw new ArithmeticException("Underflow during matrix multiplication at (" + i + ", " + j + ")");
                     }
 
                     localC[i - rowStart][j - colStart] += sum0;

@@ -1,11 +1,7 @@
 package Structures;
 
+import Tools.math;
 import Training.ActivationFunction;
-import Training.Environment;
-
-import java.util.ArrayList;
-import java.util.DoubleSummaryStatistics;
-import java.util.List;
 
 public class MLPLayer extends Layer {
     private static final float CLIP_THRESHOLD = 1.0f;
@@ -14,13 +10,14 @@ public class MLPLayer extends Layer {
     Matrix weights, biases;
     Matrix gradientWeights, gradientBiases;
     ActivationFunction phi;
+    float lambda;
 
     public Matrix m;
     public Matrix v;
     public Matrix mBias;
     public Matrix vBias;
 
-    public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, float bias) {
+    public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, float bias, float lambda) {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         weights = new Matrix(outputSize, inputSize);
@@ -31,6 +28,7 @@ public class MLPLayer extends Layer {
         gradientWeights = new Matrix(outputSize, inputSize);
         gradientBiases = new Matrix(outputSize, 1);
         phi = activation;
+        this.lambda = lambda;
 
         // Initialize Adam optimiser parameters
         m = new Matrix(outputSize, inputSize);
@@ -55,11 +53,12 @@ public class MLPLayer extends Layer {
 
         target.inputSize = this.inputSize;
         target.outputSize = this.outputSize;
+        target.lambda = this.lambda;
     }
 
     @Override
     public MLPLayer copy() {
-        MLPLayer copy = new MLPLayer(inputSize, outputSize, phi, 0);
+        MLPLayer copy = new MLPLayer(inputSize, outputSize, phi, 0, lambda);
         copyTo(copy, true);
         return copy;
     }
@@ -70,6 +69,9 @@ public class MLPLayer extends Layer {
             throw new IllegalArgumentException("Expected input to be a Matrix.");
         }
 
+        System.out.println("MLP Layer");
+        System.out.println("input: "+((Matrix) input).toRowMatrix());
+
         Matrix result = Matrix.multiply(weights, matrixInput);
         result.add(biases);
 
@@ -79,6 +81,8 @@ public class MLPLayer extends Layer {
                 result.set(c, r, phi.activate(result.get(c, r)));
             }
         }
+
+        System.out.println("output2: "+result.toRowMatrix());
         return result;
     }
 
@@ -115,7 +119,6 @@ public class MLPLayer extends Layer {
     @Override
     public void updateParameters(float learningRate) {
         // clip and normalise gradients
-
         float gradientNorm = (float) Math.sqrt(
                 Math.pow(gradientWeights.sumOfSquares(), 2) +
                 Math.pow(gradientBiases.sumOfSquares(), 2)
@@ -130,6 +133,10 @@ public class MLPLayer extends Layer {
         gradientWeights.divide(LOSS_SCALE);
         gradientBiases.divide(LOSS_SCALE);
 
+        // L2 regularization
+        weights.multiply(1.0f - learningRate * lambda);
+        biases.multiply(1.0f - learningRate * lambda);
+
         weights.subtract(Matrix.multiply(gradientWeights, learningRate));
         biases.subtract(Matrix.multiply(gradientBiases, learningRate));
     }
@@ -137,23 +144,6 @@ public class MLPLayer extends Layer {
     @Override
     public String toString() {
         return "MLPLayer: in:" + inputSize + "\tout:" + outputSize + "\tactivation:" + phi;
-    }
-
-    public static List<MLPLayer> createMLPLayers(int inputSize, List<Integer> sizes, List<ActivationFunction> activationFunctions, List<Integer> biases) {
-        if (sizes.size() != activationFunctions.size() || sizes.size() != biases.size() || activationFunctions.size() != biases.size()) {
-            throw new IllegalArgumentException("Lists must have the same size: "+sizes.size()+", "+activationFunctions.size()+", "+biases.size());
-        }
-
-        List<MLPLayer> layers = new ArrayList<>();
-
-        int currInputSize = inputSize;
-
-        for (int i=0; i<sizes.size(); i++) {
-            layers.add(new MLPLayer(currInputSize, sizes.get(i), activationFunctions.get(i), biases.get(i)));
-            currInputSize = sizes.get(i);   // input of next layer is size of previous layer
-        }
-
-        return layers;
     }
 
     public Matrix getWeights() {
@@ -184,5 +174,14 @@ public class MLPLayer extends Layer {
             throw new IllegalArgumentException("New biases must have the same dimensions as the current biases.");
         }
         biases = newBiases;
+    }
+
+    @Override
+    public void dumpInfo() {
+        System.out.println("MLP Layer | Input Size: "+inputSize+" | Output Size: "+outputSize);
+        System.out.println("- weight average: "+weights.getMeanAverage()+", range: "+ math.min(weights)+", "+math.max(weights));
+        System.out.println("- gradient weight average: "+gradientWeights.getMeanAverage()+", range: "+ math.min(gradientWeights)+", "+math.max(gradientWeights));
+        System.out.println("- biases: " + biases.toRowMatrix());
+        System.out.println("- gradient biases: " + gradientBiases.toRowMatrix());
     }
 }
