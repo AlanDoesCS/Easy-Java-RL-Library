@@ -1,6 +1,6 @@
 package Tools;
 
-import Structures.Vector2D;
+import Structures.Vector2;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +16,7 @@ public class GraphPlotter extends JFrame {
     }
 
     // INSTANCE VARS
-    private PriorityQueue<Vector2D> points = new PriorityQueue<>(Comparator.comparing(Vector2D::getX));
+    private PriorityQueue<Vector2> points = new PriorityQueue<>(Comparator.comparing(Vector2::getX));
     private Types graphType;
     private String XAxisLabel, YAxisLabel;
     List<String> args;
@@ -36,7 +36,7 @@ public class GraphPlotter extends JFrame {
     //Styling:
     private int padding = 50;
 
-    private void init(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2D> points, String... varargs) {
+    private void init(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2> points, String... varargs) {
         this.graphType = graphType;
         this.points.addAll(points);
         this.args = Arrays.asList(varargs);
@@ -54,7 +54,7 @@ public class GraphPlotter extends JFrame {
 
         add(new GraphPanel());
     }
-    public GraphPlotter(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2D> points, String... varargs) {
+    public GraphPlotter(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, List<Vector2> points, String... varargs) {
         init(graphTitle, graphType, XAxisLabel, YAxisLabel, points, varargs);
     }
     public GraphPlotter(String graphTitle, Types graphType, String XAxisLabel, String YAxisLabel, String... varargs) {
@@ -95,10 +95,10 @@ public class GraphPlotter extends JFrame {
             // plot points
             g2.setColor(Color.RED);
 
-            PriorityQueue<Vector2D> temp = new PriorityQueue<>(points);
-            Vector2D prevPoint = temp.peek();
+            PriorityQueue<Vector2> temp = new PriorityQueue<>(points);
+            Vector2 prevPoint = temp.peek();
             while (!temp.isEmpty()) {
-                Vector2D point = temp.poll();
+                Vector2 point = temp.poll();
                 int x = padding + (int) ((point.getX() - minX) / (maxX - minX) * width);
                 int y = getHeight() - padding - (int) ((point.getY() - minY) / (maxY - minY) * height);
 
@@ -157,7 +157,7 @@ public class GraphPlotter extends JFrame {
             g2.fillOval(x - 3, y - 3, 6, 6);
         }
 
-        private void drawPlotPoint(Graphics2D g2, Vector2D prevPoint, int x, int y, int width, int height, int padding, boolean useEase) {
+        private void drawPlotPoint(Graphics2D g2, Vector2 prevPoint, int x, int y, int width, int height, int padding, boolean useEase) {
             int prevX = padding + (int) ((prevPoint.getX() - minX) / (maxX - minX) * width);
             int prevY = getHeight() - padding - (int) ((prevPoint.getY() - minY) / (maxY - minY) * height);
 
@@ -179,7 +179,7 @@ public class GraphPlotter extends JFrame {
         }
     }
 
-    public void addPoint(Vector2D point) {
+    public void addPoint(Vector2 point) {
         points.add(point);
 
         // update graph bounds:
@@ -208,7 +208,7 @@ public class GraphPlotter extends JFrame {
 
     public void plot(Function<Float, Float> f, float start, float end, float step) {
         for (float i = start; i < end; i += step) {
-            addPoint(new Vector2D(i, f.apply(i)));
+            addPoint(new Vector2(i, f.apply(i)));
         }
         plot();
     }

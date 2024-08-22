@@ -1,6 +1,5 @@
-package Training;
+package Training.Environments;
 
-import Structures.Tensor;
 import com.sun.jdi.InvalidTypeException;
 
 /**

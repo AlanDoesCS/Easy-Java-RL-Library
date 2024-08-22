@@ -1,7 +1,6 @@
-package Tools.VisualiserDependencies;
+package Tools;
 
 import Structures.Layer;
-import Tools.string;
 
 import java.awt.Color;
 

@@ -1,6 +1,6 @@
-package Training;
+package Training.Environments;
 
-import Structures.Vector2D;
+import Structures.Vector2;
 import Tools.math;
 
 import java.util.Stack;
@@ -33,12 +33,12 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
 
     private void generateMaze(int startX, int startY) {
         // keep track of cells to visit: prevent reaching max recursive depth
-        Stack<Vector2D> stack = new Stack<>();
-        stack.push(new Vector2D(startX, startY));
+        Stack<Vector2> stack = new Stack<>();
+        stack.push(new Vector2(startX, startY));
         set(startX, startY, PATH);
 
         while (!stack.isEmpty()) {  // visit all accessible cells
-            Vector2D current = stack.peek();
+            Vector2 current = stack.peek();
             int x = (int) current.getX();
             int y = (int) current.getY();
 
@@ -57,7 +57,7 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
                     set(x + dir[0] / 2, y + dir[1] / 2, PATH);
                     set(newX, newY, PATH);
 
-                    stack.push(new Vector2D(newX, newY));
+                    stack.push(new Vector2(newX, newY));
                     moved = true;
                     break;
                 }
@@ -76,8 +76,8 @@ public class MazeGridEnvironment extends GridEnvironment {  // Maze generated us
         return get(x, y) == PATH;
     }
 
-    public Vector2D findValidPositionInBounds() {  // to be used for finding
-        Vector2D position;
+    public Vector2 findValidPositionInBounds() {  // to be used for finding
+        Vector2 position;
         do {
             position = getRandomCoordinateInBounds();
             position.set((int) position.getX(), (int) position.getY());

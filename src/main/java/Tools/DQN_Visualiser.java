@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import Structures.DQN;
 import Structures.Layer;
-import Tools.VisualiserDependencies.Node;
 
 public class DQN_Visualiser extends JFrame {
     static final int width=1280, height=900;

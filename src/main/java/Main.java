@@ -5,6 +5,9 @@ import Training.*;
 
 import Training.ActivationFunctions.LeakyReLU;
 import Training.ActivationFunctions.Linear;
+import Training.Environments.Environment;
+import Training.Environments.GridEnvironment;
+import Training.Environments.PerlinGridEnvironment;
 import com.sun.jdi.InvalidTypeException;
 
 import java.awt.*;
@@ -53,8 +56,8 @@ public class Main {
         trainer.trainAgent(ddqnAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path");
     }
 
-    public static void testPathfinding(Vector2D start, Vector2D end, GridEnvironment environment) {
-        ArrayList<Vector2D> shortestPath = Pathfinder.dijkstra(start, end, environment);
+    public static void testPathfinding(Vector2 start, Vector2 end, GridEnvironment environment) {
+        ArrayList<Vector2> shortestPath = Pathfinder.dijkstra(start, end, environment);
         Environment_Visualiser vis = new Environment_Visualiser(environment);
         vis.addPath(shortestPath, Color.RED);
     }

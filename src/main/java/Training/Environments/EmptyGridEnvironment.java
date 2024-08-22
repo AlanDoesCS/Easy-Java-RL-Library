@@ -1,4 +1,4 @@
-package Training;
+package Training.Environments;
 
 public class EmptyGridEnvironment extends GridEnvironment {
 

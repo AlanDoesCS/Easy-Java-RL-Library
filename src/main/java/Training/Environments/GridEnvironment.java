@@ -1,17 +1,17 @@
-package Training;
+package Training.Environments;
 
 import Structures.MatrixDouble;
 import Structures.Tensor;
-import Structures.Vector2D;
+import Structures.Vector2;
 import Tools.math;
 
 public abstract class GridEnvironment extends Environment {
     public int width, height;
     private MatrixDouble gridMatrix;
     private Tensor stateTensor;
-    private Vector2D startPosition;
-    private Vector2D agentPosition;
-    private Vector2D goalPosition;
+    private Vector2 startPosition;
+    private Vector2 agentPosition;
+    private Vector2 goalPosition;
 
     protected int maxSteps, currentSteps;
 
@@ -23,7 +23,7 @@ public abstract class GridEnvironment extends Environment {
         this.width = width;
         this.height = height;
         this.agentPosition = getRandomCoordinateInBounds();
-        this.startPosition = new Vector2D(agentPosition);
+        this.startPosition = new Vector2(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
         this.gridMatrix = new MatrixDouble(height, width);
         this.stateTensor = new Tensor(3, height, width); // Environment, Agent, Goal channels
@@ -54,7 +54,7 @@ public abstract class GridEnvironment extends Environment {
     public void randomize() {
         refill();
         this.agentPosition = getRandomCoordinateInBounds();
-        this.startPosition = new Vector2D(agentPosition);
+        this.startPosition = new Vector2(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
         this.currentSteps = 0;
     }
@@ -93,8 +93,8 @@ public abstract class GridEnvironment extends Environment {
                 state.set(0, i++, get(x, y));
             }
         }
-        Vector2D agentPos = Vector2D.normalise(getAgentPosition(), getGridWidth()-1, getGridHeight()-1);
-        Vector2D goalPos = Vector2D.normalise(getGoalPosition(), getGridWidth()-1, getGridHeight()-1);
+        Vector2 agentPos = Vector2.normalise(getAgentPosition(), getGridWidth()-1, getGridHeight()-1);
+        Vector2 goalPos = Vector2.normalise(getGoalPosition(), getGridWidth()-1, getGridHeight()-1);
         state.set(0, i++, agentPos.getX());
         state.set(0, i++, agentPos.getY());
         state.set(0, i++, goalPos.getX());
@@ -103,7 +103,7 @@ public abstract class GridEnvironment extends Environment {
         return state;
     }
 
-    double getStepReward(Vector2D oldPosition, Vector2D newPosition) {
+    double getStepReward(Vector2 oldPosition, Vector2 newPosition) {
         double oldDistance = oldPosition.manhattanDistanceTo(goalPosition);
         double newDistance = newPosition.manhattanDistanceTo(goalPosition);
 
@@ -113,8 +113,8 @@ public abstract class GridEnvironment extends Environment {
     public MoveResult step(int action) {
         float reward = 0;
         currentSteps++;
-        Vector2D oldPosition = getAgentPosition();
-        Vector2D newPosition = oldPosition.copy();
+        Vector2 oldPosition = getAgentPosition();
+        Vector2 newPosition = oldPosition.copy();
 
         getNewPosFromAction(action, newPosition);
         boolean validMove = isValidPositionInBounds((int) newPosition.getX(), (int) newPosition.getY());
@@ -164,24 +164,24 @@ public abstract class GridEnvironment extends Environment {
     public void setStartPosition(int x, int y) {
         this.startPosition.set(x, y);
     }
-    public void setAgentPosition(Vector2D position) {
+    public void setAgentPosition(Vector2 position) {
         this.agentPosition = position;
     }
-    public void setGoalPosition(Vector2D position) {
+    public void setGoalPosition(Vector2 position) {
         this.goalPosition = position;
     }
-    public void setStartPosition(Vector2D position) {
+    public void setStartPosition(Vector2 position) {
         this.startPosition = position;
     }
 
-    public Vector2D getAgentPosition() {
+    public Vector2 getAgentPosition() {
         return agentPosition;
     }
 
-    public Vector2D getGoalPosition() {
+    public Vector2 getGoalPosition() {
         return goalPosition;
     }
-    public Vector2D getStartPosition() {
+    public Vector2 getStartPosition() {
         return startPosition;
     }
 
@@ -193,8 +193,8 @@ public abstract class GridEnvironment extends Environment {
         return isInBounds(x, y);
     }
 
-    public Vector2D getRandomCoordinateInBounds() {
-        return new Vector2D(math.randomInt(0, width-1), math.randomInt(0, height-1));
+    public Vector2 getRandomCoordinateInBounds() {
+        return new Vector2(math.randomInt(0, width-1), math.randomInt(0, height-1));
     }
 
     /**
@@ -206,10 +206,10 @@ public abstract class GridEnvironment extends Environment {
      *      2 - Move down
      *      3 - Move left
      *      4 - Do nothing
-     * @param newPosition The position to be updated. This is a Vector2D object that will be modified
+     * @param newPosition The position to be updated. This is a Vector2 object that will be modified
      *                    based on the action.
      */
-    static void getNewPosFromAction(int action, Vector2D newPosition) {
+    static void getNewPosFromAction(int action, Vector2 newPosition) {
         switch(action) {
             case 0: newPosition.addY(-1); break; // Move up    (decrease y)
             case 1: newPosition.addX(1); break;  // Move right (increase x)

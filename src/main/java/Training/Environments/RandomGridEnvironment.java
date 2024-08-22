@@ -1,9 +1,6 @@
-package Training;
+package Training.Environments;
 
-import Structures.Vector2D;
 import Tools.math;
-
-import java.util.Random;
 
 public class RandomGridEnvironment extends GridEnvironment {
 

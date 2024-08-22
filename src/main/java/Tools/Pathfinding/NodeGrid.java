@@ -1,6 +1,6 @@
 package Tools.Pathfinding;
 
-import Training.GridEnvironment;
+import Training.Environments.GridEnvironment;
 
 public class NodeGrid {
     private GraphNode[][] nodes;

@@ -1,7 +1,7 @@
 package Tools.Pathfinding;
 
-import Structures.Vector2D;
-import Training.GridEnvironment;
+import Structures.Vector2;
+import Training.Environments.GridEnvironment;
 
 import java.util.*;
 
@@ -13,8 +13,8 @@ public class Pathfinder {
         }
     };
 
-    public static ArrayList<Vector2D> dijkstra(Vector2D start, Vector2D end, GridEnvironment environment) {
-        ArrayList<Vector2D> path = new ArrayList<>();
+    public static ArrayList<Vector2> dijkstra(Vector2 start, Vector2 end, GridEnvironment environment) {
+        ArrayList<Vector2> path = new ArrayList<>();
         NodeGrid nodeGrid = new NodeGrid(environment.width, environment.height, environment);
         PriorityQueue<GraphNode> Q = new PriorityQueue<>(environment.getNumSquares(), nodeComparator);
 
@@ -32,7 +32,7 @@ public class Pathfinder {
 
             if (current.x == x1 && current.y == y1) {
                 while (current != null) {
-                    path.add(new Vector2D(current.x, current.y));
+                    path.add(new Vector2(current.x, current.y));
                     current = current.previous;
                 }
                 Collections.reverse(path);

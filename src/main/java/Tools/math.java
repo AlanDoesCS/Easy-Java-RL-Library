@@ -1,7 +1,7 @@
 package Tools;
 
 import Structures.MatrixDouble;
-import Structures.Vector2D;
+import Structures.Vector2;
 
 import java.util.Random;
 
@@ -101,8 +101,8 @@ public class math {
         return maxValue;
     }
 
-    public static Vector2D maxIndex(MatrixDouble matrix) {
-        Vector2D index = new Vector2D(0, 0);
+    public static Vector2 maxIndex(MatrixDouble matrix) {
+        Vector2 index = new Vector2(0, 0);
         double max = matrix.get(0, 0);
         for (int r = 0; r < matrix.getHeight(); r++) {
             for (int c = 0; c < matrix.getWidth(); c++) {

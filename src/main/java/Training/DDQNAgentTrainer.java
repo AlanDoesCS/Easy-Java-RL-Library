@@ -2,11 +2,13 @@ package Training;
 
 import Structures.DDQNAgent;
 import Structures.MatrixDouble;
-import Structures.Vector2D;
+import Structures.Vector2;
 import Tools.Environment_Visualiser;
 import Tools.GraphPlotter;
 import Tools.Pathfinding.Pathfinder;
 import Tools.math;
+import Training.Environments.Environment;
+import Training.Environments.GridEnvironment;
 import Training.Replay.ExperienceReplay;
 import Training.Replay.PrioritizedExperienceReplay;
 import com.sun.jdi.InvalidTypeException;
@@ -87,7 +89,7 @@ public class DDQNAgentTrainer {
             MatrixDouble state = environment.getStateAsColumnMatrix();
             boolean done = false;
             double cumulativeReward = 0;
-            ArrayList<Vector2D> dqnPath = new ArrayList<>();
+            ArrayList<Vector2> dqnPath = new ArrayList<>();
 
             while (!done) {
                 int action = agent.chooseAction(state);
@@ -141,8 +143,8 @@ public class DDQNAgentTrainer {
             // Progress Tracking -------------------------------------------------------------
 
             if (plot) {
-                averageRewardPlotter.addPoint(new Vector2D(episode, meanReward));
-                if (tdErrorCounter!=0) averageLossPlotter.addPoint(new Vector2D(episode, totalSquaredTDError / tdErrorCounter));
+                averageRewardPlotter.addPoint(new Vector2(episode, meanReward));
+                if (tdErrorCounter!=0) averageLossPlotter.addPoint(new Vector2(episode, totalSquaredTDError / tdErrorCounter));
             }
 
             if (episode % savePeriod == 0) {

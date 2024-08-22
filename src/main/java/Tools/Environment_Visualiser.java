@@ -1,7 +1,7 @@
 package Tools;
 
-import Structures.Vector2D;
-import Training.GridEnvironment;
+import Structures.Vector2;
+import Training.Environments.GridEnvironment;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,7 @@ public class Environment_Visualiser extends Visualiser {
     static final int width = 720, height = 720, pointRadius = 5;
     int squareWIDTH;
     int squareHEIGHT;
-    ArrayList<ArrayList<Vector2D>> pathsFollowed = new ArrayList<>();
+    ArrayList<ArrayList<Vector2>> pathsFollowed = new ArrayList<>();
     ArrayList<Color> pathColors = new ArrayList<>();
     GridEnvironment gridEnvironment;
 
@@ -48,7 +48,7 @@ public class Environment_Visualiser extends Visualiser {
 
                 // Draw paths
                 for (int pathIndex=0; pathIndex<pathsFollowed.size(); pathIndex++) {
-                    ArrayList<Vector2D> path = pathsFollowed.get(pathIndex);
+                    ArrayList<Vector2> path = pathsFollowed.get(pathIndex);
 
                     Color color = pathColors.get(pathIndex);
                     Color startColor = darker(color);
@@ -56,7 +56,7 @@ public class Environment_Visualiser extends Visualiser {
                     g2.setColor(startColor);
 
                     for (int i=0; i<path.size(); i++) {
-                        Vector2D c = path.get(i);
+                        Vector2 c = path.get(i);
 
                         // Calculate the progress along the path (0 to 1)
                         float progress = (float) i / (path.size() - 2);
@@ -71,14 +71,14 @@ public class Environment_Visualiser extends Visualiser {
                     }
 
                     // Draw the start square as green
-                    Vector2D start = path.getFirst();
+                    Vector2 start = path.getFirst();
                     g2.setColor(Color.GREEN);
                     g2.fillRect(
                             (int) (start.getX()*squareWIDTH), (int) (start.getY()*squareHEIGHT), squareWIDTH, squareHEIGHT
                     );
 
                     // Draw the finish square as red
-                    Vector2D finish = path.getLast();
+                    Vector2 finish = path.getLast();
                     g2.setColor(Color.RED);
                     g2.fillRect(
                             (int) (finish.getX()*squareWIDTH), (int) (finish.getY()*squareHEIGHT), squareWIDTH, squareHEIGHT
@@ -91,7 +91,7 @@ public class Environment_Visualiser extends Visualiser {
         setVisible(true);
     }
 
-    public void addPath(ArrayList<Vector2D> path, Color color) {
+    public void addPath(ArrayList<Vector2> path, Color color) {
         pathsFollowed.add(path);
         pathColors.add(color);
     }

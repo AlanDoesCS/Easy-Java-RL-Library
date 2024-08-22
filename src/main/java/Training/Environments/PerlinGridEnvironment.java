@@ -1,4 +1,4 @@
-package Training;
+package Training.Environments;
 
 import Structures.MatrixDouble;
 import Tools.Perlin2D;
