@@ -195,6 +195,9 @@ public class BatchNormLayer extends Layer {
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        targetLayer.alpha = this.alpha;
+        targetLayer.t = this.t;
+
         if (!(targetLayer instanceof BatchNormLayer target)) {
             throw new IllegalArgumentException("Target layer must be a BatchNormLayer");
         }
@@ -206,16 +209,15 @@ public class BatchNormLayer extends Layer {
         System.arraycopy(this.dGamma, 0, target.dGamma, 0, this.dGamma.length);
         System.arraycopy(this.dBeta, 0, target.dBeta, 0, this.dBeta.length);
 
-        if (!ignorePrimitives) {
-            target.depth = this.depth;
-            target.height = this.height;
-            target.width = this.width;
-            target.inputSize = this.inputSize;
-            target.outputSize = this.outputSize;
-            target.epsilon = this.epsilon;
-            target.momentum = this.momentum;
+        if (ignorePrimitives) return;
 
-        }
+        target.depth = this.depth;
+        target.height = this.height;
+        target.width = this.width;
+        target.inputSize = this.inputSize;
+        target.outputSize = this.outputSize;
+        target.epsilon = this.epsilon;
+        target.momentum = this.momentum;
     }
 
     @Override

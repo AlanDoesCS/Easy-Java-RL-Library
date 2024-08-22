@@ -21,8 +21,8 @@ public class MLPLayer extends Layer {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         weights = new MatrixDouble(outputSize, inputSize);
-        double stddev = Math.sqrt(2.0 / (inputSize + outputSize));
-        weights.randomize(-stddev, stddev); // Xavier initialization
+        double stddev = Math.sqrt(2.0 / (inputSize)); // He initialization
+        weights.randomize(-stddev, stddev);
         biases = new MatrixDouble(outputSize, 1);
         biases.fill(bias);
         gradientWeights = new MatrixDouble(outputSize, inputSize);
@@ -39,6 +39,9 @@ public class MLPLayer extends Layer {
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        targetLayer.alpha = this.alpha;
+        targetLayer.t = this.t;
+
         if (!(targetLayer instanceof MLPLayer target)) {
             throw new IllegalArgumentException(String.format("Target layer must be a MLPLayer (got: %s)", targetLayer.getClass().getSimpleName()));
         }
@@ -69,7 +72,6 @@ public class MLPLayer extends Layer {
             throw new IllegalArgumentException("Expected input to be a MatrixDouble.");
         }
 
-        System.out.println("MLP Layer");
         System.out.println("input: "+((MatrixDouble) input).toRowMatrix());
 
         MatrixDouble result = MatrixDouble.multiply(weights, matrixInput);
@@ -82,7 +84,11 @@ public class MLPLayer extends Layer {
             }
         }
 
-        System.out.println("output2: "+result.toRowMatrix());
+        System.out.println("weights: "+weights.toRowMatrix());
+        System.out.println("gradientWeights: "+gradientWeights.toRowMatrix());
+        System.out.println("biases: "+biases.toRowMatrix());
+        System.out.println("gradientBiases: "+gradientBiases.toRowMatrix());
+        System.out.println("output: "+result.toRowMatrix());
         return result;
     }
 

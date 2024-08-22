@@ -37,6 +37,9 @@ public class ConvLayer extends Layer {
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        targetLayer.alpha = this.alpha;
+        targetLayer.t = this.t;
+
         if (!(targetLayer instanceof ConvLayer target)) {
             throw new IllegalArgumentException(String.format("Target layer must be a ConvLayer (got: %s)", targetLayer.getClass().getSimpleName()));
         }
@@ -123,7 +126,7 @@ public class ConvLayer extends Layer {
 
     private void initializeParameters() {
         // He initialization (for ReLU)
-        double stdDev = (double) Math.sqrt(2.0 / (inputDepth * filterSize * filterSize));
+        double stdDev = Math.sqrt(2.0 / (inputDepth * filterSize * filterSize));
         for (int i = 0; i < filters.length; i++) {
             for (int j = 0; j < filters[i].length; j++) {
                 for (int k = 0; k < filters[i][j].length; k++) {

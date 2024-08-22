@@ -78,14 +78,15 @@ public class DDQNAgentTrainer {
         int batchSize = 32;
 
         for (int episode = 1; episode <= numEpisodes; episode++) {
-            float totalSquaredTDError = 0; int tdErrorCounter = 0;
+            double totalSquaredTDError = 0;
+            int tdErrorCounter = 0;
 
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
 
             MatrixDouble state = environment.getStateAsColumnMatrix();
             boolean done = false;
-            float cumulativeReward = 0;
+            double cumulativeReward = 0;
             ArrayList<Vector2D> dqnPath = new ArrayList<>();
 
             while (!done) {
@@ -129,7 +130,7 @@ public class DDQNAgentTrainer {
             dqnPath.add(environment.getAgentPosition());
 
             int pathLength = environment.getCurrentSteps();
-            float meanReward = cumulativeReward / pathLength;
+            double meanReward = cumulativeReward / pathLength;
 
             System.out.printf("Episode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, LearningRate=%f, Environment=%s %n",
                     episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()

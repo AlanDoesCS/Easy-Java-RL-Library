@@ -57,6 +57,18 @@ public class Adam extends Optimizer {
         MatrixDouble vHat = MatrixDouble.divide(layer.v, (float) (1 - Math.pow(beta2, layer.t)));
         MatrixDouble vHatBias = MatrixDouble.divide(layer.vBias, (float) (1 - Math.pow(beta2, layer.t)));
 
+        // clip gradients
+        double gradientNorm = Math.sqrt(
+                MatrixDouble.multiply(layer.getGradientWeights(), layer.getGradientWeights().transpose()).sumOfSquares() +
+                MatrixDouble.multiply(layer.getGradientBiases(), layer.getGradientBiases().transpose()).sumOfSquares()
+        );
+        double maxGradientNorm = 1.0;
+        if (gradientNorm > maxGradientNorm) {
+            double scalingFactor = maxGradientNorm / gradientNorm;
+            layer.getGradientWeights().multiply(scalingFactor);
+            layer.getGradientBiases().multiply(scalingFactor);
+        }
+
         // update parameters
         layer.setWeights(MatrixDouble.subtract(layer.getWeights(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHat, alpha), MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHat), epsilon))));
         layer.setBiases(MatrixDouble.subtract(layer.getBiases(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHatBias, alpha), MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHatBias), epsilon))));
@@ -104,24 +116,24 @@ public class Adam extends Optimizer {
 
         for (int d = 0; d < layer.getDepth(); d++) {
             // update biased first moment estimate
-            layer.m[0][d] = Adam.default_beta1 * layer.m[0][d] + (1 - Adam.default_beta1) * layer.getGradientGamma()[d];
-            layer.m[1][d] = Adam.default_beta1 * layer.m[1][d] + (1 - Adam.default_beta1) * layer.getGradientBeta()[d];
+            layer.m[0][d] = beta1 * layer.m[0][d] + (1 - beta1) * layer.getGradientGamma()[d];
+            layer.m[1][d] = beta1 * layer.m[1][d] + (1 - beta1) * layer.getGradientBeta()[d];
 
             // update biased second raw moment estimate
-            layer.v[0][d] = Adam.default_beta2 * layer.v[0][d] + (1 - Adam.default_beta2) * layer.getGradientGamma()[d] * layer.getGradientGamma()[d];
-            layer.v[1][d] = Adam.default_beta2 * layer.v[1][d] + (1 - Adam.default_beta2) * layer.getGradientBeta()[d] * layer.getGradientBeta()[d];
+            layer.v[0][d] = beta2 * layer.v[0][d] + (1 - beta2) * layer.getGradientGamma()[d] * layer.getGradientGamma()[d];
+            layer.v[1][d] = beta2 * layer.v[1][d] + (1 - beta2) * layer.getGradientBeta()[d] * layer.getGradientBeta()[d];
 
             // compute bias corrected first moment estimate
-            double mHat0 = layer.m[0][d] / (1 - Math.pow(Adam.default_beta1, layer.t));
-            double mHat1 = layer.m[1][d] / (1 - Math.pow(Adam.default_beta1, layer.t));
+            double mHat0 = layer.m[0][d] / (1 - Math.pow(beta1, layer.t));
+            double mHat1 = layer.m[1][d] / (1 - Math.pow(beta1, layer.t));
 
             // compute bias corrected second raw moment estimate
-            double vHat0 = layer.v[0][d] / (1 - Math.pow(Adam.default_beta2, layer.t));
-            double vHat1 = layer.v[1][d] / (1 - Math.pow(Adam.default_beta2, layer.t));
+            double vHat0 = layer.v[0][d] / (1 - Math.pow(beta2, layer.t));
+            double vHat1 = layer.v[1][d] / (1 - Math.pow(beta2, layer.t));
 
             // update parameters
-            layer.gamma[d] -= alpha * mHat0 / Math.sqrt(vHat0 + Adam.default_epsilon);
-            layer.beta[d] -= alpha * mHat1 / Math.sqrt(vHat1 + Adam.default_epsilon);
+            layer.gamma[d] -= alpha * mHat0 / Math.sqrt(vHat0 + epsilon);
+            layer.beta[d] -= alpha * mHat1 / Math.sqrt(vHat1 + epsilon);
         }
     }
 }
