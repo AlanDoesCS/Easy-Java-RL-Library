@@ -196,7 +196,6 @@ public class BatchNormLayer extends Layer {
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
         targetLayer.alpha = this.alpha;
-        targetLayer.t = this.t;
 
         if (!(targetLayer instanceof BatchNormLayer target)) {
             throw new IllegalArgumentException("Target layer must be a BatchNormLayer");

@@ -8,7 +8,6 @@ import Tools.math;
 public abstract class GridEnvironment extends Environment {
     public int width, height;
     private MatrixDouble gridMatrix;
-    private Tensor stateTensor;
     private Vector2 startPosition;
     private Vector2 agentPosition;
     private Vector2 goalPosition;
@@ -26,13 +25,12 @@ public abstract class GridEnvironment extends Environment {
         this.startPosition = new Vector2(agentPosition);
         this.goalPosition = getRandomCoordinateInBounds();
         this.gridMatrix = new MatrixDouble(height, width);
-        this.stateTensor = new Tensor(3, height, width); // Environment, Agent, Goal channels
 
         this.maxSteps = width*height;
         this.currentSteps = 0;
 
-        this.minReward = -1; // Worst case: DNF
-        this.maxReward = 1; // Best case: reach goal
+        this.minReward = -1;
+        this.maxReward = getValidMoveReward()+1; // Best case: valid move + moved to goal
     }
 
     public int getNumSquares() {
@@ -69,6 +67,7 @@ public abstract class GridEnvironment extends Environment {
     }
 
     public Tensor getStateTensor() {
+        Tensor stateTensor = new Tensor(3, height, width);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 stateTensor.set(0, y, x, get(x, y));  // Environment
@@ -76,7 +75,7 @@ public abstract class GridEnvironment extends Environment {
                 stateTensor.set(2, y, x, (x == goalPosition.getX() && y == goalPosition.getY()) ? 1 : 0);  // Goal
             }
         }
-        return stateTensor.copy();
+        return stateTensor;
     }
 
     /**
@@ -103,6 +102,23 @@ public abstract class GridEnvironment extends Environment {
         return state;
     }
 
+    public Object getState() {
+        switch (Environment.stateType) {
+            case PositionVectorOnly:
+                Vector2 agentNorm = Vector2.normalise(getAgentPosition(), getGridWidth()-1, getGridHeight()-1);
+                Vector2 goalNorm = Vector2.normalise(getGoalPosition(), getGridWidth()-1, getGridHeight()-1);
+                return new MatrixDouble(new double[][] {
+                        {agentNorm.getX(), agentNorm.getY(), goalNorm.getX(), goalNorm.getY()}
+                }).toColumnMatrix();
+            case PositionAndGridAsColumn:
+                return getStateAsColumnMatrix();
+            case PositionAndGridAsLayers:
+                return getStateTensor();
+            default:
+                return null;
+        }
+    }
+
     double getStepReward(Vector2 oldPosition, Vector2 newPosition) {
         double oldDistance = oldPosition.manhattanDistanceTo(goalPosition);
         double newDistance = newPosition.manhattanDistanceTo(goalPosition);
@@ -123,7 +139,7 @@ public abstract class GridEnvironment extends Environment {
 
         if (validMove) {
             setAgentPosition(newPosition);
-            reward += getStepReward(oldPosition, newPosition);
+            reward += (float) getStepReward(oldPosition, newPosition);
             reward += getValidMoveReward(); // encourage valid moves
 
             done = newPosition.equals(getGoalPosition());
@@ -131,7 +147,7 @@ public abstract class GridEnvironment extends Environment {
             if (done) {
                 reward = 1;
             } else if (!maxStepsReached) {
-                reward -= (get((int)newPosition.getX(), (int)newPosition.getY()) * 0.6f);
+                reward -= (float) (get((int)newPosition.getX(), (int)newPosition.getY()) * 0.6f);
             }
         } else {
             reward -= getInvalidMovePunishment(); // discourage invalid moves
@@ -143,7 +159,7 @@ public abstract class GridEnvironment extends Environment {
         }
 
         reward = math.clamp(math.scale(reward, minReward, maxReward, -1, 1), -1, 1);
-        return new MoveResult(getStateAsColumnMatrix(), reward, done);
+        return new MoveResult(getState(), reward, done);
     }
 
     public void set(int x, int y, float value) {
@@ -220,11 +236,11 @@ public abstract class GridEnvironment extends Environment {
     }
 
     float getValidMoveReward() {
-        return 0.5f;
+        return 0.4f;
     }
 
     float getInvalidMovePunishment() {
-        return -1f;
+        return -0.6f;
     }
 
     public String toString() {

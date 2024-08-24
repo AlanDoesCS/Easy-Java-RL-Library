@@ -39,6 +39,7 @@ public class DDQNAgentTrainer {
     public void trainAgent(DDQNAgent agent, int numEpisodes, int savePeriod, int visualiserUpdatePeriod, String... varargs) {
         List<String> args = Arrays.asList(varargs);
         boolean verbose = args.contains("verbose");
+        boolean dumpInfo = args.contains("dump_info");
 
         boolean plot = args.contains("plot");
         GraphPlotter averageRewardPlotter = null;
@@ -76,7 +77,7 @@ public class DDQNAgentTrainer {
 
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
-        PrioritizedExperienceReplay replay = new PrioritizedExperienceReplay(10000);
+        PrioritizedExperienceReplay replay = new PrioritizedExperienceReplay(100000);
         int batchSize = 32;
 
         for (int episode = 1; episode <= numEpisodes; episode++) {
@@ -86,7 +87,7 @@ public class DDQNAgentTrainer {
             GridEnvironment environment = environments.get(math.randomInt(0, environmentClasses.size()-1));
             environment.randomize();
 
-            MatrixDouble state = environment.getStateAsColumnMatrix();
+            MatrixDouble state = (MatrixDouble) environment.getState();
             boolean done = false;
             double cumulativeReward = 0;
             ArrayList<Vector2> dqnPath = new ArrayList<>();
@@ -127,17 +128,21 @@ public class DDQNAgentTrainer {
                 done = result.done;
                 cumulativeReward += result.reward;
 
-                if (verbose) System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f, Steps: (%d)%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, cumulativeReward, environment.getCurrentSteps());
+                // if (verbose) System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f, Steps: (%d)%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, cumulativeReward, environment.getCurrentSteps());
             }
             dqnPath.add(environment.getAgentPosition());
 
             int pathLength = environment.getCurrentSteps();
             double meanReward = cumulativeReward / pathLength;
 
-            System.out.printf("Episode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, LearningRate=%f, Environment=%s %n",
-                    episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()
-            );
-            agent.dumpDQNInfo();
+            if (verbose) {
+                System.out.printf("Episode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, LearningRate=%f, Environment=%s %n",
+                        episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()
+                );
+            }
+            if (dumpInfo) {
+                agent.dumpDQNInfo();
+            }
 
 
             // Progress Tracking -------------------------------------------------------------

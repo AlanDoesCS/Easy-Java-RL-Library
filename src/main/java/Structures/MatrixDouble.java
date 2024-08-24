@@ -44,7 +44,6 @@ public class MatrixDouble implements Serializable {
         }
     }
 
-
     public static MatrixDouble elementwiseSquare(MatrixDouble matrix) {
         MatrixDouble result = new MatrixDouble(matrix.rows, matrix.cols);
         for (int i = 0; i < matrix.rows; i++) {
@@ -420,6 +419,16 @@ public class MatrixDouble implements Serializable {
         return result;
     }
 
+    public MatrixDouble toColumnMatrix() {
+        MatrixDouble result = new MatrixDouble(rows*cols, 1);
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                result.set(0, r*cols+c, get(c, r));
+            }
+        }
+        return result;
+    }
+
     public double getSum() {
         double sum = 0;
         for (int i = 0; i < rows; i++) {
@@ -541,6 +550,10 @@ public class MatrixDouble implements Serializable {
             synchronized (C) {
                 for (int i = 0; i < localC.length; i++) {
                     for (int j = 0; j < localC[0].length; j++) {
+                        if (Double.isNaN(localC[i][j]) || Double.isInfinite(localC[i][j])) {
+                            throw new IllegalArgumentException("NaN or Infinity encountered in matrix multiplication");
+
+                        }
                         globalC[i + rowStart][j + colStart] += localC[i][j];
                     }
                 }

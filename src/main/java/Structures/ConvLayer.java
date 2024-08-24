@@ -38,7 +38,6 @@ public class ConvLayer extends Layer {
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
         targetLayer.alpha = this.alpha;
-        targetLayer.t = this.t;
 
         if (!(targetLayer instanceof ConvLayer target)) {
             throw new IllegalArgumentException(String.format("Target layer must be a ConvLayer (got: %s)", targetLayer.getClass().getSimpleName()));

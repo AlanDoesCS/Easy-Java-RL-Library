@@ -9,6 +9,32 @@ import com.sun.jdi.InvalidTypeException;
  * Only allows for one state and action space to be defined.
  */
 public abstract class Environment {
+    public static void setStateType(StateType stateType) {
+        Environment.stateType = stateType;
+    }
+
+    static StateType stateType = StateType.PositionVectorOnly;
+
+    public static enum StateType {
+        PositionVectorOnly,
+        PositionAndGridAsColumn,
+        PositionAndGridAsLayers
+    }
+
+    private static void updateStateSpace() {
+        switch (stateType) {
+            case PositionVectorOnly:
+                stateSpace = 4;
+                break;
+            case PositionAndGridAsColumn:
+                stateSpace = 4 + getGridSquares();
+                break;
+            case PositionAndGridAsLayers:
+                stateSpace = 3 * getGridWidth() * getGridHeight();
+                break;
+        }
+    }
+
     // defaults
     static int gridWidth = 30, gridHeight = 30;
     static int octaves = 8;
@@ -88,7 +114,7 @@ public abstract class Environment {
         gridWidth = width;
         gridHeight = height;
 
-        setStateSpace(width * height+4);
+        updateStateSpace();
     }
 
     public static void setOctaves(int octaves) {

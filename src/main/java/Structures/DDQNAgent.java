@@ -21,6 +21,8 @@ public class DDQNAgent {
     private final int targetUpdateFrequency; // how often to update target network
     private int stepCounter;
 
+    private boolean isVerbose = false;
+
     private int dumpCounter = 0;
     private final int dumpFrequency = 20;
 
@@ -34,7 +36,7 @@ public class DDQNAgent {
         this.gamma = gamma;
         this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
-        this.targetUpdateFrequency = 5000;
+        this.targetUpdateFrequency = 10000;
         this.tau = tau;
         this.stepCounter = 0;
 
@@ -64,7 +66,7 @@ public class DDQNAgent {
             return (int) (Math.random() * actionSpace);
         } else {
             MatrixDouble qValues = (MatrixDouble) onlineDQN.getOutput(state);
-            if (dumpCounter % dumpFrequency == 0) {
+            if (dumpCounter % dumpFrequency == 0 && isVerbose) {
                 System.out.println("Q Values: "+qValues.toRowMatrix() + ", maxIndex = "+math.maxIndex(qValues).y);
             }
             dumpCounter++;
@@ -125,6 +127,7 @@ public class DDQNAgent {
 
     public double train(Object state, int action, double reward, Object nextState, boolean done) {
         stepCounter++;
+        optimizer.incrementT();
 
         List<Object> layerOutputs = onlineDQN.forwardPass(state);
         MatrixDouble currentQValues = (MatrixDouble) layerOutputs.getLast(); // get predicted q values
@@ -149,7 +152,7 @@ public class DDQNAgent {
         // Calculate TD error
         double tdError = target.get(0, action) - currentQValues.get(0, action);
         if (Double.isNaN(currentQValues.get(0, action))) {
-            System.err.println("action " + action + " is NaN!! : " + currentQValues.get(0, action));
+            throw new IllegalStateException("action " + action + " is NaN!! : " + currentQValues.get(0, action));
         }
 
         Object gradientOutput = MatrixDouble.subtract(target, currentQValues);
@@ -184,6 +187,9 @@ public class DDQNAgent {
         return epsilon;
     }
     public double getLearningRate() { return onlineDQN.getLearningRate(); }
+    public void setVerbose(boolean verbose) {
+        isVerbose = verbose;
+    }
 
     public void saveAgent(String filename) {
         onlineDQN.saveNN(filename);

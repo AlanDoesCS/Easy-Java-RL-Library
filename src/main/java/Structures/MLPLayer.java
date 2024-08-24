@@ -40,7 +40,6 @@ public class MLPLayer extends Layer {
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
         targetLayer.alpha = this.alpha;
-        targetLayer.t = this.t;
 
         if (!(targetLayer instanceof MLPLayer target)) {
             throw new IllegalArgumentException(String.format("Target layer must be a MLPLayer (got: %s)", targetLayer.getClass().getSimpleName()));
@@ -72,8 +71,6 @@ public class MLPLayer extends Layer {
             throw new IllegalArgumentException("Expected input to be a MatrixDouble.");
         }
 
-        System.out.println("input: "+((MatrixDouble) input).toRowMatrix());
-
         MatrixDouble result = MatrixDouble.multiply(weights, matrixInput);
         result.add(biases);
 
@@ -84,31 +81,23 @@ public class MLPLayer extends Layer {
             }
         }
 
-        System.out.println("weights: "+weights.toRowMatrix());
-        System.out.println("gradientWeights: "+gradientWeights.toRowMatrix());
-        System.out.println("biases: "+biases.toRowMatrix());
-        System.out.println("gradientBiases: "+gradientBiases.toRowMatrix());
-        System.out.println("output: "+result.toRowMatrix());
         return result;
     }
 
     @Override
     public MatrixDouble backpropagate(Object input, Object gradientOutput) {
-        if (!(input instanceof MatrixDouble)) {
+        if (!(input instanceof MatrixDouble matrixInput)) {
             throw new IllegalArgumentException("Expected input to be a MatrixDouble.");
         }
-        if (!(gradientOutput instanceof MatrixDouble)) {
+        if (!(gradientOutput instanceof MatrixDouble matrixGradientOutput)) {
             throw new IllegalArgumentException("Expected gradientOutput to be a MatrixDouble.");
         }
-
-        MatrixDouble matrixInput = (MatrixDouble) input;
-        MatrixDouble matrixGradientOutput = (MatrixDouble) gradientOutput;
 
         // Apply loss scaling
         matrixGradientOutput = MatrixDouble.multiply(matrixGradientOutput, LOSS_SCALE);
 
-        gradientWeights = MatrixDouble.multiply(matrixGradientOutput, matrixInput.transpose());
-        gradientBiases = matrixGradientOutput;
+        this.gradientWeights = MatrixDouble.multiply(matrixGradientOutput, matrixInput.transpose());
+        this.gradientBiases = matrixGradientOutput;
 
         MatrixDouble gradientInput = MatrixDouble.multiply(weights.transpose(), matrixGradientOutput);
 
@@ -132,19 +121,19 @@ public class MLPLayer extends Layer {
 
         if (gradientNorm > CLIP_THRESHOLD) {
             double scale = CLIP_THRESHOLD / gradientNorm;
-            gradientWeights.multiply(scale);
+            this.gradientWeights.multiply(scale);
             gradientBiases.multiply(scale);
         }
 
-        gradientWeights.divide(LOSS_SCALE);
-        gradientBiases.divide(LOSS_SCALE);
+        this.gradientWeights.divide(LOSS_SCALE);
+        this.gradientBiases.divide(LOSS_SCALE);
 
         // L2 regularization
-        weights.multiply(1.0f - learningRate * lambda);
-        biases.multiply(1.0f - learningRate * lambda);
+        this.weights.multiply(1.0f - learningRate * lambda);
+        this.biases.multiply(1.0f - learningRate * lambda);
 
-        weights.subtract(MatrixDouble.multiply(gradientWeights, learningRate));
-        biases.subtract(MatrixDouble.multiply(gradientBiases, learningRate));
+        this.weights.subtract(MatrixDouble.multiply(gradientWeights, learningRate));
+        this.biases.subtract(MatrixDouble.multiply(gradientBiases, learningRate));
     }
 
     @Override
