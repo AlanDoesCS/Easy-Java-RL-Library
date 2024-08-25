@@ -1,5 +1,6 @@
 package Training;
 
+import Structures.CircularBuffer;
 import Structures.DDQNAgent;
 import Structures.MatrixDouble;
 import Structures.Vector2;
@@ -44,6 +45,9 @@ public class DDQNAgentTrainer {
         boolean plot = args.contains("plot");
         GraphPlotter averageRewardPlotter = null;
         GraphPlotter averageLossPlotter = null;
+        GraphPlotter successRatePlotter = null;
+        int nLastStepsForSuccessRate = 10;
+        CircularBuffer successRateBuffer = new CircularBuffer(nLastStepsForSuccessRate);
 
         if (plot) {
             averageRewardPlotter = new GraphPlotter("Average Reward vs Episodes", GraphPlotter.Types.LINE, "Episode", "Average Reward", varargs);
@@ -53,6 +57,10 @@ public class DDQNAgentTrainer {
             averageLossPlotter = new GraphPlotter("Average Loss vs Episodes", GraphPlotter.Types.LINE, "Episode", "Average Loss", varargs);
             averageLossPlotter.setVisible(true);
             averageLossPlotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
+            successRatePlotter = new GraphPlotter("Success Rate for last "+nLastStepsForSuccessRate+" vs Episodes", GraphPlotter.Types.LINE, "Episode", "Success Rate", varargs);
+            successRatePlotter.setVisible(true);
+            successRatePlotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         }
 
         boolean showPath = args.contains("show_path");
@@ -132,6 +140,12 @@ public class DDQNAgentTrainer {
             }
             dqnPath.add(environment.getAgentPosition());
 
+            if (environment.getAgentPosition().equals(environment.getGoalPosition())) {
+                successRateBuffer.add(1);
+            } else {
+                successRateBuffer.add(0);
+            }
+
             int pathLength = environment.getCurrentSteps();
             double meanReward = cumulativeReward / pathLength;
 
@@ -150,6 +164,7 @@ public class DDQNAgentTrainer {
             if (plot) {
                 averageRewardPlotter.addPoint(new Vector2(episode, meanReward));
                 if (tdErrorCounter!=0) averageLossPlotter.addPoint(new Vector2(episode, totalSquaredTDError / tdErrorCounter));
+                successRatePlotter.addPoint(new Vector2(episode, successRateBuffer.getAverage()));
             }
 
             if (episode % savePeriod == 0) {
@@ -165,6 +180,7 @@ public class DDQNAgentTrainer {
                 if (plot) {
                     averageRewardPlotter.plot();
                     averageLossPlotter.plot();
+                    successRatePlotter.plot();
                 }
 
                 if (showPath) {

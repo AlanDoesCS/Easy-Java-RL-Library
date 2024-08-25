@@ -5,7 +5,6 @@ import Training.ActivationFunctions.ActivationFunction;
 
 public class MLPLayer extends Layer {
     private static final double CLIP_THRESHOLD = 1.0f;
-    private static final double LOSS_SCALE = 128.0f;
 
     MatrixDouble weights, biases;
     MatrixDouble gradientWeights, gradientBiases;
@@ -93,9 +92,6 @@ public class MLPLayer extends Layer {
             throw new IllegalArgumentException("Expected gradientOutput to be a MatrixDouble.");
         }
 
-        // Apply loss scaling
-        matrixGradientOutput = MatrixDouble.multiply(matrixGradientOutput, LOSS_SCALE);
-
         this.gradientWeights = MatrixDouble.multiply(matrixGradientOutput, matrixInput.transpose());
         this.gradientBiases = matrixGradientOutput;
 
@@ -124,9 +120,6 @@ public class MLPLayer extends Layer {
             this.gradientWeights.multiply(scale);
             gradientBiases.multiply(scale);
         }
-
-        this.gradientWeights.divide(LOSS_SCALE);
-        this.gradientBiases.divide(LOSS_SCALE);
 
         // L2 regularization
         this.weights.multiply(1.0f - learningRate * lambda);
