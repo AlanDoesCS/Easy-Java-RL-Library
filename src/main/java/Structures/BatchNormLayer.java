@@ -1,7 +1,13 @@
 package Structures;
 
-import java.util.Arrays;
-
+/**
+ * Represents a Batch Normalization layer in a neural network.
+ * <p>
+ * This class extends the abstract Layer class and provides functionality
+ * for normalizing the inputs to a layer, which helps in accelerating the
+ * training process and improving the performance of the neural network.
+ * </p>
+ */
 public class BatchNormLayer extends Layer {
     private int depth, height, width;
     private double epsilon = 1e-5f;

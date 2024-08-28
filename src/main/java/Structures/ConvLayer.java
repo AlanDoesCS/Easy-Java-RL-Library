@@ -8,6 +8,14 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
+/**
+ * Represents a convolutional layer in a neural network.
+ * <p>
+ * This class extends the abstract Layer class and provides
+ * functionality for forward and backward propagation, parameter
+ * updates, and other operations specific to convolutional layers.
+ * </p>
+ */
 public class ConvLayer extends Layer {
     private static final int PARALLELISM_THRESHOLD = 32;   // threshold for parallelizing loops - increase value for weaker systems
     private static final ForkJoinPool POOL = ForkJoinPool.commonPool();

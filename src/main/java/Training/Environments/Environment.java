@@ -70,12 +70,12 @@ public abstract class Environment {
         return gridHeight;
     }
 
-    /*
-        Randomize:
-        Randomize the environment
-
-        - MUST ALSO RANDOMIZE START AND TARGET POSITIONS
-    */
+    /**
+     * Randomizes the environment.
+     * <p>
+     * This method should be implemented to randomize the environment,
+     * including the start and target positions.
+     */
     public abstract void randomize();
 
     // Environment instantiation table

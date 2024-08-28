@@ -164,7 +164,7 @@ public class DDQNAgentTrainer {
             if (plot) {
                 averageRewardPlotter.addPoint(new Vector2(episode, meanReward));
                 if (tdErrorCounter!=0) averageLossPlotter.addPoint(new Vector2(episode, totalSquaredTDError / tdErrorCounter));
-                successRatePlotter.addPoint(new Vector2(episode, successRateBuffer.getAverage()));
+                successRatePlotter.addPoint(new Vector2(episode, successRateBuffer.getMean()));
             }
 
             if (episode % savePeriod == 0) {

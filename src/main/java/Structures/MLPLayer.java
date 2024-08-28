@@ -3,6 +3,14 @@ package Structures;
 import Tools.math;
 import Training.ActivationFunctions.ActivationFunction;
 
+/**
+ * Represents a Multi-Layer Perceptron (MLP) layer in a neural network.
+ * <p>
+ * This class extends the abstract Layer class and provides functionality
+ * for forward and backward propagation, parameter updates, and other
+ * operations specific to MLP layers.
+ * </p>
+ */
 public class MLPLayer extends Layer {
     private static final double CLIP_THRESHOLD = 1.0f;
 

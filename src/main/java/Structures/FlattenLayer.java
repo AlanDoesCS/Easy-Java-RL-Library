@@ -1,5 +1,12 @@
 package Structures;
 
+/**
+ * Represents a Flatten layer in a neural network.
+ * <p>
+ * This class extends the abstract Layer class and provides functionality
+ * for flattening a multi-dimensional input tensor into a 2D matrix.
+ * </p>
+ */
 public class FlattenLayer extends Layer {
     private int inputDepth, inputHeight, inputWidth;
 

@@ -8,6 +8,14 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
+/**
+ * Represents a matrix of doubles with various operations.
+ * <p>
+ * This class provides methods for matrix manipulation, including addition,
+ * subtraction, multiplication, division, and other element-wise operations.
+ * It also supports parallel computation for certain operations.
+ * </p>
+ */
 public class MatrixDouble implements Serializable {
     private static final int TILE_SIZE = 32;
     private static final int UNROLL_FACTOR = 4;
@@ -266,14 +274,6 @@ public class MatrixDouble implements Serializable {
         data[y][x] = value;
     }
 
-    /*
-    -----------------------------------------------------------------------------
-
-    STATIC METHODS
-
-    -----------------------------------------------------------------------------
-     */
-
     public static MatrixDouble add(MatrixDouble a, MatrixDouble b) {
         MatrixDouble res = a.copy();
         if (a.rows != b.rows || a.cols != b.cols) {
@@ -349,14 +349,6 @@ public class MatrixDouble implements Serializable {
 
         return m;
     }
-
-    /*
-    -----------------------------------------------------------------------------
-
-    MULTIPLICATION
-
-    -----------------------------------------------------------------------------
-    */
 
     public static MatrixDouble elementWiseMultiply(MatrixDouble A, MatrixDouble B) {
         if (A.rows != B.rows || A.cols != B.cols) {

@@ -1,17 +1,11 @@
 import Structures.*;
-import Tools.Environment_Visualiser;
-import Tools.Pathfinding.Pathfinder;
-import Training.*;
 
-import Training.ActivationFunctions.LeakyReLU;
-import Training.ActivationFunctions.Linear;
-import Training.Environments.EmptyGridEnvironment;
-import Training.Environments.Environment;
-import Training.Environments.GridEnvironment;
-import Training.Environments.PerlinGridEnvironment;
+import Training.DDQNAgentTrainer;
+import Training.ActivationFunctions.*;
+import Training.Environments.*;
+
 import com.sun.jdi.InvalidTypeException;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +18,7 @@ public class Main {
 
         DDQNAgentTrainer trainer;
         try {
-            trainer = new DDQNAgentTrainer(Set.of(EmptyGridEnvironment.class));
+            trainer = new DDQNAgentTrainer(Set.of(EmptyGridEnvironment.class, RandomGridEnvironment.class, PerlinGridEnvironment.class, MazeGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
@@ -48,11 +42,16 @@ public class Main {
                 0.999,                         // gamma
                 0.0001,                        // learning rate
                 0.99995,                       // learning rate decay
-                0.00005f,                      // learning rate minimum
+                0.000001f,                     // learning rate minimum
                 0.005                          // tau
         );
 
-        ddqnAgent.dumpDQNInfo();
-        trainer.trainAgent(ddqnAgent, 600000, 500, 1, "plot", "ease", "axis_ticks", "show_path", "verbose");
+        trainer.trainAgent(
+                ddqnAgent,                     // agent
+                600000,                        // num episodes
+                500,                           // save period
+                1,                             // visualiser update period
+                "plot", "ease", "axis_ticks", "show_path", "verbose" // varargs
+        );
     }
 }
