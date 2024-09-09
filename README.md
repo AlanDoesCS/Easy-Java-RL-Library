@@ -1,4 +1,4 @@
-# RL-Pathfinding
+# Easy Java Reinforcement Learning Library (EJRLL)
 A simple neural network library for training Deep Q Networks in different environments.
 
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/AlanDoesCS/RL-Pathfinding)
