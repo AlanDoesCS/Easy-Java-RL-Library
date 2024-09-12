@@ -38,10 +38,16 @@ public class ConvLayer extends Layer {
 
     private ActivationFunction activationFunction;
 
-    private static final double clipValue = 5.0f;
+    private double clipValue = 1.0f; // default clip value
+
+    private int timestep = 0;
 
     private double[][][][] gradientFilters;
     private double[] gradientBiases;
+
+    public void setClipValue(double clipValue) {
+        this.clipValue = clipValue;
+    }
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
@@ -346,17 +352,10 @@ public class ConvLayer extends Layer {
                 backpropagateSequential();
             } else {
                 int midFilter = (startFilter + endFilter) / 2;
-                BackpropagationTask leftTask = new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter);
-                BackpropagationTask rightTask = new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter);
                 invokeAll(
-                        leftTask,
-                        rightTask
+                        new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter),
+                        new BackpropagationTask(input, gradientOutput, gradientInput, midFilter, endFilter) // Corrected range
                 );
-
-                synchronized (ConvLayer.this) {
-                    addLocalGradients(leftTask.localGradientFilters, leftTask.localGradientBiases, startFilter);
-                    addLocalGradients(rightTask.localGradientFilters, rightTask.localGradientBiases, midFilter);
-                }
             }
         }
 
@@ -408,17 +407,49 @@ public class ConvLayer extends Layer {
 
     @Override
     public void updateParameters(double learningRate) {
+        timestep++;
+        double beta1 = 0.9;
+        double beta2 = 0.999;
+        double epsilon = 1e-8;
+
         for (int f = 0; f < numFilters; f++) {
             for (int d = 0; d < inputDepth; d++) {
                 for (int i = 0; i < filterSize; i++) {
                     for (int j = 0; j < filterSize; j++) {
-                        gradientFilters[f][d][i][j] = math.clamp(gradientFilters[f][d][i][j], -clipValue, clipValue);
-                        filters[f][d][i][j] -= learningRate * gradientFilters[f][d][i][j];
+                        // Update biased first moment estimate
+                        m[f][d][i][j] = beta1 * m[f][d][i][j] + (1 - beta1) * gradientFilters[f][d][i][j];
+                        // Update biased second raw moment estimate
+                        v[f][d][i][j] = beta2 * v[f][d][i][j] + (1 - beta2) * gradientFilters[f][d][i][j] * gradientFilters[f][d][i][j];
+                        // Compute bias-corrected first moment estimate
+                        double mHat = m[f][d][i][j] / (1 - Math.pow(beta1, timestep));
+                        // Compute bias-corrected second raw moment estimate
+                        double vHat = v[f][d][i][j] / (1 - Math.pow(beta2, timestep));
+                        // Update parameters
+                        double update = learningRate * mHat / (Math.sqrt(vHat) + epsilon);
+                        // Clip the update
+                        update = math.clamp(update, -clipValue, clipValue);
+                        filters[f][d][i][j] -= update;
                     }
                 }
             }
-            gradientBiases[f] = math.clamp(gradientBiases[f], -clipValue, clipValue); // Clip the bias gradient
-            biases[f] -= learningRate * gradientBiases[f];
+            // Update biases with Adam
+            mBias[f] = beta1 * mBias[f] + (1 - beta1) * gradientBiases[f];
+            vBias[f] = beta2 * vBias[f] + (1 - beta2) * gradientBiases[f] * gradientBiases[f];
+            double mHatBias = mBias[f] / (1 - Math.pow(beta1, timestep));
+            double vHatBias = vBias[f] / (1 - Math.pow(beta2, timestep));
+            double biasUpdate = learningRate * mHatBias / (Math.sqrt(vHatBias) + epsilon);
+            biasUpdate = math.clamp(biasUpdate, -clipValue, clipValue);
+            biases[f] -= biasUpdate;
+        }
+
+        // Reset gradients after update
+        for (int f = 0; f < numFilters; f++) {
+            Arrays.fill(gradientBiases, 0);
+            for (int d = 0; d < inputDepth; d++) {
+                for (int i = 0; i < filterSize; i++) {
+                    Arrays.fill(gradientFilters[f][d][i], 0);
+                }
+            }
         }
     }
 

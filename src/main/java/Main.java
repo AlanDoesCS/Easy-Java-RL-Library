@@ -3,9 +3,7 @@ import Structures.*;
 import Training.DDQNAgentTrainer;
 import Training.ActivationFunctions.*;
 import Training.Environments.*;
-
 import com.sun.jdi.InvalidTypeException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +16,7 @@ public class Main {
 
         DDQNAgentTrainer trainer;
         try {
-            trainer = new DDQNAgentTrainer(Set.of(EmptyGridEnvironment.class, RandomGridEnvironment.class, PerlinGridEnvironment.class, MazeGridEnvironment.class));
+            trainer = new DDQNAgentTrainer(Set.of(EmptyGridEnvironment.class));
         } catch (InvalidTypeException e) {
             e.printStackTrace();
             return;
@@ -37,15 +35,17 @@ public class Main {
                 Environment.getActionSpace(),  // action space
                 layers,                        // layers
                 1,                             // initial epsilon
-                0.9999,                        // epsilon decay
+                0.99995,                       // epsilon decay
                 0.01,                          // epsilon min
                 0.999,                         // gamma
-                0.0001,                        // learning rate
-                0.99995,                       // learning rate decay
-                0.000001f,                     // learning rate minimum
-                0.005                          // tau
+                0.000001,                      // learning rate
+                0.99999,                       // learning rate decay
+                0.0001f,                       // learning rate minimum
+                0.0005                         // tau
         );
 
+        ddqnAgent.dumpDQNInfo();
+        ddqnAgent.setVerbose(true);
         trainer.trainAgent(
                 ddqnAgent,                     // agent
                 600000,                        // num episodes

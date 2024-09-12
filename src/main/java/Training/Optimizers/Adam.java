@@ -6,41 +6,47 @@ public class Adam extends Optimizer {
     private final float beta1;
     private final float beta2;
     private final float epsilon;
+    private final double learningRateDecay;
+    private final double learningRateMin;
 
     // DEFAULTS - from paper: https://arxiv.org/pdf/1412.6980
     public static final float default_beta1 = 0.9f;
     public static final float default_beta2 = 0.999f;
     public static final float default_epsilon = 1e-8f;
 
-    public Adam(float beta1, float beta2, float epsilon) {
+    public Adam(float beta1, float beta2, float epsilon, double learningRateDecay, double learningRateMin) {
         this.beta1 = beta1;
         this.beta2 = beta2;
         this.epsilon = epsilon;
+        this.learningRateDecay = learningRateDecay;
+        this.learningRateMin = learningRateMin;
     }
+
     public Adam() {
-        this(default_beta1, default_beta2, default_epsilon);
+        this(default_beta1, default_beta2, default_epsilon, 0.9995, 1e-6);
     }
 
     @Override
     public void optimize(Layer layer) {
-        double maxGradientNorm = 1.0; // You can adjust this value as needed
+        // Reduced gradient clipping threshold for better stability
+        double maxGradientNorm = 0.02;
         clipGradients(layer, maxGradientNorm);
 
         if (layer instanceof MLPLayer) {
-            optimizeMLP((MLPLayer)layer);
+            optimizeMLP((MLPLayer) layer);
         } else if (layer instanceof ConvLayer) {
-            optimizeConv((ConvLayer)layer);
+            optimizeConv((ConvLayer) layer);
         } else if (layer instanceof BatchNormLayer) {
-            optimizeBatchNorm((BatchNormLayer)layer);
+            optimizeBatchNorm((BatchNormLayer) layer);
         } else if (layer instanceof FlattenLayer) {
-            // do nothing
+            // FlattenLayer doesn't have weights to optimize, so skip it.
         } else {
-            throw new IllegalArgumentException("Unsupported layer type. : " + layer.getClass().getSimpleName());
+            throw new IllegalArgumentException("Unsupported layer type: " + layer.getClass().getSimpleName());
         }
     }
 
     private void clipGradients(Layer layer, double maxGradientNorm) {
-        double gradientNorm = 0.0;
+        double gradientNorm = 0.1;
 
         if (layer instanceof MLPLayer mlpLayer) {
             gradientNorm = Math.sqrt(
@@ -57,12 +63,6 @@ public class Adam extends Optimizer {
                     }
                 }
                 gradientNorm += Math.pow(convLayer.getGradientBiases()[f], 2);
-            }
-            gradientNorm = Math.sqrt(gradientNorm);
-        } else if (layer instanceof BatchNormLayer bnLayer) {
-            for (int d = 0; d < bnLayer.getDepth(); d++) {
-                gradientNorm += Math.pow(bnLayer.getGradientGamma()[d], 2);
-                gradientNorm += Math.pow(bnLayer.getGradientBeta()[d], 2);
             }
             gradientNorm = Math.sqrt(gradientNorm);
         }
@@ -83,95 +83,98 @@ public class Adam extends Optimizer {
                     }
                     convLayer.getGradientBiases()[f] *= scalingFactor;
                 }
-            } else if (layer instanceof BatchNormLayer bnLayer) {
-                for (int d = 0; d < bnLayer.getDepth(); d++) {
-                    bnLayer.getGradientGamma()[d] *= scalingFactor;
-                    bnLayer.getGradientBeta()[d] *= scalingFactor;
-                }
             }
         }
     }
 
     private void optimizeMLP(MLPLayer layer) {
-        double alpha = layer.getAlpha();
+        double alpha = Math.max(layer.getAlpha() * learningRateDecay, learningRateMin); // Adjusted learning rate
 
-        // update biased first moment estimate
+        // L2 regularization
+        double lambda = 0.001;  // Regularization strength
+        MatrixDouble regularizationTerm = MatrixDouble.multiply(layer.getWeights(), lambda);
+        layer.setWeights(MatrixDouble.subtract(layer.getWeights(), regularizationTerm));
+
+        // Update biased first moment estimate
         layer.m = MatrixDouble.add(MatrixDouble.multiply(layer.m, beta1), MatrixDouble.multiply(layer.getGradientWeights(), 1 - beta1));
         layer.mBias = MatrixDouble.add(MatrixDouble.multiply(layer.mBias, beta1), MatrixDouble.multiply(layer.getGradientBiases(), 1 - beta1));
 
-        // update biased second raw moment estimate
+        // Update biased second raw moment estimate
         layer.v = MatrixDouble.add(MatrixDouble.multiply(layer.v, beta2), MatrixDouble.multiply(MatrixDouble.elementwiseSquare(layer.getGradientWeights()), 1 - beta2));
         layer.vBias = MatrixDouble.add(MatrixDouble.multiply(layer.vBias, beta2), MatrixDouble.multiply(MatrixDouble.elementwiseSquare(layer.getGradientBiases()), 1 - beta2));
 
-        // compute bias corrected first moment estimate
+        // Compute bias-corrected first moment estimate
         MatrixDouble mHat = MatrixDouble.divide(layer.m, (float) (1 - Math.pow(beta1, t)));
         MatrixDouble mHatBias = MatrixDouble.divide(layer.mBias, (float) (1 - Math.pow(beta1, t)));
 
-        // compute bias corrected second raw moment estimate
+        // Compute bias-corrected second raw moment estimate
         MatrixDouble vHat = MatrixDouble.divide(layer.v, (float) (1 - Math.pow(beta2, t)));
         MatrixDouble vHatBias = MatrixDouble.divide(layer.vBias, (float) (1 - Math.pow(beta2, t)));
 
-        // update parameters
-        layer.setWeights(MatrixDouble.subtract(layer.getWeights(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHat, alpha), MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHat), epsilon))));
-        layer.setBiases(MatrixDouble.subtract(layer.getBiases(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHatBias, alpha), MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHatBias), epsilon))));
+        // Update weights and biases with Adam optimization
+        layer.setWeights(MatrixDouble.subtract(layer.getWeights(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHat, alpha),
+                MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHat), epsilon))));
+        layer.setBiases(MatrixDouble.subtract(layer.getBiases(), MatrixDouble.elementWiseDivide(MatrixDouble.multiply(mHatBias, alpha),
+                MatrixDouble.add(MatrixDouble.elementwiseSquareRoot(vHatBias), epsilon))));
     }
 
     private void optimizeConv(ConvLayer layer) {
-        double alpha = layer.getAlpha();
+        double alpha = layer.getAlpha(); // Learning rate
 
         for (int f = 0; f < layer.getNumFilters(); f++) {
             for (int d = 0; d < layer.getInputDepth(); d++) {
                 for (int i = 0; i < layer.getFilterSize(); i++) {
                     for (int j = 0; j < layer.getFilterSize(); j++) {
-                        // biased first moment
+                        // Biased first moment
                         layer.m[f][d][i][j] = beta1 * layer.m[f][d][i][j] + (1 - beta1) * layer.getGradientFilters()[f][d][i][j];
 
-                        // biased second raw moment
-                        layer.v[f][d][i][j] = beta2 * layer.v[f][d][i][j] + (1 - beta2) * layer.getGradientFilters()[f][d][i][j] * layer.getGradientFilters()[f][d][i][j];
+                        // Biased second raw moment
+                        layer.v[f][d][i][j] = beta2 * layer.v[f][d][i][j] + (1 - beta2) * Math.pow(layer.getGradientFilters()[f][d][i][j], 2);
 
-                        // bias corrected first moment estimate
-                        float mHat = (float) (layer.m[f][d][i][j] / (1 - Math.pow(beta1, t)));
+                        // Bias-corrected first moment estimate
+                        double mHat = layer.m[f][d][i][j] / (1 - Math.pow(beta1, t));
 
-                        // bias corrected second raw moment estimate
-                        float vHat = (float) (layer.v[f][d][i][j] / (1 - Math.pow(beta2, t)));
+                        // Bias-corrected second raw moment estimate
+                        double vHat = layer.v[f][d][i][j] / (1 - Math.pow(beta2, t));
 
-                        // update params
-                        layer.filters[f][d][i][j] -= (float) (alpha * mHat / (Math.sqrt(vHat) + epsilon));
+                        // Update filter weights
+                        layer.filters[f][d][i][j] -= alpha * mHat / (Math.sqrt(vHat) + epsilon);
                     }
                 }
             }
 
+            // Update biases
             layer.mBias[f] = beta1 * layer.mBias[f] + (1 - beta1) * layer.getGradientBiases()[f];
-            layer.vBias[f] = beta2 * layer.vBias[f] + (1 - beta2) * layer.getGradientBiases()[f] * layer.getGradientBiases()[f];
+            layer.vBias[f] = beta2 * layer.vBias[f] + (1 - beta2) * Math.pow(layer.getGradientBiases()[f], 2);
 
-            float mHatBias = (float) (layer.mBias[f] / (1 - Math.pow(beta1, t)));
-            float vHatBias = (float) (layer.vBias[f] / (1 - Math.pow(beta2, t)));
+            double mHatBias = layer.mBias[f] / (1 - Math.pow(beta1, t));
+            double vHatBias = layer.vBias[f] / (1 - Math.pow(beta2, t));
 
-            layer.biases[f] -= (float) (alpha * mHatBias / (Math.sqrt(vHatBias) + epsilon));
+            layer.biases[f] -= alpha * mHatBias / (Math.sqrt(vHatBias) + epsilon);
         }
     }
 
     private void optimizeBatchNorm(BatchNormLayer layer) {
-        double alpha = layer.getAlpha();
+        double alpha = layer.getAlpha(); // Learning rate
 
         for (int d = 0; d < layer.getDepth(); d++) {
-            // update biased first moment estimate
+            // Update biased first moment estimate
             layer.m[0][d] = beta1 * layer.m[0][d] + (1 - beta1) * layer.getGradientGamma()[d];
             layer.m[1][d] = beta1 * layer.m[1][d] + (1 - beta1) * layer.getGradientBeta()[d];
 
-            // update biased second raw moment estimate
-            layer.v[0][d] = beta2 * layer.v[0][d] + (1 - beta2) * layer.getGradientGamma()[d] * layer.getGradientGamma()[d];
-            layer.v[1][d] = beta2 * layer.v[1][d] + (1 - beta2) * layer.getGradientBeta()[d] * layer.getGradientBeta()[d];
+            // Update biased second raw moment estimate
+            layer.v[0][d] = beta2 * layer.v[0][d] + (1 - beta2) * Math.pow(layer.getGradientGamma()[d], 2);
+            layer.v[1][d] = beta2 * layer.v[1][d] + (1 - beta2) * Math.pow(layer.getGradientBeta()[d], 2);
 
-            // compute bias corrected first moment estimate
+            // Compute bias-corrected first moment estimate
             double mHat0 = layer.m[0][d] / (1 - Math.pow(beta1, t));
             double mHat1 = layer.m[1][d] / (1 - Math.pow(beta1, t));
 
-            // compute bias corrected second raw moment estimate
+            // Compute bias-corrected second raw moment estimate
             double vHat0 = layer.v[0][d] / (1 - Math.pow(beta2, t));
             double vHat1 = layer.v[1][d] / (1 - Math.pow(beta2, t));
 
-            // update parameters
+            // Update parameters
             layer.gamma[d] -= alpha * mHat0 / Math.sqrt(vHat0 + epsilon);
             layer.beta[d] -= alpha * mHat1 / Math.sqrt(vHat1 + epsilon);
         }

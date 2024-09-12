@@ -26,6 +26,9 @@ public class MatrixDouble implements Serializable {
     int rows, cols;
 
     public MatrixDouble(int rows, int cols) {
+        if (rows <= 0 || cols <= 0) {
+            throw new IllegalArgumentException("Matrix dimensions must be positive.");
+        }
         this.rows = rows;
         this.cols = cols;
 
@@ -33,12 +36,18 @@ public class MatrixDouble implements Serializable {
     }
 
     public MatrixDouble(double[][] data) {
+        if (data == null || data.length == 0 || data[0].length == 0) {
+            throw new IllegalArgumentException("Data array must be non-empty.");
+        }
         this.data = data;
         this.rows = data.length;
         this.cols = data[0].length;
     }
 
     public MatrixDouble(double[] data, int rows, int cols) {
+        if (rows <= 0 || cols <= 0) {
+            throw new IllegalArgumentException("Matrix dimensions must be positive.");
+        }
         if (data.length != rows * cols) {
             throw new IllegalArgumentException("Data length does not match the specified dimensions");
         }
@@ -46,9 +55,7 @@ public class MatrixDouble implements Serializable {
         this.cols = cols;
         this.data = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                this.data[i][j] = data[i * cols + j];
-            }
+            System.arraycopy(data, i * cols, this.data[i], 0, cols);
         }
     }
 
@@ -88,7 +95,6 @@ public class MatrixDouble implements Serializable {
         }
 
         return result;
-
     }
 
     public static MatrixDouble subtract(MatrixDouble inputMatrix, double mean) {
@@ -98,7 +104,7 @@ public class MatrixDouble implements Serializable {
                 result.data[i][j] = inputMatrix.data[i][j] - mean;
             }
         }
-        return inputMatrix;
+        return result;
     }
 
     public void fill(double value) {
@@ -267,12 +273,28 @@ public class MatrixDouble implements Serializable {
     }
 
     public double get(int x, int y) {
+        if (x < 0 || x >= cols || y < 0 || y >= rows) {
+            throw new IndexOutOfBoundsException(
+                    String.format("Attempted to access element at (%d, %d) in a [%d x %d] matrix.", x, y, rows, cols));
+        }
         return data[y][x];
     }
 
     public void set(int x, int y, double value) {
+        if (x < 0 || x >= cols || y < 0 || y >= rows) {
+            throw new IndexOutOfBoundsException(
+                    String.format("Attempted to set element at (%d, %d) in a [%d x %d] matrix.", x, y, rows, cols));
+        }
         data[y][x] = value;
     }
+
+    /*
+    -----------------------------------------------------------------------------
+
+    STATIC METHODS
+
+    -----------------------------------------------------------------------------
+     */
 
     public static MatrixDouble add(MatrixDouble a, MatrixDouble b) {
         MatrixDouble res = a.copy();
@@ -290,17 +312,15 @@ public class MatrixDouble implements Serializable {
     }
 
     public static MatrixDouble subtract(MatrixDouble a, MatrixDouble b) {
-        MatrixDouble res = a.copy();
         if (a.rows != b.rows || a.cols != b.cols) {
             throw new IllegalArgumentException("The matrices must have the same dimensions.");
         }
-
+        MatrixDouble res = new MatrixDouble(a.rows, a.cols);
         for (int i = 0; i < res.rows; i++) {
             for (int j = 0; j < res.cols; j++) {
                 res.data[i][j] = a.data[i][j] - b.data[i][j];
             }
         }
-
         return res;
     }
 
@@ -349,6 +369,14 @@ public class MatrixDouble implements Serializable {
 
         return m;
     }
+
+    /*
+    -----------------------------------------------------------------------------
+
+    MULTIPLICATION
+
+    -----------------------------------------------------------------------------
+    */
 
     public static MatrixDouble elementWiseMultiply(MatrixDouble A, MatrixDouble B) {
         if (A.rows != B.rows || A.cols != B.cols) {

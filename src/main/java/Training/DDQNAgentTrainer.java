@@ -1,6 +1,5 @@
 package Training;
 
-import Structures.CircularBuffer;
 import Structures.DDQNAgent;
 import Structures.MatrixDouble;
 import Structures.Vector2;
@@ -13,13 +12,12 @@ import Training.Environments.GridEnvironment;
 import Training.Replay.ExperienceReplay;
 import Training.Replay.PrioritizedExperienceReplay;
 import com.sun.jdi.InvalidTypeException;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import javax.swing.*;
 
 public class DDQNAgentTrainer {
     Set<Class<? extends GridEnvironment>> environmentClasses;
@@ -39,15 +37,12 @@ public class DDQNAgentTrainer {
      */
     public void trainAgent(DDQNAgent agent, int numEpisodes, int savePeriod, int visualiserUpdatePeriod, String... varargs) {
         List<String> args = Arrays.asList(varargs);
-        boolean verbose = args.contains("verbose");
+        boolean isVerbose = args.contains("verbose");  // Declared verbose flag here
         boolean dumpInfo = args.contains("dump_info");
 
         boolean plot = args.contains("plot");
         GraphPlotter averageRewardPlotter = null;
         GraphPlotter averageLossPlotter = null;
-        GraphPlotter successRatePlotter = null;
-        int nLastStepsForSuccessRate = 10;
-        CircularBuffer successRateBuffer = new CircularBuffer(nLastStepsForSuccessRate);
 
         if (plot) {
             averageRewardPlotter = new GraphPlotter("Average Reward vs Episodes", GraphPlotter.Types.LINE, "Episode", "Average Reward", varargs);
@@ -57,17 +52,13 @@ public class DDQNAgentTrainer {
             averageLossPlotter = new GraphPlotter("Average Loss vs Episodes", GraphPlotter.Types.LINE, "Episode", "Average Loss", varargs);
             averageLossPlotter.setVisible(true);
             averageLossPlotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-
-            successRatePlotter = new GraphPlotter("Success Rate for last "+nLastStepsForSuccessRate+" vs Episodes", GraphPlotter.Types.LINE, "Episode", "Success Rate", varargs);
-            successRatePlotter.setVisible(true);
-            successRatePlotter.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         }
 
         boolean showPath = args.contains("show_path");
         Environment_Visualiser visualiser = null;  // for showing the path - Dijkstra's path
         Environment_Visualiser visualiser2 = null; // for showing the path - DQN's path
 
-        if (verbose) {
+        if (isVerbose) {
             System.out.println("Training agent with "+numEpisodes+" episodes, saving every "+savePeriod+" episodes.");
             System.out.println("plot: "+plot+", show_path: "+showPath+"\n");
         }
@@ -85,7 +76,7 @@ public class DDQNAgentTrainer {
 
         // TRAINING LOOP -----------------------------------------------------------------------------------------------
 
-        PrioritizedExperienceReplay replay = new PrioritizedExperienceReplay(100000);
+        PrioritizedExperienceReplay replay = new PrioritizedExperienceReplay(200000);
         int batchSize = 32;
 
         for (int episode = 1; episode <= numEpisodes; episode++) {
@@ -103,7 +94,7 @@ public class DDQNAgentTrainer {
             while (!done) {
                 int action = agent.chooseAction(state);
                 if (!dqnPath.isEmpty()) {
-                    if (!dqnPath.getLast().equals(environment.getAgentPosition())) {
+                    if (!dqnPath.get(dqnPath.size() - 1).equals(environment.getAgentPosition())) {
                         dqnPath.add(environment.getAgentPosition()); // Add to path if agent has moved
                     }
                 } else {
@@ -125,46 +116,48 @@ public class DDQNAgentTrainer {
                         treeIndices.add(exp.index);
                         tdErrors.add(tdError);
 
-                        totalSquaredTDError += tdError*tdError;
+                        totalSquaredTDError += tdError * tdError;
                         tdErrorCounter++;
                     }
 
                     replay.updatePriorities(treeIndices, tdErrors);
                 }
 
+                // Update state and cumulative reward
                 state = (MatrixDouble) result.state;
                 done = result.done;
                 cumulativeReward += result.reward;
 
-                // if (verbose) System.out.printf("Current: %s, Goal:%s, Step reward:%f, Total reward:%f, Steps: (%d)%n", environment.getAgentPosition(), environment.getGoalPosition(), result.reward, cumulativeReward, environment.getCurrentSteps());
+                MatrixDouble qValues = (MatrixDouble) agent.getOnlineDQN().getOutput(state);
+
+
+                if (isVerbose) {
+                    System.out.printf(
+                            "Episode %d: Total Reward=%.6f, Average Reward=%.6f, Total Steps=%d, Epsilon=%.6f, LearningRate=%.6f, Environment=%s, Q Values: %s, maxIndex = %.0f%n",
+                            episode, cumulativeReward, cumulativeReward / dqnPath.size(), environment.getCurrentSteps(), agent.getEpsilon(), agent.getLearningRate(),
+                            environment.getClass().getSimpleName(), qValues.toRowMatrix(), math.maxIndex(qValues).getY()
+                    );
+                }
             }
             dqnPath.add(environment.getAgentPosition());
-
-            if (environment.getAgentPosition().equals(environment.getGoalPosition())) {
-                successRateBuffer.add(1);
-            } else {
-                successRateBuffer.add(0);
-            }
 
             int pathLength = environment.getCurrentSteps();
             double meanReward = cumulativeReward / pathLength;
 
-            if (verbose) {
+            if (isVerbose) {
                 System.out.printf("Episode %d: Total Reward=%f, Average Reward=%f, Total Steps=%d, Epsilon=%f, LearningRate=%f, Environment=%s %n",
-                        episode, cumulativeReward, cumulativeReward / dqnPath.size(), dqnPath.size(), agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()
+                        episode, cumulativeReward, meanReward, pathLength, agent.getEpsilon(), agent.getLearningRate(), environment.getClass().getSimpleName()
                 );
             }
             if (dumpInfo) {
                 agent.dumpDQNInfo();
             }
 
-
             // Progress Tracking -------------------------------------------------------------
 
             if (plot) {
                 averageRewardPlotter.addPoint(new Vector2(episode, meanReward));
-                if (tdErrorCounter!=0) averageLossPlotter.addPoint(new Vector2(episode, totalSquaredTDError / tdErrorCounter));
-                successRatePlotter.addPoint(new Vector2(episode, successRateBuffer.getMean()));
+                if (tdErrorCounter != 0) averageLossPlotter.addPoint(new Vector2(episode, totalSquaredTDError / tdErrorCounter));
             }
 
             if (episode % savePeriod == 0) {
@@ -180,7 +173,6 @@ public class DDQNAgentTrainer {
                 if (plot) {
                     averageRewardPlotter.plot();
                     averageLossPlotter.plot();
-                    successRatePlotter.plot();
                 }
 
                 if (showPath) {

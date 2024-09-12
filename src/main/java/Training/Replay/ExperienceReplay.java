@@ -1,7 +1,6 @@
 package Training.Replay;
 
 import Tools.math;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,17 +13,19 @@ public class ExperienceReplay {
         this.buffer = new ArrayList<>(capacity);
     }
 
+    // Add experiences to the buffer, removing the oldest if capacity is reached
     public void add(Experience experience) {
         if (buffer.size() >= capacity) {
-            buffer.removeFirst();
+            buffer.removeFirst();  // Removes the first experience (FIFO)
         }
         buffer.add(experience);
     }
 
+    // Sample a batch of experiences randomly
     public List<Experience> sample(int batchSize) {
         List<Experience> batch = new ArrayList<>(batchSize);
         for (int i = 0; i < batchSize; i++) {
-            batch.add(buffer.get(math.randomInt(0, buffer.size()-1)));
+            batch.add(buffer.get(math.randomInt(0, buffer.size() - 1)));
         }
         return batch;
     }
@@ -47,8 +48,7 @@ public class ExperienceReplay {
         public double reward;
         public Object nextState;
         public boolean done;
-
-        public int index; // Index in the priority tree - Only used in PrioritizedExperienceReplay
+        public int index;
 
         public Experience(Object state, int action, double reward, Object nextState, boolean done) {
             this.state = state;
@@ -58,8 +58,9 @@ public class ExperienceReplay {
             this.done = done;
         }
 
+        @Override
         public String toString() {
-            return "Exp(" + state + ", " + action + ", " + reward + ", " + nextState + ", " + done+", "+index+")";
+            return "Exp(" + state + ", " + action + ", " + reward + ", " + nextState + ", " + done + ", " + index + ")";
         }
     }
 }

@@ -197,16 +197,24 @@ public class BatchNormLayer extends Layer {
 
     @Override
     public void updateParameters(double learningRate) {
+        for (int d = 0; d < depth; d++) {
+            // Update gamma and beta
+            gamma[d] -= learningRate * dGamma[d];
+            beta[d] -= learningRate * dBeta[d];
+            // Reset gradients after update
+            dGamma[d] = 0;
+            dBeta[d] = 0;
+        }
     }
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
-        targetLayer.alpha = this.alpha;
-
+        // Ensure target is a BatchNormLayer
         if (!(targetLayer instanceof BatchNormLayer target)) {
             throw new IllegalArgumentException("Target layer must be a BatchNormLayer");
         }
 
+        // Copy fields from the current BatchNormLayer to the target BatchNormLayer
         System.arraycopy(this.gamma, 0, target.gamma, 0, this.gamma.length);
         System.arraycopy(this.beta, 0, target.beta, 0, this.beta.length);
         System.arraycopy(this.runningMean, 0, target.runningMean, 0, this.runningMean.length);
@@ -214,13 +222,17 @@ public class BatchNormLayer extends Layer {
         System.arraycopy(this.dGamma, 0, target.dGamma, 0, this.dGamma.length);
         System.arraycopy(this.dBeta, 0, target.dBeta, 0, this.dBeta.length);
 
-        if (ignorePrimitives) return;
+        if (!ignorePrimitives) {
+            // Copy fields from the Layer superclass (manually)
+            target.inputSize = this.inputSize;
+            target.outputSize = this.outputSize;
+            target.alpha = this.alpha;
+        }
 
+        // Copy other fields specific to BatchNormLayer
         target.depth = this.depth;
         target.height = this.height;
         target.width = this.width;
-        target.inputSize = this.inputSize;
-        target.outputSize = this.outputSize;
         target.epsilon = this.epsilon;
         target.momentum = this.momentum;
     }

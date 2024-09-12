@@ -28,13 +28,9 @@ public abstract class NN {
         layerOutputs.add(input);
 
         Object currentInput = input;
-        int i=0;
         for (Layer layer : layers) {
-            // System.out.println("Layer "+i);
-
             currentInput = layer.compute(currentInput);
             layerOutputs.add(currentInput);
-            i++;
         }
 
         return layerOutputs;

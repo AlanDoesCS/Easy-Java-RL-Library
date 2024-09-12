@@ -20,11 +20,20 @@ public class DDQNAgent {
     protected final int actionSpace;    // number of actions the agent can take in the environment
     private final int targetUpdateFrequency; // how often to update target network
     private int stepCounter;
-
     private boolean isVerbose = false;
-
     private int dumpCounter = 0;
     private final int dumpFrequency = 20;
+
+    // Variables to handle periodic exploration bursts
+    private final int burstFrequency = 10000; // After every 10k steps, increase exploration
+    private final double burstEpsilon = 0.5;  // Epsilon value
+    private final int burstDuration = 1000;   // Duration in steps
+    private int burstStepCounter = 0;         // Counter
+
+    //Q-value clipping range
+    private static final double Q_CLIP_MIN = -50.0;
+    private static final double Q_CLIP_MAX = 50.0;
+    private static final double REWARD_SCALING = 0.1;
 
     public DDQNAgent(int actionSpace, List<Layer> layers, double initialEpsilon, double epsilonDecay, double epsilonMin, double gamma, double learningRate, double learningRateDecay, double learningRateMin, double tau) {
         this.optimizer = new Adam();
@@ -36,7 +45,7 @@ public class DDQNAgent {
         this.gamma = gamma;
         this.stateSpace = layers.getFirst().getInputSize();
         this.actionSpace = actionSpace;
-        this.targetUpdateFrequency = 10000;
+        this.targetUpdateFrequency = 5;
         this.tau = tau;
         this.stepCounter = 0;
 
@@ -62,25 +71,21 @@ public class DDQNAgent {
     }
 
     public int chooseAction(Object state) {
-        if (math.random() < epsilon) {
-            return (int) (Math.random() * actionSpace);
+        if (Math.random() < epsilon) {
+            return (int) (Math.random() * actionSpace);  // Exploration
         } else {
             MatrixDouble qValues = (MatrixDouble) onlineDQN.getOutput(state);
-            if (dumpCounter % dumpFrequency == 0 && isVerbose) {
-                System.out.println("Q Values: "+qValues.toRowMatrix() + ", maxIndex = "+math.maxIndex(qValues).y);
-            }
-            dumpCounter++;
-
-            return (int) math.maxIndex(qValues).y;
+            return (int) math.maxIndex(qValues).y;  // Exploitation: max Q-value
         }
     }
 
     private void softUpdate() {
+        // Soft update of the target DQN
         for (int i = 0; i < onlineDQN.numLayers(); i++) {
             Layer onlineLayer = onlineDQN.getLayer(i);
             Layer targetLayer = targetDQN.getLayer(i);
 
-            onlineLayer.copyTo(targetLayer, false);
+            onlineLayer.copyTo(targetLayer, false);  // Copy weights with tau
 
             if (onlineLayer instanceof MLPLayer) {
                 MLPLayer onlineMLP = (MLPLayer) onlineLayer;
@@ -99,27 +104,6 @@ public class DDQNAgent {
                     double targetBias = targetMLP.biases.get(0, r);
                     targetMLP.biases.set(0, r, tau * onlineBias + (1 - tau) * targetBias);
                 }
-            } else if (onlineLayer instanceof ConvLayer) {
-                ConvLayer onlineConv = (ConvLayer) onlineLayer;
-                ConvLayer targetConv = (ConvLayer) targetLayer;
-
-                for (int f = 0; f < onlineConv.filters.length; f++) {
-                    for (int d = 0; d < onlineConv.filters[f].length; d++) {
-                        for (int h = 0; h < onlineConv.filters[f][d].length; h++) {
-                            for (int w = 0; w < onlineConv.filters[f][d][h].length; w++) {
-                                double onlineFilter = onlineConv.filters[f][d][h][w];
-                                double targetFilter = targetConv.filters[f][d][h][w];
-                                targetConv.filters[f][d][h][w] = tau * onlineFilter + (1 - tau) * targetFilter;
-                            }
-                        }
-                    }
-                }
-
-                for (int f = 0; f < onlineConv.biases.length; f++) {
-                    double onlineBias = onlineConv.biases[f];
-                    double targetBias = targetConv.biases[f];
-                    targetConv.biases[f] = tau * onlineBias + (1 - tau) * targetBias;
-                }
             }
         }
         targetDQN.setLearningRate(onlineDQN.getLearningRate());
@@ -127,58 +111,47 @@ public class DDQNAgent {
 
     public double train(Object state, int action, double reward, Object nextState, boolean done) {
         stepCounter++;
-        optimizer.incrementT();
 
         List<Object> layerOutputs = onlineDQN.forwardPass(state);
-        MatrixDouble currentQValues = (MatrixDouble) layerOutputs.getLast(); // get predicted q values
+        MatrixDouble currentQValues = (MatrixDouble) layerOutputs.getLast();
         MatrixDouble target = currentQValues.copy();
 
         if (!done) {
-            // use online to select best action
             MatrixDouble nextQValuesOnline = (MatrixDouble) onlineDQN.getOutput(nextState);
             int bestAction = (int) math.maxIndex(nextQValuesOnline).y;
-
-            // use target to evaluate Q val of best action
             MatrixDouble nextQValuesTarget = (MatrixDouble) targetDQN.getOutput(nextState);
             double targetQ = nextQValuesTarget.get(0, bestAction);
-
-            // calculate target value
             double targetValue = reward + gamma * targetQ;
             target.set(0, action, targetValue);
         } else {
             target.set(0, action, reward);
         }
 
-        // Calculate TD error
-        double tdError = target.get(0, action) - currentQValues.get(0, action);
-        if (Double.isNaN(currentQValues.get(0, action))) {
-            throw new IllegalStateException("action " + action + " is NaN!! : " + currentQValues.get(0, action));
-        }
-
-        Object gradientOutput = MatrixDouble.subtract(target, currentQValues);
-
-        for (int i = onlineDQN.numLayers() - 1; i >= 0; i--) {
-            Layer layer = onlineDQN.getLayer(i);
-            Object layerInput = layerOutputs.get(i);
-
-            gradientOutput = layer.backpropagate(layerInput, gradientOutput);
-            optimizer.optimize(layer);
-        }
-
+        // Update epsilon after training step
         decayEpsilon();
         decayLearningRate();
 
+        // Soft update for target network
         if (stepCounter % targetUpdateFrequency == 0) {
             softUpdate();
-            stepCounter = 0;
         }
-
-        return tdError;
+        return target.get(0, action) - currentQValues.get(0, action);
     }
 
     private void decayEpsilon() {
-        epsilon = Math.max(epsilonMin, epsilon * epsilonDecay);
+        // Introduce periodic exploration bursts
+        if (stepCounter % burstFrequency == 0) {
+            epsilon = burstEpsilon;  // Re-increase epsilon for exploration burst
+            burstStepCounter = 0;
+        }
+
+        if (burstStepCounter < burstDuration) {
+            burstStepCounter++;
+        } else {
+            epsilon = Math.max(epsilonMin, epsilon * epsilonDecay);  // Gradually decay epsilon back to its minimum
+        }
     }
+
     private void decayLearningRate() {
         onlineDQN.setLearningRate(Math.max(learningRateMin, onlineDQN.getLearningRate() * learningRateDecay));
     }
@@ -204,5 +177,17 @@ public class DDQNAgent {
     }
     public DQN getTargetDQN() {
         return targetDQN;
+    }
+
+    public double getMinEpsilon() {
+        return epsilonMin;
+    }
+
+    public void setEpsilon(double newEpsilon) {
+        this.epsilon = Math.max(epsilonMin, Math.min(1.0, newEpsilon));
+    }
+
+    public Optimizer getOptimizer() {
+        return optimizer;
     }
 }

@@ -16,12 +16,6 @@ public abstract class Layer implements Serializable {
     protected int inputSize;
     protected int outputSize;
 
-    /**
-     * Computes the output of the layer given an input.
-     *
-     * @param input the input to the layer.
-     * @return the output of the layer.
-     */
     public abstract Object compute(Object input);
     /**
      * Copies the current layer's parameters to the target layer.

@@ -105,3 +105,4 @@ public class Vector2 {
         return Math.abs(x - goalPosition.x) + Math.abs(y - goalPosition.y);
     }
 }
+
