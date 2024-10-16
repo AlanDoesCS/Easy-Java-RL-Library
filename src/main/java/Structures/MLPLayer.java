@@ -20,10 +20,10 @@ public class MLPLayer extends Layer {
     ActivationFunction phi;
     double lambda;
 
-    public MatrixDouble m;
-    public MatrixDouble v;
-    public MatrixDouble mBias;
-    public MatrixDouble vBias;
+    public MatrixDouble mW;
+    public MatrixDouble vW;
+    public MatrixDouble mB;
+    public MatrixDouble vB;
 
     public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, double bias, double lambda) {
         this.inputSize = inputSize;
@@ -39,10 +39,10 @@ public class MLPLayer extends Layer {
         this.lambda = lambda;
 
         // Initialize Adam optimizer parameters
-        m = new MatrixDouble(outputSize, inputSize);
-        v = new MatrixDouble(outputSize, inputSize);
-        mBias = new MatrixDouble(outputSize, 1);
-        vBias = new MatrixDouble(outputSize, 1);
+        mW = new MatrixDouble(outputSize, inputSize);
+        vW = new MatrixDouble(outputSize, inputSize);
+        mB = new MatrixDouble(outputSize, 1);
+        vB = new MatrixDouble(outputSize, 1);
     }
 
     @Override

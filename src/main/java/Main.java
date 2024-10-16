@@ -38,8 +38,8 @@ public class Main {
                 0.99995,                       // epsilon decay
                 0.01,                          // epsilon min
                 0.999,                         // gamma
-                0.000001,                      // learning rate
-                0.99999,                       // learning rate decay
+                1f,                            // learning rate
+                0.9999,                        // learning rate decay
                 0.0001f,                       // learning rate minimum
                 0.0005                         // tau
         );

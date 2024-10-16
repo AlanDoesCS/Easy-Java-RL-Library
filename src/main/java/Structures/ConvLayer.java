@@ -31,16 +31,20 @@ public class ConvLayer extends Layer {
     int inputDepth;
     private int outputWidth, outputHeight;
 
-    public double[][][][] m;
-    public double[][][][] v;
-    public double[] mBias;
-    public double[] vBias;
+    public double[][][][] mFilters;
+    public double[][][][] vFilters;
+    public double[] mBiases;
+    public double[] vBiases;
+    double beta1 = 0.9;
+    double beta2 = 0.999;
+    double beta1Power = beta1;
+    double beta2Power = beta2;
+    double epsilon = 1e-8;
+    int timestep = 1;
 
-    private ActivationFunction activationFunction;
+    ActivationFunction activationFunction;
 
     private double clipValue = 1.0f; // default clip value
-
-    private int timestep = 0;
 
     private double[][][][] gradientFilters;
     private double[] gradientBiases;
