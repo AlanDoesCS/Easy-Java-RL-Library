@@ -16,6 +16,19 @@ A simple neural network library for training Deep Q Networks in different enviro
 
 ---
 
+## RL Algorithms
+- DQN
+- Double DQN
+
+## Replay
+- Replay Buffer
+- Prioritized Experience Replay
+
+## Optimizers
+- Adam
+
+---
+
 ## Example usage:
 
 ```java
