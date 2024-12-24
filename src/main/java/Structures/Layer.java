@@ -64,7 +64,11 @@ public abstract class Layer implements Serializable {
      * @return the gradient of the loss with respect to the input of the layer.
      */
     public abstract Object backpropagate(Object input, Object gradientOutput);
-    public abstract void updateParameters(double learningRate);
+
+    /**
+     * Resets the gradients after an optimization step.
+     */
+    public abstract void resetGradients();
 
     public void dumpInfo() {}
 }

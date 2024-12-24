@@ -17,91 +17,32 @@ import java.util.concurrent.RecursiveAction;
  * </p>
  */
 public class ConvLayer extends Layer {
-    private static final int PARALLELISM_THRESHOLD = 32;   // threshold for parallelizing loops - increase value for weaker systems
+    private static final int PARALLELISM_THRESHOLD = 32; // Threshold for parallelizing loops
     private static final ForkJoinPool POOL = ForkJoinPool.commonPool();
 
+    // Parameters
     public double[][][][] filters; // [numFilters][depth][height][width]
     public double[] biases; // [numFilters]
-    private int strideX, strideY;
-    private int paddingX, paddingY;
-    public int filterSize; // assumes square filters
-    private int numFilters;
-    int inputWidth;
-    int inputHeight;
-    int inputDepth;
-    private int outputWidth, outputHeight;
 
-    public double[][][][] mFilters;
-    public double[][][][] vFilters;
-    public double[] mBiases;
-    public double[] vBiases;
-    double beta1 = 0.9;
-    double beta2 = 0.999;
-    double beta1Power = beta1;
-    double beta2Power = beta2;
-    double epsilon = 1e-8;
-    int timestep = 1;
-
-    ActivationFunction activationFunction;
-
-    private double clipValue = 1.0f; // default clip value
-
+    // Gradients
     private double[][][][] gradientFilters;
     private double[] gradientBiases;
 
-    public void setClipValue(double clipValue) {
-        this.clipValue = clipValue;
-    }
+    // Adam optimizer parameters
+    public double[][][][] mFilters, vFilters;
+    public double[] mBiases, vBiases;
 
-    @Override
-    public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
-        targetLayer.alpha = this.alpha;
+    private int strideX, strideY;
+    private int paddingX, paddingY;
+    public int filterSize; // Assumes square filters
+    private int numFilters;
+    private int inputWidth, inputHeight, inputDepth;
+    private int outputWidth, outputHeight;
 
-        if (!(targetLayer instanceof ConvLayer target)) {
-            throw new IllegalArgumentException(String.format("Target layer must be a ConvLayer (got: %s)", targetLayer.getClass().getSimpleName()));
-        }
-        for (int f = 0; f < this.filters.length; f++) {
-            for (int d = 0; d < this.filters[f].length; d++) {
-                for (int h = 0; h < this.filters[f][d].length; h++) {
-                    System.arraycopy(this.filters[f][d][h], 0, target.filters[f][d][h], 0, this.filters[f][d][h].length);
-                }
-            }
-        }
-        for (int f = 0; f < this.gradientFilters.length; f++) {
-            for (int d = 0; d < this.gradientFilters[f].length; d++) {
-                for (int h = 0; h < this.gradientFilters[f][d].length; h++) {
-                    System.arraycopy(this.gradientFilters[f][d][h], 0, target.gradientFilters[f][d][h], 0, this.gradientFilters[f][d][h].length);
-                }
-            }
-        }
+    private ActivationFunction activationFunction;
 
-        System.arraycopy(this.biases, 0, target.biases, 0, this.biases.length);
-        System.arraycopy(this.gradientBiases, 0, target.gradientBiases, 0, this.gradientBiases.length);
-
-        if (ignorePrimitives) return;
-
-        target.strideX = this.strideX;
-        target.strideY = this.strideY;
-        target.paddingX = this.paddingX;
-        target.paddingY = this.paddingY;
-        target.filterSize = this.filterSize;
-        target.numFilters = this.numFilters;
-        target.inputWidth = this.inputWidth;
-        target.inputHeight = this.inputHeight;
-        target.inputDepth = this.inputDepth;
-        target.outputWidth = this.outputWidth;
-        target.outputHeight = this.outputHeight;
-        target.activationFunction = this.activationFunction;
-    }
-
-    @Override
-    public Layer copy() {
-        ConvLayer copyLayer = new ConvLayer(activationFunction, inputWidth, inputHeight, inputDepth, filterSize, numFilters, strideX, strideY, paddingX, paddingY, "noInit");
-        copyTo(copyLayer, true);
-        return copyLayer;
-    }
-
-    public ConvLayer(ActivationFunction activationFunction, int inputWidth, int inputHeight, int inputDepth, int filterSize, int numFilters, int strideX, int strideY, int paddingX, int paddingY, String... args) {
+    public ConvLayer(ActivationFunction activationFunction, int inputWidth, int inputHeight, int inputDepth,
+                     int filterSize, int numFilters, int strideX, int strideY, int paddingX, int paddingY, String... args) {
         this.activationFunction = activationFunction;
         this.inputSize = inputWidth * inputHeight * inputDepth;
         this.inputWidth = inputWidth;
@@ -124,21 +65,15 @@ public class ConvLayer extends Layer {
         gradientFilters = new double[numFilters][inputDepth][filterSize][filterSize];
         gradientBiases = new double[numFilters];
 
-        if (args.length > 0) {
-            List<String> argList = List.of(args);
-
-            if (argList.contains("noInit")) {
-                return;
-            }
+        if (args.length == 0 || !Arrays.asList(args).contains("noInit")) {
+            initializeParameters();
         }
 
-        initializeParameters();
-
-        // Initialize Adam parameters
-        m = new double[numFilters][inputDepth][filterSize][filterSize];
-        v = new double[numFilters][inputDepth][filterSize][filterSize];
-        mBias = new double[numFilters];
-        vBias = new double[numFilters];
+        // Initialize Adam optimizer parameters
+        mFilters = new double[numFilters][inputDepth][filterSize][filterSize];
+        vFilters = new double[numFilters][inputDepth][filterSize][filterSize];
+        mBiases = new double[numFilters];
+        vBiases = new double[numFilters];
     }
 
     private void initializeParameters() {
@@ -158,18 +93,69 @@ public class ConvLayer extends Layer {
     }
 
     @Override
-    public Object compute(Object input) {
-        if (!(input instanceof Tensor tensorInput)) {
-            throw new IllegalArgumentException("Expected input to be a Tensor, instead got: " + input.getClass().getSimpleName());
-        }
+    public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
+        targetLayer.alpha = this.alpha;
 
-        if (tensorInput.getDepth() != inputDepth || tensorInput.getHeight() != inputHeight || tensorInput.getWidth() != inputWidth) {
-            throw new IllegalArgumentException("Input dimensions do not match expected dimensions: Expected: (" + inputDepth + ", " + inputHeight + ", " + inputWidth + "), Got: (" + tensorInput.getDepth() + ", " + tensorInput.getHeight() + ", " + tensorInput.getWidth() + ")");
+        if (!(targetLayer instanceof ConvLayer)) {
+            throw new IllegalArgumentException(String.format("Target layer must be a ConvLayer (got: %s)", targetLayer.getClass().getSimpleName()));
         }
+        ConvLayer target = (ConvLayer) targetLayer;
 
-        double[][][] outputData = new double[numFilters][outputHeight][outputWidth];
-        POOL.invoke(new ComputeTask(tensorInput, outputData, 0, numFilters));
-        return new Tensor(outputData);
+        // Copy filters and biases
+        for (int f = 0; f < this.filters.length; f++) {
+            for (int d = 0; d < this.filters[f].length; d++) {
+                for (int h = 0; h < this.filters[f][d].length; h++) {
+                    System.arraycopy(this.filters[f][d][h], 0, target.filters[f][d][h], 0, this.filters[f][d][h].length);
+                }
+            }
+        }
+        System.arraycopy(this.biases, 0, target.biases, 0, this.biases.length);
+
+        // Copy gradients
+        for (int f = 0; f < this.gradientFilters.length; f++) {
+            for (int d = 0; d < this.gradientFilters[f].length; d++) {
+                for (int h = 0; h < this.gradientFilters[f][d].length; h++) {
+                    System.arraycopy(this.gradientFilters[f][d][h], 0, target.gradientFilters[f][d][h], 0, this.gradientFilters[f][d][h].length);
+                }
+            }
+        }
+        System.arraycopy(this.gradientBiases, 0, target.gradientBiases, 0, this.gradientBiases.length);
+
+        // Copy moment estimates
+        for (int f = 0; f < this.mFilters.length; f++) {
+            for (int d = 0; d < this.mFilters[f].length; d++) {
+                for (int h = 0; h < this.mFilters[f][d].length; h++) {
+                    System.arraycopy(this.mFilters[f][d][h], 0, target.mFilters[f][d][h], 0, this.mFilters[f][d][h].length);
+                    System.arraycopy(this.vFilters[f][d][h], 0, target.vFilters[f][d][h], 0, this.vFilters[f][d][h].length);
+                }
+            }
+        }
+        System.arraycopy(this.mBiases, 0, target.mBiases, 0, this.mBiases.length);
+        System.arraycopy(this.vBiases, 0, target.vBiases, 0, this.vBiases.length);
+
+        target.activationFunction = this.activationFunction;
+
+        if (ignorePrimitives) return;
+
+        target.strideX = this.strideX;
+        target.strideY = this.strideY;
+        target.paddingX = this.paddingX;
+        target.paddingY = this.paddingY;
+        target.filterSize = this.filterSize;
+        target.numFilters = this.numFilters;
+        target.inputWidth = this.inputWidth;
+        target.inputHeight = this.inputHeight;
+        target.inputDepth = this.inputDepth;
+        target.outputWidth = this.outputWidth;
+        target.outputHeight = this.outputHeight;
+    }
+
+    @Override
+    public ConvLayer copy() {
+        ConvLayer copyLayer = new ConvLayer(activationFunction, inputWidth, inputHeight, inputDepth, filterSize,
+                numFilters, strideX, strideY, paddingX, paddingY, "noInit");
+        copyTo(copyLayer, true);
+        return copyLayer;
     }
 
     public int getNumFilters() { return numFilters; }
@@ -259,6 +245,22 @@ public class ConvLayer extends Layer {
         return gradientBiases;
     }
 
+    @Override
+    public Object compute(Object input) {
+        if (!(input instanceof Tensor)) {
+            throw new IllegalArgumentException("Expected input to be a Tensor.");
+        }
+        Tensor tensorInput = (Tensor) input;
+
+        if (tensorInput.getDepth() != inputDepth || tensorInput.getHeight() != inputHeight || tensorInput.getWidth() != inputWidth) {
+            throw new IllegalArgumentException("Input dimensions do not match expected dimensions.");
+        }
+
+        double[][][] outputData = new double[numFilters][outputHeight][outputWidth];
+        POOL.invoke(new ComputeTask(tensorInput, outputData, 0, numFilters));
+        return new Tensor(outputData);
+    }
+
     private class ComputeTask extends RecursiveAction {
         private final Tensor input;
         private final double[][][] output;
@@ -310,24 +312,13 @@ public class ConvLayer extends Layer {
 
     @Override
     public Tensor backpropagate(Object input, Object gradientOutput) {
-        if (!(input instanceof Tensor tensorInput)) {
-            throw new IllegalArgumentException("Expected input to be a Tensor.");
+        if (!(input instanceof Tensor) || !(gradientOutput instanceof Tensor)) {
+            throw new IllegalArgumentException("Expected input and gradientOutput to be Tensors.");
         }
-        if (!(gradientOutput instanceof Tensor tensorGradientOutput)) {
-            throw new IllegalArgumentException("Expected gradientOutput to be a Tensor.");
-        }
+        Tensor tensorInput = (Tensor) input;
+        Tensor tensorGradientOutput = (Tensor) gradientOutput;
 
         Tensor gradientInput = new Tensor(inputDepth, inputHeight, inputWidth);
-
-        // Reset gradients
-        for (int f = 0; f < numFilters; f++) {
-            for (int d = 0; d < inputDepth; d++) {
-                for (int i = 0; i < filterSize; i++) {
-                    Arrays.fill(gradientFilters[f][d][i], 0);
-                }
-            }
-        }
-        Arrays.fill(gradientBiases, 0);
 
         POOL.invoke(new BackpropagationTask(tensorInput, tensorGradientOutput, gradientInput, 0, numFilters));
 
@@ -337,8 +328,6 @@ public class ConvLayer extends Layer {
     private class BackpropagationTask extends RecursiveAction {
         private final Tensor input, gradientOutput, gradientInput;
         private final int startFilter, endFilter;
-        private final double[][][][] localGradientFilters;
-        private final double[] localGradientBiases;
 
         BackpropagationTask(Tensor input, Tensor gradientOutput, Tensor gradientInput, int startFilter, int endFilter) {
             this.input = input;
@@ -346,8 +335,6 @@ public class ConvLayer extends Layer {
             this.gradientInput = gradientInput;
             this.startFilter = startFilter;
             this.endFilter = endFilter;
-            this.localGradientFilters = new double[endFilter - startFilter][inputDepth][filterSize][filterSize];
-            this.localGradientBiases = new double[endFilter - startFilter];
         }
 
         @Override
@@ -358,7 +345,7 @@ public class ConvLayer extends Layer {
                 int midFilter = (startFilter + endFilter) / 2;
                 invokeAll(
                         new BackpropagationTask(input, gradientOutput, gradientInput, startFilter, midFilter),
-                        new BackpropagationTask(input, gradientOutput, gradientInput, midFilter, endFilter) // Corrected range
+                        new BackpropagationTask(input, gradientOutput, gradientInput, midFilter, endFilter)
                 );
             }
         }
@@ -369,7 +356,7 @@ public class ConvLayer extends Layer {
                     for (int j = 0; j < outputWidth; j++) {
                         double gradientValue = gradientOutput.get(f, i, j) * activationFunction.derivative(gradientOutput.get(f, i, j));
 
-                        localGradientBiases[f - startFilter] += gradientValue;
+                        gradientBiases[f] += gradientValue;
 
                         for (int d = 0; d < inputDepth; d++) {
                             for (int k = 0; k < filterSize; k++) {
@@ -378,7 +365,7 @@ public class ConvLayer extends Layer {
                                     int inputJ = j * strideX - paddingX + l;
                                     if (inputI >= 0 && inputI < inputHeight && inputJ >= 0 && inputJ < inputWidth) {
                                         double inputValue = input.get(d, inputI, inputJ);
-                                        localGradientFilters[f - startFilter][d][k][l] += gradientValue * inputValue;
+                                        gradientFilters[f][d][k][l] += gradientValue * inputValue;
                                         synchronized (gradientInput) {
                                             gradientInput.set(d, inputI, inputJ, gradientInput.get(d, inputI, inputJ) + gradientValue * filters[f][d][k][l]);
                                         }
@@ -388,67 +375,14 @@ public class ConvLayer extends Layer {
                         }
                     }
                 }
-
-            }
-            synchronized (ConvLayer.this) {
-                addLocalGradients(localGradientFilters, localGradientBiases, startFilter);
-            }
-        }
-
-        private void addLocalGradients(double[][][][] localFilters, double[] localBiases, int offset) {
-            for (int f = 0; f < localFilters.length; f++) {
-                for (int d = 0; d < inputDepth; d++) {
-                    for (int i = 0; i < filterSize; i++) {
-                        for (int j = 0; j < filterSize; j++) {
-                            gradientFilters[f + offset][d][i][j] += localFilters[f][d][i][j];
-                        }
-                    }
-                }
-                gradientBiases[f + offset] += localBiases[f];
             }
         }
     }
 
     @Override
-    public void updateParameters(double learningRate) {
-        timestep++;
-        double beta1 = 0.9;
-        double beta2 = 0.999;
-        double epsilon = 1e-8;
-
+    public void resetGradients() {
         for (int f = 0; f < numFilters; f++) {
-            for (int d = 0; d < inputDepth; d++) {
-                for (int i = 0; i < filterSize; i++) {
-                    for (int j = 0; j < filterSize; j++) {
-                        // Update biased first moment estimate
-                        m[f][d][i][j] = beta1 * m[f][d][i][j] + (1 - beta1) * gradientFilters[f][d][i][j];
-                        // Update biased second raw moment estimate
-                        v[f][d][i][j] = beta2 * v[f][d][i][j] + (1 - beta2) * gradientFilters[f][d][i][j] * gradientFilters[f][d][i][j];
-                        // Compute bias-corrected first moment estimate
-                        double mHat = m[f][d][i][j] / (1 - Math.pow(beta1, timestep));
-                        // Compute bias-corrected second raw moment estimate
-                        double vHat = v[f][d][i][j] / (1 - Math.pow(beta2, timestep));
-                        // Update parameters
-                        double update = learningRate * mHat / (Math.sqrt(vHat) + epsilon);
-                        // Clip the update
-                        update = math.clamp(update, -clipValue, clipValue);
-                        filters[f][d][i][j] -= update;
-                    }
-                }
-            }
-            // Update biases with Adam
-            mBias[f] = beta1 * mBias[f] + (1 - beta1) * gradientBiases[f];
-            vBias[f] = beta2 * vBias[f] + (1 - beta2) * gradientBiases[f] * gradientBiases[f];
-            double mHatBias = mBias[f] / (1 - Math.pow(beta1, timestep));
-            double vHatBias = vBias[f] / (1 - Math.pow(beta2, timestep));
-            double biasUpdate = learningRate * mHatBias / (Math.sqrt(vHatBias) + epsilon);
-            biasUpdate = math.clamp(biasUpdate, -clipValue, clipValue);
-            biases[f] -= biasUpdate;
-        }
-
-        // Reset gradients after update
-        for (int f = 0; f < numFilters; f++) {
-            Arrays.fill(gradientBiases, 0);
+            gradientBiases[f] = 0;
             for (int d = 0; d < inputDepth; d++) {
                 for (int i = 0; i < filterSize; i++) {
                     Arrays.fill(gradientFilters[f][d][i], 0);

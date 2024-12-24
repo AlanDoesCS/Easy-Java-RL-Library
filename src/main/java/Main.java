@@ -35,23 +35,23 @@ public class Main {
                 Environment.getActionSpace(),  // action space
                 layers,                        // layers
                 1,                             // initial epsilon
-                0.99995,                       // epsilon decay
+                0.9999,                        // epsilon decay
                 0.01,                          // epsilon min
-                0.999,                         // gamma
-                1f,                            // learning rate
+                0.95,                          // gamma
+                0.001f,                        // learning rate
                 0.9999,                        // learning rate decay
                 0.0001f,                       // learning rate minimum
                 0.0005                         // tau
         );
 
         ddqnAgent.dumpDQNInfo();
-        ddqnAgent.setVerbose(true);
+        ddqnAgent.setVerbose(false);
         trainer.trainAgent(
                 ddqnAgent,                     // agent
                 600000,                        // num episodes
-                500,                           // save period
-                1,                             // visualiser update period
-                "plot", "ease", "axis_ticks", "show_path", "verbose" // varargs
+                3000,                          // save period
+                200,                           // visualiser update period
+                "plot", "ease", "axis_ticks", "show_path" // varargs
         );
     }
 }

@@ -90,8 +90,8 @@ public class FlattenLayer extends Layer {
     }
 
     @Override
-    public void updateParameters(double learningRate) {
-        // No parameters to update
+    public void resetGradients() {
+        // unused
     }
 
     @Override

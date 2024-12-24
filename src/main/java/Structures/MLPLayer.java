@@ -12,31 +12,31 @@ import Training.ActivationFunctions.ActivationFunction;
  * </p>
  */
 public class MLPLayer extends Layer {
-    private static final double CLIP_THRESHOLD = 1.0f; // Threshold for gradient clipping
-    private static final double LOSS_SCALE = 128.0f;
+    MatrixDouble weights;
+    MatrixDouble biases;
+    private MatrixDouble gradientWeights, gradientBiases;
+    private ActivationFunction phi;
+    private double lambda;
 
-    MatrixDouble weights, biases;
-    MatrixDouble gradientWeights, gradientBiases;
-    ActivationFunction phi;
-    double lambda;
-
-    public MatrixDouble mW;
-    public MatrixDouble vW;
-    public MatrixDouble mB;
-    public MatrixDouble vB;
+    // Adam optimizer parameters
+    public MatrixDouble mW, vW; // Moment estimates for weights
+    public MatrixDouble mB, vB; // Moment estimates for biases
 
     public MLPLayer(int inputSize, int outputSize, ActivationFunction activation, double bias, double lambda) {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
+        this.alpha = 0.001; // Default learning rate
+        this.lambda = lambda;
+
         weights = new MatrixDouble(outputSize, inputSize);
         double stddev = Math.sqrt(2.0 / (inputSize)); // He initialization
         weights.randomize(-stddev, stddev);
         biases = new MatrixDouble(outputSize, 1);
         biases.fill(bias);
+
         gradientWeights = new MatrixDouble(outputSize, inputSize);
         gradientBiases = new MatrixDouble(outputSize, 1);
         phi = activation;
-        this.lambda = lambda;
 
         // Initialize Adam optimizer parameters
         mW = new MatrixDouble(outputSize, inputSize);
@@ -57,6 +57,12 @@ public class MLPLayer extends Layer {
         MatrixDouble.copy(this.biases, target.biases);
         MatrixDouble.copy(this.gradientWeights, target.gradientWeights);
         MatrixDouble.copy(this.gradientBiases, target.gradientBiases);
+
+        MatrixDouble.copy(this.mW, target.mW);
+        MatrixDouble.copy(this.vW, target.vW);
+        MatrixDouble.copy(this.mB, target.mB);
+        MatrixDouble.copy(this.vB, target.vB);
+
         target.phi = this.phi;
 
         if (ignorePrimitives) return;
@@ -94,18 +100,15 @@ public class MLPLayer extends Layer {
 
     @Override
     public MatrixDouble backpropagate(Object input, Object gradientOutput) {
-        if (!(input instanceof MatrixDouble matrixInput)) {
-            throw new IllegalArgumentException("Expected input to be a MatrixDouble.");
+        if (!(input instanceof MatrixDouble) || !(gradientOutput instanceof MatrixDouble)) {
+            throw new IllegalArgumentException("Expected input and gradientOutput to be MatrixDouble.");
         }
-        if (!(gradientOutput instanceof MatrixDouble matrixGradientOutput)) {
-            throw new IllegalArgumentException("Expected gradientOutput to be a MatrixDouble.");
-        }
+        MatrixDouble matrixInput = (MatrixDouble) input;
+        MatrixDouble matrixGradientOutput = (MatrixDouble) gradientOutput;
 
-        // Apply loss scaling
-        matrixGradientOutput = MatrixDouble.multiply(matrixGradientOutput, LOSS_SCALE);
-
-        this.gradientWeights = MatrixDouble.multiply(matrixGradientOutput, matrixInput.transpose());
-        this.gradientBiases = matrixGradientOutput;
+        // Compute gradients
+        gradientWeights = MatrixDouble.multiply(matrixGradientOutput, matrixInput.transpose());
+        gradientBiases = matrixGradientOutput;
 
         MatrixDouble gradientInput = MatrixDouble.multiply(weights.transpose(), matrixGradientOutput);
 
@@ -120,30 +123,9 @@ public class MLPLayer extends Layer {
     }
 
     @Override
-    public void updateParameters(double learningRate) {
-        // Calculate gradient norms for clipping
-        double gradientNorm = Math.sqrt(
-                gradientWeights.sumOfSquares() + gradientBiases.sumOfSquares()
-        );
-
-        // Clip gradients if they exceed the threshold
-        if (gradientNorm > CLIP_THRESHOLD) {
-            double scale = CLIP_THRESHOLD / gradientNorm;
-            gradientWeights.multiply(scale);
-            gradientBiases.multiply(scale);
-        }
-
-        // Normalize gradients
-        gradientWeights.divide(LOSS_SCALE);
-        gradientBiases.divide(LOSS_SCALE);
-
-        // L2 regularization (weight decay)
-        weights.multiply(1.0f - learningRate * lambda);
-        biases.multiply(1.0f - learningRate * lambda);
-
-        // Update weights and biases using the scaled gradients
-        weights.subtract(MatrixDouble.multiply(gradientWeights, learningRate));
-        biases.subtract(MatrixDouble.multiply(gradientBiases, learningRate));
+    public void resetGradients() {
+        gradientWeights.fill(0);
+        gradientBiases.fill(0);
     }
 
     @Override

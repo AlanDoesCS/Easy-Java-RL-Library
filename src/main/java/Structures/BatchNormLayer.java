@@ -13,15 +13,19 @@ public class BatchNormLayer extends Layer {
     private double epsilon = 1e-5f;
     private double momentum = 0.99f;
 
+    // Parameters
     public double[] gamma;
     public double[] beta;
+
+    // Running statistics
     private double[] runningMean;
     private double[] runningVar;
 
+    // Gradients
     private double[] dGamma;
     private double[] dBeta;
 
-    // [2][depth]
+    // Adam optimizer parameters
     public double[][] m; // First moment estimates for gamma and beta
     public double[][] v; // Second moment estimates for gamma and beta
 
@@ -31,6 +35,7 @@ public class BatchNormLayer extends Layer {
         this.width = width;
         this.inputSize = depth * height * width;
         this.outputSize = inputSize;
+        this.alpha = 0.001; // Default learning rate
 
         gamma = new double[depth];
         beta = new double[depth];
@@ -40,20 +45,21 @@ public class BatchNormLayer extends Layer {
         dBeta = new double[depth];
 
         for (int i = 0; i < depth; i++) {
-            gamma[i] = 1.0f;
-            beta[i] = 0.0f;
+            gamma[i] = 1.0;
+            beta[i] = 0.0;
         }
 
-        m = new double[2][depth];
-        v = new double[2][depth];
+        // Initialize Adam optimizer parameters
+        m = new double[2][depth]; // m[0] for gamma, m[1] for beta
+        v = new double[2][depth]; // v[0] for gamma, v[1] for beta
     }
 
     @Override
     public Object compute(Object input) {
-        if (input instanceof Tensor inputTensor) {
-            return computeTensor(inputTensor);
-        } else if (input instanceof MatrixDouble inputMatrix) {
-            return computeMatrix(inputMatrix);
+        if (input instanceof Tensor) {
+            return computeTensor((Tensor) input);
+        } else if (input instanceof MatrixDouble) {
+            return computeMatrix((MatrixDouble) input);
         } else {
             throw new IllegalArgumentException("Expected input to be a Tensor or MatrixDouble.");
         }
@@ -118,12 +124,12 @@ public class BatchNormLayer extends Layer {
 
     @Override
     public Object backpropagate(Object input, Object gradientOutput) {
-        if (input instanceof Tensor inputTensor && gradientOutput instanceof Tensor gradOutputTensor) {
-            return backpropagateTensor(inputTensor, gradOutputTensor);
-        } else if (input instanceof MatrixDouble inputMatrix && gradientOutput instanceof MatrixDouble gradOutputMatrix) {
-            return backpropagateMatrix(inputMatrix, gradOutputMatrix);
+        if (input instanceof Tensor && gradientOutput instanceof Tensor) {
+            return backpropagateTensor((Tensor) input, (Tensor) gradientOutput);
+        } else if (input instanceof MatrixDouble && gradientOutput instanceof MatrixDouble) {
+            return backpropagateMatrix((MatrixDouble) input, (MatrixDouble) gradientOutput);
         } else {
-            throw new IllegalArgumentException("Expected input and gradientOutput to be a Tensor or MatrixDouble.");
+            throw new IllegalArgumentException("Expected input and gradientOutput to be Tensor or MatrixDouble.");
         }
     }
 
@@ -196,12 +202,8 @@ public class BatchNormLayer extends Layer {
     }
 
     @Override
-    public void updateParameters(double learningRate) {
+    public void resetGradients() {
         for (int d = 0; d < depth; d++) {
-            // Update gamma and beta
-            gamma[d] -= learningRate * dGamma[d];
-            beta[d] -= learningRate * dBeta[d];
-            // Reset gradients after update
             dGamma[d] = 0;
             dBeta[d] = 0;
         }
@@ -209,27 +211,32 @@ public class BatchNormLayer extends Layer {
 
     @Override
     public void copyTo(Layer targetLayer, boolean ignorePrimitives) {
-        // Ensure target is a BatchNormLayer
-        if (!(targetLayer instanceof BatchNormLayer target)) {
+        if (!(targetLayer instanceof BatchNormLayer)) {
             throw new IllegalArgumentException("Target layer must be a BatchNormLayer");
         }
+        BatchNormLayer target = (BatchNormLayer) targetLayer;
 
-        // Copy fields from the current BatchNormLayer to the target BatchNormLayer
         System.arraycopy(this.gamma, 0, target.gamma, 0, this.gamma.length);
         System.arraycopy(this.beta, 0, target.beta, 0, this.beta.length);
         System.arraycopy(this.runningMean, 0, target.runningMean, 0, this.runningMean.length);
         System.arraycopy(this.runningVar, 0, target.runningVar, 0, this.runningVar.length);
+
+        // Copy gradients
         System.arraycopy(this.dGamma, 0, target.dGamma, 0, this.dGamma.length);
         System.arraycopy(this.dBeta, 0, target.dBeta, 0, this.dBeta.length);
 
+        // Copy moment estimates
+        for (int i = 0; i < 2; i++) {
+            System.arraycopy(this.m[i], 0, target.m[i], 0, this.m[i].length);
+            System.arraycopy(this.v[i], 0, target.v[i], 0, this.v[i].length);
+        }
+
         if (!ignorePrimitives) {
-            // Copy fields from the Layer superclass (manually)
             target.inputSize = this.inputSize;
             target.outputSize = this.outputSize;
             target.alpha = this.alpha;
         }
 
-        // Copy other fields specific to BatchNormLayer
         target.depth = this.depth;
         target.height = this.height;
         target.width = this.width;
@@ -238,7 +245,7 @@ public class BatchNormLayer extends Layer {
     }
 
     @Override
-    public Layer copy() {
+    public BatchNormLayer copy() {
         BatchNormLayer copy = new BatchNormLayer(depth, height, width);
         copyTo(copy, false);
         return copy;
@@ -251,6 +258,14 @@ public class BatchNormLayer extends Layer {
 
     public int getDepth() {
         return depth;
+    }
+
+    public double[] getGamma() {
+        return gamma;
+    }
+
+    public double[] getBeta() {
+        return beta;
     }
 
     public double[] getGradientGamma() {
